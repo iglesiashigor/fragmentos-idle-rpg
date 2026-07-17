@@ -13,6 +13,7 @@ import {
 import { generateEnemy } from '../data/enemies';
 import {
   INITIAL_LOCATIONS,
+  generateRandomEnemyLocation,
   generateRandomLocation,
   MAX_ENEMIES,
   MAX_EVENTS,
@@ -417,14 +418,16 @@ export function useGameState(
 
       const newLocations = [...remainingLocations];
 
-      // Add new enemy if needed
+      // Enemy replacement must always add an enemy. Events are optional extras.
       if (newEnemyCount < MAX_ENEMIES) {
+        newLocations.push(generateRandomEnemyLocation());
+      }
+
+      if (newEventCount < MAX_EVENTS && Math.random() < 0.25) {
         const newLocation = generateRandomLocation();
-        // Only add if it's an enemy or if we have room for more events
         if (
-          newLocation.type === 'enemy' ||
-          ((newLocation.type === 'event' || newLocation.type === 'gathering') &&
-            newEventCount < MAX_EVENTS)
+          newLocation.type === 'event' ||
+          newLocation.type === 'gathering'
         ) {
           newLocations.push(newLocation);
         }
