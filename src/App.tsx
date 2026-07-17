@@ -51,15 +51,10 @@ function App() {
     };
 
     return (
-      <div>
-        <button
-          onClick={handleBackToSelection}
-          className="fixed top-4 left-4 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors"
-        >
-          Voltar
-        </button>
-        <CharacterCreation onCreateCharacter={handleCreateCharacter} />
-      </div>
+      <CharacterCreation
+        onCreateCharacter={handleCreateCharacter}
+        onBack={handleBackToSelection}
+      />
     );
   }
 
@@ -75,23 +70,15 @@ function App() {
   }
 
   return (
-    <div>
-      <button
-        onClick={handleBackToSelection}
-        className="fixed top-4 left-4 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors"
-      >
-        Voltar para Seleção
-      </button>
-      <GameContent 
-        character={activeCharacter}
-        onCharacterUpdate={updateCharacter}
-        onLogout={() => {
-          setActiveCharacter(null);
-          logout();
-        }}
-        onCreateNew={() => handleCreateNew(activeCharacter)}
-      />
-    </div>
+    <GameContent
+      character={activeCharacter}
+      onCharacterUpdate={updateCharacter}
+      onLogout={() => {
+        setActiveCharacter(null);
+        logout();
+      }}
+      onCreateNew={() => handleCreateNew(activeCharacter)}
+    />
   );
 }
 
