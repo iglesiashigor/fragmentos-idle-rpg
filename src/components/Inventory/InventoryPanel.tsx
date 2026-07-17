@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Shield, Sword, FlaskRound as Flask, Package } from 'lucide-react';
-import { InventoryItem, Equipment } from '../../types/game';
+import { ReactNode } from 'react';
+import { FlaskRound as Flask, Package, Shield, Sword } from 'lucide-react';
+import { Equipment, InventoryItem } from '../../types/game';
 
 interface InventoryPanelProps {
   inventory: InventoryItem[];
@@ -19,224 +19,189 @@ export function InventoryPanel({
   onUnequipItem,
   onUsePotion,
 }: InventoryPanelProps) {
-  const [activeTab, setActiveTab] = useState<'equipment' | 'potions' | 'loot'>('equipment');
-  
-  const equippableItems = inventory.filter(
-    (item) => item.type === 'weapon' || item.type === 'armor'
-  );
-
-  const potions = inventory.filter(
-    (item) => item.type === 'potion'
-  );
-
-  const lootItems = inventory.filter(
-    (item) => item.type === 'loot'
-  );
-
-  const renderPotionEffect = (potion: InventoryItem) => {
-    const effects = [];
-    if (potion.healing) {
-      effects.push(<span key="health" className="text-red-500">Vida: +{potion.healing}</span>);
-    }
-    if (potion.manaRestore) {
-      effects.push(<span key="mana" className="text-blue-500">Mana: +{potion.manaRestore}</span>);
-    }
-    if (potion.staminaRestore) {
-      effects.push(<span key="stamina" className="text-yellow-500">Estamina: +{potion.staminaRestore}</span>);
-    }
-    return effects;
-  };
+  const bagItems = inventory;
+  const emptySlots = Math.max(0, 24 - bagItems.length);
 
   return (
-    <div>
-      <div className="mb-6 flex flex-wrap gap-3">
-        <button
-          onClick={() => setActiveTab('equipment')}
-          className={`flex items-center gap-2 rounded-md px-4 py-2 font-semibold transition-colors ${
-            activeTab === 'equipment'
-              ? 'bg-amber-600 text-white'
-              : 'bg-stone-200 text-stone-700 hover:bg-stone-300'
-          }`}
-        >
-          <Sword className="w-4 h-4" />
-          Equipamento
-        </button>
-        <button
-          onClick={() => setActiveTab('potions')}
-          className={`flex items-center gap-2 rounded-md px-4 py-2 font-semibold transition-colors ${
-            activeTab === 'potions'
-              ? 'bg-amber-600 text-white'
-              : 'bg-stone-200 text-stone-700 hover:bg-stone-300'
-          }`}
-        >
-          <Flask className="w-4 h-4" />
-          Poções
-        </button>
-        <button
-          onClick={() => setActiveTab('loot')}
-          className={`flex items-center gap-2 rounded-md px-4 py-2 font-semibold transition-colors ${
-            activeTab === 'loot'
-              ? 'bg-amber-600 text-white'
-              : 'bg-stone-200 text-stone-700 hover:bg-stone-300'
-          }`}
-        >
-          <Package className="w-4 h-4" />
-          Espólios
-        </button>
+    <div className="rpg-panel rounded-lg p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-black text-stone-950">Inventário</h2>
+          <p className="text-sm font-medium text-stone-500">
+            Equipamentos e bolsa
+          </p>
+        </div>
+        <div className="rounded-md bg-stone-900 px-3 py-1 text-sm font-bold text-amber-300">
+          {bagItems.length}/24
+        </div>
       </div>
 
-      {activeTab === 'equipment' ? (
-        <div className="space-y-6">
-          {/* Equipment Slots */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="rpg-item rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Sword className="w-5 h-5 text-gray-600" />
-                <h3 className="font-medium">Arma</h3>
-              </div>
-              {equipment.weapon ? (
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">{equipment.weapon.name}</p>
-                    <p className="text-sm text-gray-600">Poder: {equipment.weapon.power}</p>
-                  </div>
-                  <button
-                    onClick={() => onUnequipItem('weapon')}
-                    className="text-sm text-red-500 hover:text-red-600"
-                  >
-                    Desequipar
-                  </button>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">Nenhuma arma equipada</p>
-              )}
-            </div>
+      <div className="mb-5 grid grid-cols-2 gap-3">
+        <EquipmentSlot
+          title="Arma"
+          icon={<Sword className="h-5 w-5" />}
+          item={equipment.weapon}
+          onUnequip={() => onUnequipItem('weapon')}
+        />
+        <EquipmentSlot
+          title="Armadura"
+          icon={<Shield className="h-5 w-5" />}
+          item={equipment.armor}
+          onUnequip={() => onUnequipItem('armor')}
+        />
+      </div>
 
-            <div className="rpg-item rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Shield className="w-5 h-5 text-gray-600" />
-                <h3 className="font-medium">Armadura</h3>
-              </div>
-              {equipment.armor ? (
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">{equipment.armor.name}</p>
-                    <p className="text-sm text-gray-600">Defesa: {equipment.armor.power}</p>
-                  </div>
-                  <button
-                    onClick={() => onUnequipItem('armor')}
-                    className="text-sm text-red-500 hover:text-red-600"
-                  >
-                    Desequipar
-                  </button>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500">Nenhuma armadura equipada</p>
-              )}
-            </div>
-          </div>
+      <div className="mb-3 flex items-center justify-between border-t border-stone-200 pt-4">
+        <h3 className="font-black text-stone-950">Bolsa</h3>
+        <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+          Itens carregados
+        </span>
+      </div>
 
-          {/* Inventory Items */}
-          <div>
-            <h3 className="font-medium mb-3">Itens Equipáveis</h3>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {equippableItems.map((item) => (
-                <div key={item.id} className="rpg-item rounded-lg">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-gray-600">{item.description}</p>
-                      {item.power && (
-                        <p className="text-sm text-blue-600">
-                          {item.type === 'weapon' ? 'Poder: ' : 'Defesa: '}
-                          {item.power}
-                        </p>
-                      )}
-                      <p className="text-sm text-gray-500 mt-1">
-                        Quantidade: {item.quantity}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => onEquipItem(item)}
-                      className="text-sm text-blue-500 hover:text-blue-600"
-                    >
-                      Equipar
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : activeTab === 'potions' ? (
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
+        {bagItems.map((item) => (
+          <BagSlot
+            key={item.id}
+            item={item}
+            equipped={
+              equipment.weapon?.id === item.id || equipment.armor?.id === item.id
+            }
+            onEquipItem={onEquipItem}
+            onUsePotion={onUsePotion}
+          />
+        ))}
+
+        {Array.from({ length: emptySlots }).map((_, index) => (
+          <div
+            key={`empty-${index}`}
+            className="aspect-square rounded-md border border-dashed border-stone-300 bg-stone-100/70"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EquipmentSlot({
+  title,
+  icon,
+  item,
+  onUnequip,
+}: {
+  title: string;
+  icon: ReactNode;
+  item: Equipment['weapon'];
+  onUnequip: () => void;
+}) {
+  return (
+    <div className="rounded-md border border-stone-200 bg-white p-3">
+      <div className="mb-2 flex items-center gap-2 text-sm font-bold text-stone-600">
+        {icon}
+        {title}
+      </div>
+      {item ? (
         <div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {potions.map((potion) => (
-              <div key={potion.id} className="rpg-item rounded-lg">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Flask className="w-4 h-4 text-red-500" />
-                      <p className="font-medium">{potion.name}</p>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-2">{potion.description}</p>
-                    <div className="flex flex-col gap-1">
-                      {renderPotionEffect(potion)}
-                    </div>
-                    <p className="text-sm text-gray-500 mt-2">
-                      Quantidade: {potion.quantity}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => onUsePotion(potion)}
-                    disabled={potion.quantity <= 0}
-                    className={`ml-4 px-3 py-1 rounded ${
-                      potion.quantity > 0
-                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
-                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    }`}
-                  >
-                    Usar
-                  </button>
-                </div>
-              </div>
-            ))}
-            {potions.length === 0 && (
-              <div className="col-span-2 text-center py-8 text-gray-500">
-                Nenhuma poção no inventário
-              </div>
-            )}
+          <div className="font-bold text-stone-950">{item.name}</div>
+          <div className="text-xs text-stone-500">
+            {item.type === 'weapon' ? 'Poder' : 'Defesa'}: {item.power || 0}
           </div>
+          <button
+            onClick={onUnequip}
+            className="mt-2 text-xs font-bold text-red-600 hover:text-red-700"
+          >
+            Desequipar
+          </button>
         </div>
       ) : (
-        <div>
-          <h3 className="font-medium mb-3">Itens Coletados</h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {lootItems.map((item) => (
-              <div key={item.id} className="rpg-item rounded-lg">
-                <div className="flex items-start gap-3">
-                  <Package className="w-5 h-5 text-gray-500 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-gray-600">{item.description}</p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-yellow-600">🪙 {item.price}</span>
-                      <span className="text-sm text-gray-500">
-                        Quantidade: {item.quantity}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-            {lootItems.length === 0 && (
-              <div className="col-span-2 text-center py-8 text-gray-500">
-                Nenhum item coletado ainda
-              </div>
-            )}
-          </div>
+        <div className="flex h-16 items-center justify-center rounded border border-dashed border-stone-300 text-xs font-semibold text-stone-400">
+          Vazio
         </div>
       )}
     </div>
   );
+}
+
+function BagSlot({
+  item,
+  equipped,
+  onEquipItem,
+  onUsePotion,
+}: {
+  item: InventoryItem;
+  equipped: boolean;
+  onEquipItem: (item: InventoryItem) => void;
+  onUsePotion: (item: InventoryItem) => void;
+}) {
+  const canEquip = item.type === 'weapon' || item.type === 'armor';
+  const canUse = item.type === 'potion';
+
+  return (
+    <div
+      className={`group relative aspect-square rounded-md border bg-white p-2 shadow-sm transition-colors ${
+        equipped
+          ? 'border-amber-500 ring-2 ring-amber-300'
+          : 'border-stone-200 hover:border-amber-300'
+      }`}
+      title={item.description}
+    >
+      <div className="flex h-full flex-col justify-between">
+        <div className="flex items-start justify-between gap-1">
+          <ItemIcon item={item} />
+          {item.quantity > 1 && (
+            <span className="rounded bg-stone-900 px-1.5 py-0.5 text-xs font-bold text-white">
+              {item.quantity}
+            </span>
+          )}
+        </div>
+        <div>
+          <div className="line-clamp-2 text-xs font-bold leading-tight text-stone-950">
+            {item.name}
+          </div>
+          <div className="text-[11px] font-semibold text-stone-500">
+            {item.type === 'weapon' && `Poder ${item.power || 0}`}
+            {item.type === 'armor' && `Defesa ${item.power || 0}`}
+            {item.type === 'potion' && 'Poção'}
+            {item.type === 'loot' && `${item.price} ouro`}
+          </div>
+        </div>
+      </div>
+
+      {(canEquip || canUse) && (
+        <div className="absolute inset-x-1 bottom-1 hidden gap-1 group-hover:flex">
+          {canEquip && (
+            <button
+              onClick={() => onEquipItem(item)}
+              disabled={equipped}
+              className="flex-1 rounded bg-amber-600 px-1 py-1 text-[11px] font-bold text-white hover:bg-amber-700 disabled:bg-stone-400"
+            >
+              {equipped ? 'Equipado' : 'Equipar'}
+            </button>
+          )}
+          {canUse && (
+            <button
+              onClick={() => onUsePotion(item)}
+              className="flex-1 rounded bg-emerald-600 px-1 py-1 text-[11px] font-bold text-white hover:bg-emerald-700"
+            >
+              Usar
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ItemIcon({ item }: { item: InventoryItem }) {
+  const iconClass = 'h-6 w-6';
+
+  if (item.type === 'weapon') {
+    return <Sword className={`${iconClass} text-red-700`} />;
+  }
+  if (item.type === 'armor') {
+    return <Shield className={`${iconClass} text-sky-700`} />;
+  }
+  if (item.type === 'potion') {
+    return <Flask className={`${iconClass} text-emerald-700`} />;
+  }
+  return <Package className={`${iconClass} text-amber-700`} />;
 }
