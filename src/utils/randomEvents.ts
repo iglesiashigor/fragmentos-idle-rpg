@@ -81,12 +81,16 @@ export function generateGatheringEvent(
   resourcePool = 'forest'
 ): GatheringReward {
   const pool = RESOURCE_POOLS[resourcePool] || RESOURCE_POOLS.forest;
-  const rewards = pool.items
-    .map((itemId) => ({
-      item: RESOURCE_BY_ID[itemId],
-      quantity: Math.max(1, Math.floor(Math.random() * 2) + level),
-    }))
-    .filter((reward) => Boolean(reward.item));
+  const itemId = pool.items[Math.floor(Math.random() * pool.items.length)];
+  const item = RESOURCE_BY_ID[itemId];
+  const rewards = item
+    ? [
+        {
+          item,
+          quantity: Math.max(1, level),
+        },
+      ]
+    : [];
 
   return {
     type: 'resource',

@@ -9,6 +9,29 @@ export interface CharacterCombatStats {
   criticalChance: number;
 }
 
+function getClassPassive(character: Character) {
+  switch (character.class.id) {
+    case 'warrior':
+      return { attack: 1.12, defense: 1.08, magic: 1, critical: 0 };
+    case 'fighter':
+      return { attack: 1.08, defense: 1, magic: 1, critical: 0.04 };
+    case 'mage':
+      return { attack: 1, defense: 1, magic: 1.18, critical: 0 };
+    case 'summoner':
+      return { attack: 1, defense: 1.05, magic: 1.12, critical: 0 };
+    case 'barbarian':
+      return { attack: 1.18, defense: 0.95, magic: 1, critical: 0.02 };
+    case 'shaman':
+      return { attack: 1, defense: 1.1, magic: 1.1, critical: 0 };
+    case 'thief':
+      return { attack: 1.05, defense: 1, magic: 1, critical: 0.08 };
+    case 'illusionist':
+      return { attack: 1, defense: 1, magic: 1.08, critical: 0.08 };
+    default:
+      return { attack: 1, defense: 1, magic: 1, critical: 0 };
+  }
+}
+
 export function calculateMaxHealth(character: Character): number {
   return (
     character.class.baseHealth +
@@ -32,27 +55,34 @@ export function calculateCharacterStats(
 ): CharacterCombatStats {
   const weaponPower = character.equipment.weapon?.power || 0;
   const armorPower = character.equipment.armor?.power || 0;
+  const passive = getClassPassive(character);
+  const attack =
+    8 +
+    weaponPower +
+    character.race.bonuses.damage +
+    character.attributes.strength * 2 +
+    character.attributes.effort;
+  const magicPower =
+    8 +
+    weaponPower * 0.5 +
+    character.race.bonuses.damage +
+    character.attributes.intelligence * 2.5 +
+    character.attributes.accuracy * 0.5;
+  const defense =
+    armorPower +
+    character.race.bonuses.defense +
+    character.attributes.resistance * 1.5;
 
   return {
-    attack:
-      8 +
-      weaponPower +
-      character.race.bonuses.damage +
-      character.attributes.strength * 2 +
-      character.attributes.effort,
-    magicPower:
-      8 +
-      weaponPower * 0.5 +
-      character.race.bonuses.damage +
-      character.attributes.intelligence * 2.5 +
-      character.attributes.accuracy * 0.5,
-    defense:
-      armorPower +
-      character.race.bonuses.defense +
-      character.attributes.resistance * 1.5,
+    attack: attack * passive.attack,
+    magicPower: magicPower * passive.magic,
+    defense: defense * passive.defense,
     maxHealth: calculateMaxHealth(character),
     maxResource: calculateMaxResource(character),
-    criticalChance: Math.min(0.35, 0.05 + character.attributes.accuracy * 0.015),
+    criticalChance: Math.min(
+      0.45,
+      0.05 + character.attributes.accuracy * 0.015 + passive.critical
+    ),
   };
 }
 

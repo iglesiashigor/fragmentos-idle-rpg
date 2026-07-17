@@ -64,7 +64,18 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
   },
 ];
 
-export const MAX_EQUIPMENT_UPGRADE = 5;
+export const MAX_EQUIPMENT_UPGRADE = 10;
+
+export function getEquipmentUpgradePowerGain(item: InventoryItem) {
+  const rarityBonus = {
+    common: 2,
+    rare: 3,
+    epic: 4,
+    legendary: 5,
+  }[item.rarity || 'common'];
+  const milestoneBonus = ((item.upgradeLevel || 0) + 1) % 5 === 0 ? 1 : 0;
+  return rarityBonus + milestoneBonus;
+}
 
 export function getEquipmentUpgradeCost(item: InventoryItem): {
   goldCost: number;
@@ -72,6 +83,7 @@ export function getEquipmentUpgradeCost(item: InventoryItem): {
 } {
   const nextLevel = (item.upgradeLevel || 0) + 1;
   const oreCost = Math.ceil(nextLevel / 2);
+  const rareMaterialCost = nextLevel >= 6 ? 1 : 0;
 
   if (item.type === 'weapon') {
     return {
@@ -79,15 +91,17 @@ export function getEquipmentUpgradeCost(item: InventoryItem): {
       materials: [
         { itemId: 'iron_ore', quantity: oreCost },
         { itemId: 'wood', quantity: nextLevel },
+        ...(rareMaterialCost ? [{ itemId: 'stone', quantity: rareMaterialCost }] : []),
       ],
     };
   }
 
   return {
     goldCost: 30 * nextLevel,
-    materials: [
-      { itemId: 'iron_ore', quantity: oreCost },
-      { itemId: 'hide', quantity: nextLevel },
-    ],
+      materials: [
+        { itemId: 'iron_ore', quantity: oreCost },
+        { itemId: 'hide', quantity: nextLevel },
+        ...(rareMaterialCost ? [{ itemId: 'fiber', quantity: rareMaterialCost }] : []),
+      ],
   };
 }

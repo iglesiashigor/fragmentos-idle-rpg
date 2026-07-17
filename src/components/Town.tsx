@@ -1,5 +1,12 @@
 import { useState } from 'react';
+import { TITLE_ACHIEVEMENTS } from '../data/achievements';
 import { ARMORS, POTIONS, WEAPONS } from '../data/items';
+import {
+  getProfessionRequiredExperience,
+  MAX_PROFESSION_LEVEL,
+  PROFESSION_BY_ID,
+  PROFESSIONS,
+} from '../data/professions';
 import {
   CRAFTING_RECIPES,
   CraftingRecipe,
@@ -8,7 +15,7 @@ import {
   MaterialCost,
 } from '../data/recipes';
 import { RESOURCE_BY_ID } from '../data/resources';
-import { InventoryItem, Item, Quest, SavedCharacter } from '../types/game';
+import { InventoryItem, Item, ProfessionId, Quest, SavedCharacter } from '../types/game';
 import {
   canAddItemToInventory,
   getItemQuantity,
@@ -27,15 +34,17 @@ interface TownProps {
   currentHealth: number;
   maxHealth: number;
   onBuyItem: (item: Item) => void;
-  onSellItem: (item: InventoryItem) => void;
+  onSellItem: (item: InventoryItem, quantity: number) => void;
   onRest: () => void;
   onAcceptQuest: (quest: Quest) => void;
   onClaimQuestReward: (quest: Quest) => void;
   onCraftRecipe: (recipe: CraftingRecipe) => void;
   onUpgradeItem: (item: InventoryItem) => void;
+  onChooseProfession: (professionId: ProfessionId) => void;
+  onSetActiveTitle: (titleId?: string) => void;
 }
 
-type TownTabId = 'shop' | 'inn' | 'sell' | 'quests' | 'craft';
+type TownTabId = 'shop' | 'inn' | 'sell' | 'quests' | 'craft' | 'profession' | 'achievements';
 
 export function Town({
   character,
@@ -50,8 +59,12 @@ export function Town({
   onClaimQuestReward,
   onCraftRecipe,
   onUpgradeItem,
+  onChooseProfession,
+  onSetActiveTitle,
 }: TownProps) {
-  const [activeTab, setActiveTab] = useState<TownTabId>('shop');
+  const [activeTab, setActiveTab] = useState<TownTabId>(
+    character.profession ? 'shop' : 'profession'
+  );
 
   return (
     <div className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
@@ -66,6 +79,8 @@ export function Town({
         <TownTab label="Loja" active={activeTab === 'shop'} onClick={() => setActiveTab('shop')} />
         <TownTab label="Taverna" active={activeTab === 'inn'} onClick={() => setActiveTab('inn')} />
         <TownTab label="Missões" active={activeTab === 'quests'} onClick={() => setActiveTab('quests')} />
+        <TownTab label="Profissão" active={activeTab === 'profession'} onClick={() => setActiveTab('profession')} />
+        <TownTab label="Conquistas" active={activeTab === 'achievements'} onClick={() => setActiveTab('achievements')} />
         <TownTab label="Oficina" active={activeTab === 'craft'} onClick={() => setActiveTab('craft')} />
         <TownTab label="Vender" active={activeTab === 'sell'} onClick={() => setActiveTab('sell')} />
       </div>
@@ -84,6 +99,16 @@ export function Town({
           character={character}
           onAcceptQuest={onAcceptQuest}
           onClaimQuestReward={onClaimQuestReward}
+        />
+      ) : activeTab === 'profession' ? (
+        <ProfessionPanel
+          character={character}
+          onChooseProfession={onChooseProfession}
+        />
+      ) : activeTab === 'achievements' ? (
+        <AchievementPanel
+          character={character}
+          onSetActiveTitle={onSetActiveTitle}
         />
       ) : activeTab === 'craft' ? (
         <CraftPanel
@@ -149,26 +174,157 @@ function SellPanel({
   onSellItem,
 }: {
   inventory: InventoryItem[];
-  onSellItem: (item: InventoryItem) => void;
+  onSellItem: (item: InventoryItem, quantity: number) => void;
 }) {
   return (
     <div>
       <h3 className="mb-4 text-lg font-bold text-stone-950">Seu inventário</h3>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {inventory.map((item) => (
-          <button
+          <SellItemCard
             key={item.instanceId || item.id}
-            onClick={() => onSellItem(item)}
+            item={item}
+            onSellItem={onSellItem}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SellItemCard({
+  item,
+  onSellItem,
+}: {
+  item: InventoryItem;
+  onSellItem: (item: InventoryItem, quantity: number) => void;
+}) {
+  const [quantity, setQuantity] = useState(1);
+  const isEquipped = Boolean(item.equipped);
+  const selectedQuantity = Math.min(item.quantity, quantity);
+  const sellPrice = Math.floor(item.price * 0.7) * selectedQuantity;
+
+  return (
+    <div className={`rpg-item rounded-lg ${isEquipped ? 'opacity-70' : ''}`}>
+      <div className="font-bold text-stone-950">{item.name}</div>
+      <div className="text-sm text-stone-600">{item.description}</div>
+      <div className="mt-2 text-sm text-stone-500">
+        Quantidade: {item.quantity}
+      </div>
+      {isEquipped ? (
+        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-2 text-sm font-bold text-amber-800">
+          Item equipado não pode ser vendido.
+        </div>
+      ) : (
+        <>
+          <label className="mt-3 block text-xs font-bold uppercase tracking-wide text-stone-500">
+            Quantidade para vender
+          </label>
+          <input
+            type="number"
+            min={1}
+            max={item.quantity}
+            value={selectedQuantity}
+            onChange={(event) => {
+              const value = Number(event.target.value);
+              setQuantity(Math.max(1, Math.min(item.quantity, value || 1)));
+            }}
+            className="mt-1 w-full rounded-md border border-stone-300 px-3 py-2 font-semibold"
+          />
+          <button
+            onClick={() => onSellItem(item, selectedQuantity)}
+            className="rpg-button-primary mt-3 w-full"
+          >
+            Vender por {sellPrice} ouro
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function ProfessionPanel({
+  character,
+  onChooseProfession,
+}: {
+  character: SavedCharacter;
+  onChooseProfession: (professionId: ProfessionId) => void;
+}) {
+  if (character.profession) {
+    const profession = PROFESSION_BY_ID[character.profession.id];
+    const requiredExperience = getProfessionRequiredExperience(
+      character.profession.level
+    );
+    const isMaxLevel = character.profession.level >= MAX_PROFESSION_LEVEL;
+    const progress = Math.min(
+      100,
+      isMaxLevel || requiredExperience === 0
+        ? 100
+        : (character.profession.experience / requiredExperience) * 100
+    );
+
+    return (
+      <div className="rpg-item rounded-lg">
+        <div className="text-sm font-bold uppercase tracking-wide text-emerald-700">
+          Profissão atual
+        </div>
+        <h3 className="mt-1 text-2xl font-black text-stone-950">
+          {profession.name}
+        </h3>
+        <p className="mt-1 text-sm text-stone-600">{profession.description}</p>
+        <div className="mt-4 flex justify-between text-sm font-bold text-stone-700">
+          <span>Nível {character.profession.level}</span>
+          <span>
+            {isMaxLevel
+              ? 'Nível máximo'
+              : `${character.profession.experience}/${requiredExperience} XP`}
+          </span>
+        </div>
+        <div className="mt-2 h-3 overflow-hidden rounded-full bg-stone-200">
+          <div
+            className="h-full rounded-full bg-emerald-600"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        {isMaxLevel && (
+          <div className="mt-5">
+            <div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-800">
+              Você chegou ao nível máximo. Agora pode trocar de profissão.
+            </div>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {PROFESSIONS.filter((option) => option.id !== character.profession?.id).map((option) => (
+                <button
+                  key={option.id}
+                  onClick={() => onChooseProfession(option.id)}
+                  className="rpg-item rounded-lg text-left"
+                >
+                  <h4 className="font-black text-stone-950">{option.name}</h4>
+                  <p className="mt-1 text-sm text-stone-600">{option.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h3 className="mb-3 text-lg font-bold text-stone-950">
+        Escolha uma profissão
+      </h3>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {PROFESSIONS.map((profession) => (
+          <button
+            key={profession.id}
+            onClick={() => onChooseProfession(profession.id)}
             className="rpg-item rounded-lg text-left"
           >
-            <div className="font-bold text-stone-950">{item.name}</div>
-            <div className="text-sm text-stone-600">{item.description}</div>
-            <div className="mt-2 font-semibold text-amber-700">
-              Vender por {Math.floor(item.price * 0.7)} ouro
-            </div>
-            <div className="text-sm text-stone-500">
-              Quantidade: {item.quantity}
-            </div>
+            <h4 className="font-black text-stone-950">{profession.name}</h4>
+            <p className="mt-1 text-sm text-stone-600">
+              {profession.description}
+            </p>
           </button>
         ))}
       </div>
@@ -241,6 +397,64 @@ function QuestPanel({
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function AchievementPanel({
+  character,
+  onSetActiveTitle,
+}: {
+  character: SavedCharacter;
+  onSetActiveTitle: (titleId?: string) => void;
+}) {
+  const unlocked = new Set(character.unlockedTitleIds || []);
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <h3 className="text-lg font-black text-stone-950">Títulos</h3>
+        <p className="text-sm font-semibold text-stone-600">
+          Escolha uma tag desbloqueada para aparecer no personagem.
+        </p>
+        <button
+          onClick={() => onSetActiveTitle(undefined)}
+          className="rpg-button-secondary mt-3"
+        >
+          Remover título ativo
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {TITLE_ACHIEVEMENTS.map((achievement) => {
+          const isUnlocked = unlocked.has(achievement.id);
+          const isActive = character.activeTitleId === achievement.id;
+
+          return (
+            <div
+              key={achievement.id}
+              className={`rounded-lg border p-4 ${
+                isUnlocked
+                  ? 'border-emerald-200 bg-white'
+                  : 'border-stone-200 bg-stone-100 opacity-70'
+              }`}
+            >
+              <div className="text-xs font-black uppercase tracking-wide text-amber-700">
+                {achievement.title}
+              </div>
+              <h4 className="font-black text-stone-950">{achievement.name}</h4>
+              <p className="mt-1 text-sm text-stone-600">{achievement.description}</p>
+              <button
+                onClick={() => onSetActiveTitle(achievement.id)}
+                disabled={!isUnlocked || isActive}
+                className="rpg-button-primary mt-4 w-full disabled:bg-stone-300 disabled:text-stone-500"
+              >
+                {isActive ? 'Título ativo' : isUnlocked ? 'Usar título' : 'Bloqueado'}
+              </button>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

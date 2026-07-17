@@ -38,6 +38,19 @@ export interface Attributes {
   accuracy: number;
 }
 
+export type ProfessionId = 'woodcutter' | 'gatherer' | 'miner' | 'explorer';
+
+export interface ProfessionProgress {
+  id: ProfessionId;
+  level: number;
+  experience: number;
+}
+
+export interface GatheringNodeState {
+  remaining: number;
+  resetAt: number;
+}
+
 export interface AttributeModifiers {
   strength: number;
   effort: number;
@@ -144,6 +157,21 @@ export interface Character {
   skills?: Skill[];
   quests?: Quest[];
   completedQuestIds?: string[];
+  profession?: ProfessionProgress;
+  professions?: Partial<Record<ProfessionId, ProfessionProgress>>;
+  activeProfessionId?: ProfessionId;
+  gatheringNodes?: Record<string, GatheringNodeState>;
+  stats?: CharacterStats;
+  unlockedTitleIds?: string[];
+  activeTitleId?: string;
+}
+
+export interface CharacterStats {
+  kills: number;
+  bossesKilled: number;
+  resourcesGathered: number;
+  itemsCrafted: number;
+  equipmentUpgrades: number;
 }
 
 export interface SavedCharacter extends Character {
@@ -190,7 +218,7 @@ export interface EnemyAbility {
 
 export interface MapLocation {
   id: string;
-  type: 'town' | 'enemy' | 'event' | 'gathering' | 'dungeon' | 'shop' | 'quest';
+  type: 'town' | 'enemy' | 'event' | 'gathering' | 'boss_lair' | 'dungeon' | 'shop' | 'quest';
   name: string;
   x: number;
   y: number;

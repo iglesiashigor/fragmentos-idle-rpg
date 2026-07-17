@@ -9,8 +9,10 @@ import {
   Attributes,
   Ability,
   Quest,
+  ProfessionId,
+  ProfessionProgress,
 } from '../types/game';
-import { generateEnemy } from '../data/enemies';
+import { generateBoss, generateEnemy } from '../data/enemies';
 import {
   INITIAL_LOCATIONS,
   generateRandomEnemyLocation,
@@ -47,8 +49,21 @@ import {
 import {
   CraftingRecipe,
   getEquipmentUpgradeCost,
+  getEquipmentUpgradePowerGain,
   MAX_EQUIPMENT_UPGRADE,
 } from '../data/recipes';
+import {
+  createProfession,
+  getProfessionExtraChance,
+  getProfessionRequiredExperience,
+  getProfessionYieldBonus,
+  MAX_PROFESSION_LEVEL,
+  PROFESSION_BY_ID,
+} from '../data/professions';
+import { getUnlockedTitleIds } from '../data/achievements';
+
+const GATHERING_NODE_MAX_CHARGES = 5;
+const GATHERING_NODE_RESET_MS = 5 * 60 * 1000;
 
 export function useGameState(
   initialCharacter: SavedCharacter,
@@ -65,6 +80,23 @@ export function useGameState(
       ...savedCharacter,
       quests: savedCharacter.quests || [],
       completedQuestIds: savedCharacter.completedQuestIds || [],
+      professions: savedCharacter.profession
+        ? {
+            ...(savedCharacter.professions || {}),
+            [savedCharacter.profession.id]: savedCharacter.profession,
+          }
+        : savedCharacter.professions || {},
+      activeProfessionId:
+        savedCharacter.activeProfessionId || savedCharacter.profession?.id,
+      gatheringNodes: savedCharacter.gatheringNodes || {},
+      stats: savedCharacter.stats || {
+        kills: 0,
+        bossesKilled: 0,
+        resourcesGathered: 0,
+        itemsCrafted: 0,
+        equipmentUpgrades: 0,
+      },
+      unlockedTitleIds: savedCharacter.unlockedTitleIds || [],
       maxHealth,
       health:
         savedCharacter.health <= 0
@@ -110,6 +142,9 @@ export function useGameState(
     type: 'spell' | 'item';
     reward: Spell | Item;
   } | RandomEventReward | null>(null);
+  const [lastGatheringRewards, setLastGatheringRewards] = useState<
+    { name: string; quantity: number }[] | null
+  >(null);
   const [showDeathModal, setShowDeathModal] = useState(false);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [attributePoints, setAttributePoints] = useState(0);
@@ -129,7 +164,11 @@ export function useGameState(
   }, [character, initialCharacter, onCharacterUpdate]);
 
   const updateCharacter = (updates: Partial<SavedCharacter>) => {
-    const updatedCharacter = { ...character, ...updates } as SavedCharacter;
+    const mergedCharacter = { ...character, ...updates } as SavedCharacter;
+    const updatedCharacter = {
+      ...mergedCharacter,
+      unlockedTitleIds: getUnlockedTitleIds(mergedCharacter),
+    };
     setCharacter(updatedCharacter);
     onCharacterUpdate(updatedCharacter);
   };
@@ -285,23 +324,40 @@ export function useGameState(
 
   const handleLocationSelect = (location: MapLocation) => {
     setCurrentLocation(location);
+    setLastGatheringRewards(null);
+    const encounterLevel = getEncounterLevel(character.level);
+
     if (location.type === 'enemy') {
-      setEnemy(generateEnemy(location.level || 1));
+      setEnemy(generateEnemy(encounterLevel));
+    } else if (location.type === 'boss_lair') {
+      setEnemy(generateBoss(Math.max(character.level + 1, encounterLevel)));
+      setShowRandomEvent(false);
+      setRandomEventReward(null);
     } else if (location.type === 'event') {
-      setEnemy(null);
-      setRandomEventReward(
-        generateRandomEvent(
-          location.level || 1,
-          character.class.resourceType === 'mana'
-        )
-      );
-      setShowRandomEvent(true);
+      const bossChance = 0.3;
+
+      if (Math.random() < bossChance) {
+        setCurrentLocation({
+          ...location,
+          name: 'Chefão Encontrado',
+        });
+        setEnemy(generateBoss(encounterLevel));
+        setShowRandomEvent(false);
+        setRandomEventReward(null);
+      } else {
+        setEnemy(null);
+        setRandomEventReward(
+          generateRandomEvent(
+            encounterLevel,
+            character.class.resourceType === 'mana'
+          )
+        );
+        setShowRandomEvent(true);
+      }
     } else if (location.type === 'gathering') {
       setEnemy(null);
-      setRandomEventReward(
-        generateGatheringEvent(location.level || 1, location.resourcePool)
-      );
-      setShowRandomEvent(true);
+      setRandomEventReward(null);
+      setShowRandomEvent(false);
     } else {
       setEnemy(null);
     }
@@ -309,6 +365,12 @@ export function useGameState(
       setShowRandomEvent(false);
       setRandomEventReward(null);
     }
+  };
+
+  const getEncounterLevel = (playerLevel: number) => {
+    const minLevel = Math.max(1, playerLevel - 2);
+    const maxLevel = Math.max(minLevel, playerLevel + 2);
+    return Math.floor(Math.random() * (maxLevel - minLevel + 1)) + minLevel;
   };
 
   const handleAttack = () => {
@@ -404,9 +466,12 @@ export function useGameState(
 
     // Update map locations
     setMapLocations((prev) => {
-      const remainingLocations = prev.filter(
-        (loc) => loc.id !== currentLocation.id
-      );
+      const isFixedLocation =
+        currentLocation.type === 'boss_lair' ||
+        currentLocation.id.startsWith('gathering_');
+      const remainingLocations = isFixedLocation
+        ? prev
+        : prev.filter((loc) => loc.id !== currentLocation.id);
       
       const newEnemyCount = remainingLocations.filter(
         (loc) => loc.type === 'enemy'
@@ -450,6 +515,19 @@ export function useGameState(
       ...preRewardUpdates,
       gold: rewardBaseCharacter.gold + goldReward,
       experience: newExp,
+      stats: {
+        ...(rewardBaseCharacter.stats || {
+          kills: 0,
+          bossesKilled: 0,
+          resourcesGathered: 0,
+          itemsCrafted: 0,
+          equipmentUpgrades: 0,
+        }),
+        kills: (rewardBaseCharacter.stats?.kills || 0) + 1,
+        bossesKilled:
+          (rewardBaseCharacter.stats?.bossesKilled || 0) +
+          (enemy.isBoss ? 1 : 0),
+      },
     };
 
     // Add loot items to inventory
@@ -549,8 +627,9 @@ export function useGameState(
     }
   };
 
-  const handleSellItem = (item: InventoryItem) => {
-    const sellPrice = Math.floor(item.price * 0.7);
+  const handleSellItem = (item: InventoryItem, quantity = 1) => {
+    const sellQuantity = Math.max(1, Math.min(quantity, item.quantity));
+    const sellPrice = Math.floor(item.price * 0.7) * sellQuantity;
     const isSameInventoryItem = (
       first: InventoryItem,
       second: InventoryItem
@@ -559,20 +638,13 @@ export function useGameState(
         ? first.instanceId === second.instanceId
         : first.id === second.id;
     
-    // Check if the item is currently equipped
-    const updatedEquipment = { ...character.equipment };
     if (
-      item.type === 'weapon' &&
-      character.equipment.weapon &&
-      isSameInventoryItem(character.equipment.weapon, item)
+      (character.equipment.weapon &&
+        isSameInventoryItem(character.equipment.weapon, item)) ||
+      (character.equipment.armor &&
+        isSameInventoryItem(character.equipment.armor, item))
     ) {
-      updatedEquipment.weapon = null;
-    } else if (
-      item.type === 'armor' &&
-      character.equipment.armor &&
-      isSameInventoryItem(character.equipment.armor, item)
-    ) {
-      updatedEquipment.armor = null;
+      return;
     }
 
     // Update inventory
@@ -581,7 +653,7 @@ export function useGameState(
       .map((i) => {
         if (!removedItem && isSameInventoryItem(i, item)) {
           removedItem = true;
-          return { ...i, quantity: i.quantity - 1, equipped: false };
+          return { ...i, quantity: i.quantity - sellQuantity, equipped: false };
         }
         return i;
       })
@@ -590,7 +662,6 @@ export function useGameState(
     updateCharacter({
       gold: character.gold + sellPrice,
       inventory: updatedInventory,
-      equipment: updatedEquipment,
     });
   };
 
@@ -600,17 +671,23 @@ export function useGameState(
     if (randomEventReward.type === 'resource') {
       let updatedInventory = [...character.inventory];
       const collectedItems: { itemId: string; quantity: number }[] = [];
+      const professionUpdate = getGatheringProfessionUpdate(
+        character.profession,
+        currentLocation.resourcePool
+      );
 
       randomEventReward.rewards.forEach(({ item, quantity }) => {
+        const finalQuantity = quantity + professionUpdate.quantityBonus;
         if (canAddItemToInventory(item, updatedInventory)) {
-          updatedInventory = addItemToInventory(item, updatedInventory, quantity);
-          collectedItems.push({ itemId: item.id, quantity });
+          updatedInventory = addItemToInventory(item, updatedInventory, finalQuantity);
+          collectedItems.push({ itemId: item.id, quantity: finalQuantity });
         }
       });
 
       updateCharacter({
         inventory: updatedInventory,
         quests: updateQuestsForCollect(character.quests || [], collectedItems),
+        profession: professionUpdate.profession,
       });
     } else if (randomEventReward.type === 'item') {
       const rewardItem = randomEventReward.reward as Item;
@@ -637,12 +714,124 @@ export function useGameState(
       updateCharacter({ spells: updatedSpells });
     }
 
-    setMapLocations((prev) =>
-      prev.filter((location) => location.id !== currentLocation.id)
-    );
+    const shouldKeepFixedGatheringPoint =
+      randomEventReward.type === 'resource' &&
+      currentLocation.id.startsWith('gathering_');
+
+    if (!shouldKeepFixedGatheringPoint) {
+      setMapLocations((prev) =>
+        prev.filter((location) => location.id !== currentLocation.id)
+      );
+    }
     setRandomEventReward(null);
     setShowRandomEvent(false);
-    setCurrentLocation(null);
+    if (!shouldKeepFixedGatheringPoint) {
+      setCurrentLocation(null);
+    }
+  };
+
+  const canGatherAtCurrentLocation = () => {
+    if (!currentLocation || currentLocation.type !== 'gathering') return false;
+    if (!character.profession) return false;
+
+    const professionDefinition = PROFESSION_BY_ID[character.profession.id];
+    return professionDefinition.resourcePools.includes(
+      currentLocation.resourcePool || ''
+    );
+  };
+
+  const getGatheringNodeState = (nodeId: string) => {
+    const savedNode = character.gatheringNodes?.[nodeId];
+    const now = Date.now();
+
+    if (!savedNode) {
+      return {
+        remaining: GATHERING_NODE_MAX_CHARGES,
+        resetAt: 0,
+      };
+    }
+
+    if (savedNode.remaining <= 0 && savedNode.resetAt <= now) {
+      return {
+        remaining: GATHERING_NODE_MAX_CHARGES,
+        resetAt: 0,
+      };
+    }
+
+    return savedNode;
+  };
+
+  const handleGather = () => {
+    if (!currentLocation || currentLocation.type !== 'gathering') return;
+    if (!canGatherAtCurrentLocation()) return;
+    const nodeState = getGatheringNodeState(currentLocation.id);
+    if (nodeState.remaining <= 0) {
+      updateCharacter({
+        gatheringNodes: {
+          ...(character.gatheringNodes || {}),
+          [currentLocation.id]: nodeState,
+        },
+      });
+      return;
+    }
+
+    const gatheringReward = generateGatheringEvent(
+      currentLocation.level || 1,
+      currentLocation.resourcePool
+    );
+    let updatedInventory = [...character.inventory];
+    const collectedItems: { itemId: string; quantity: number }[] = [];
+    const displayedRewards: { name: string; quantity: number }[] = [];
+    const professionUpdate = getGatheringProfessionUpdate(
+      character.profession,
+      currentLocation.resourcePool
+    );
+
+    gatheringReward.rewards.forEach(({ item, quantity }) => {
+      const finalQuantity = quantity + professionUpdate.quantityBonus;
+
+      if (canAddItemToInventory(item, updatedInventory)) {
+        updatedInventory = addItemToInventory(item, updatedInventory, finalQuantity);
+        collectedItems.push({ itemId: item.id, quantity: finalQuantity });
+        displayedRewards.push({ name: item.name, quantity: finalQuantity });
+      }
+    });
+
+    updateCharacter({
+      inventory: updatedInventory,
+      quests: updateQuestsForCollect(character.quests || [], collectedItems),
+      profession: professionUpdate.profession,
+      professions: professionUpdate.profession
+        ? {
+            ...(character.professions || {}),
+            [professionUpdate.profession.id]: professionUpdate.profession,
+          }
+        : character.professions,
+      activeProfessionId: professionUpdate.profession?.id || character.activeProfessionId,
+      gatheringNodes: {
+        ...(character.gatheringNodes || {}),
+        [currentLocation.id]: {
+          remaining: nodeState.remaining - 1,
+          resetAt:
+            nodeState.remaining - 1 <= 0
+              ? Date.now() + GATHERING_NODE_RESET_MS
+              : nodeState.resetAt,
+          },
+      },
+      stats: {
+        ...(character.stats || {
+          kills: 0,
+          bossesKilled: 0,
+          resourcesGathered: 0,
+          itemsCrafted: 0,
+          equipmentUpgrades: 0,
+        }),
+        resourcesGathered:
+          (character.stats?.resourcesGathered || 0) +
+          collectedItems.reduce((total, item) => total + item.quantity, 0),
+      },
+    });
+    setLastGatheringRewards(displayedRewards);
   };
 
   const handleAcceptQuest = (quest: Quest) => {
@@ -655,6 +844,35 @@ export function useGameState(
         ...(character.quests || []),
         createActiveQuest(quest, character.inventory),
       ],
+    });
+  };
+
+  const handleChooseProfession = (professionId: ProfessionId) => {
+    if (
+      character.profession &&
+      character.profession.level < MAX_PROFESSION_LEVEL
+    ) {
+      return;
+    }
+    const nextProfession =
+      character.professions?.[professionId] || createProfession(professionId);
+    updateCharacter({
+      profession: nextProfession,
+      activeProfessionId: professionId,
+      professions: {
+        ...(character.professions || {}),
+        ...(character.profession
+          ? { [character.profession.id]: character.profession }
+          : {}),
+        [professionId]: nextProfession,
+      },
+    });
+  };
+
+  const handleSetActiveTitle = (titleId?: string) => {
+    if (titleId && !(character.unlockedTitleIds || []).includes(titleId)) return;
+    updateCharacter({
+      activeTitleId: titleId,
     });
   };
 
@@ -718,6 +936,16 @@ export function useGameState(
     updateCharacter({
       gold: character.gold - recipe.goldCost,
       inventory: updatedInventory,
+      stats: {
+        ...(character.stats || {
+          kills: 0,
+          bossesKilled: 0,
+          resourcesGathered: 0,
+          itemsCrafted: 0,
+          equipmentUpgrades: 0,
+        }),
+        itemsCrafted: (character.stats?.itemsCrafted || 0) + recipe.quantity,
+      },
     });
   };
 
@@ -735,7 +963,7 @@ export function useGameState(
     const upgradedItem: InventoryItem = {
       ...item,
       name: `${baseName} +${nextUpgradeLevel}`,
-      power: (item.power || 0) + 2,
+      power: (item.power || 0) + getEquipmentUpgradePowerGain(item),
       upgradeLevel: nextUpgradeLevel,
     };
     const isSameInventoryItem = (
@@ -771,7 +999,76 @@ export function useGameState(
       gold: character.gold - cost.goldCost,
       inventory: updatedInventory,
       equipment: updatedEquipment,
+      stats: {
+        ...(character.stats || {
+          kills: 0,
+          bossesKilled: 0,
+          resourcesGathered: 0,
+          itemsCrafted: 0,
+          equipmentUpgrades: 0,
+        }),
+        equipmentUpgrades: (character.stats?.equipmentUpgrades || 0) + 1,
+      },
     });
+  };
+
+  const getGatheringProfessionUpdate = (
+    profession: ProfessionProgress | undefined,
+    resourcePool?: string
+  ): { profession: ProfessionProgress | undefined; quantityBonus: number } => {
+    if (!profession || !resourcePool) {
+      return { profession, quantityBonus: 0 };
+    }
+
+    const professionDefinition = PROFESSION_BY_ID[profession.id];
+    if (!professionDefinition.resourcePools.includes(resourcePool)) {
+      return { profession, quantityBonus: 0 };
+    }
+
+    const baseBonus = getProfessionYieldBonus(profession.level);
+    const extraBonus = Math.random() < getProfessionExtraChance(profession.level) ? 1 : 0;
+    if (profession.level >= MAX_PROFESSION_LEVEL) {
+      return {
+        profession: {
+          ...profession,
+          level: MAX_PROFESSION_LEVEL,
+          experience: 0,
+        },
+        quantityBonus: baseBonus + extraBonus,
+      };
+    }
+
+    let nextProfession: ProfessionProgress = {
+      ...profession,
+      experience: profession.experience + 25,
+    };
+
+    while (
+      nextProfession.level < MAX_PROFESSION_LEVEL &&
+      nextProfession.experience >=
+      getProfessionRequiredExperience(nextProfession.level)
+    ) {
+      nextProfession = {
+        ...nextProfession,
+        experience:
+          nextProfession.experience -
+          getProfessionRequiredExperience(nextProfession.level),
+        level: nextProfession.level + 1,
+      };
+    }
+
+    if (nextProfession.level >= MAX_PROFESSION_LEVEL) {
+      nextProfession = {
+        ...nextProfession,
+        level: MAX_PROFESSION_LEVEL,
+        experience: 0,
+      };
+    }
+
+    return {
+      profession: nextProfession,
+      quantityBonus: baseBonus + extraBonus,
+    };
   };
 
   return {
@@ -784,6 +1081,12 @@ export function useGameState(
     showDeathModal,
     showLevelUpModal,
     attributePoints,
+    lastGatheringRewards,
+    gatheringNodeState:
+      currentLocation?.type === 'gathering'
+        ? getGatheringNodeState(currentLocation.id)
+        : null,
+    gatheringResetMs: GATHERING_NODE_RESET_MS,
     updateCharacter,
     handleLocationSelect,
     handleRest,
@@ -794,10 +1097,13 @@ export function useGameState(
     handleBuyItem,
     handleSellItem,
     handleClaimRandomEvent,
+    handleGather,
     handleAcceptQuest,
     handleClaimQuestReward,
     handleCraftRecipe,
     handleUpgradeItem,
+    handleChooseProfession,
+    handleSetActiveTitle,
     handleAttributeIncrease,
     handleSpellSelect,
     handleAbilitySelect,

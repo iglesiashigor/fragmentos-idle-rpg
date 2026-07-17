@@ -2,6 +2,7 @@ import { Character } from './Character';
 import { GameMap } from './GameMap';
 import { Town } from './Town';
 import { Combat } from './Combat';
+import { Gathering } from './Gathering';
 import { RandomEventModal } from './RandomEventModal';
 import { UserProfile } from './Profile/UserProfile';
 import { DeathModal } from './Character/DeathModal';
@@ -135,7 +136,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
       <div className="page-wrap space-y-6">
         <UserProfile username={initialCharacter.name} onLogout={onLogout} />
 
-        <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+        <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[440px_minmax(0,1fr)]">
           <div className="space-y-6">
             <Character character={gameState.character} />
             <InventoryPanel
@@ -149,7 +150,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
             />
           </div>
 
-          <div className="rpg-panel rounded-lg p-4 sm:p-6">
+          <div className="rpg-panel min-w-0 rounded-lg p-4 sm:p-6">
             <div className="mb-4">
               <h2 className="text-2xl font-black text-stone-950">Mapa</h2>
               <p className="text-sm font-semibold text-stone-500">
@@ -180,6 +181,16 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                     onClaimQuestReward={gameState.handleClaimQuestReward}
                     onCraftRecipe={gameState.handleCraftRecipe}
                     onUpgradeItem={gameState.handleUpgradeItem}
+                    onChooseProfession={gameState.handleChooseProfession}
+                    onSetActiveTitle={gameState.handleSetActiveTitle}
+                  />
+                ) : gameState.currentLocation.type === 'gathering' ? (
+                  <Gathering
+                    character={gameState.character}
+                    location={gameState.currentLocation}
+                    lastRewards={gameState.lastGatheringRewards}
+                    nodeState={gameState.gatheringNodeState}
+                    onGather={gameState.handleGather}
                   />
                 ) : (
                   gameState.enemy && (

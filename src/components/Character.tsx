@@ -1,5 +1,11 @@
 import { Backpack, Shield, Sword } from 'lucide-react';
 import { Character as CharacterType } from '../types/game';
+import { TITLE_BY_ID } from '../data/achievements';
+import {
+  getProfessionRequiredExperience,
+  MAX_PROFESSION_LEVEL,
+  PROFESSION_BY_ID,
+} from '../data/professions';
 import { calculateRequiredExperience } from '../utils/experience';
 import { calculateCharacterStats } from '../utils/combatStats';
 
@@ -14,6 +20,26 @@ export function Character({ character }: CharacterProps) {
     (character.experience / requiredExp) * 100
   );
   const combatStats = calculateCharacterStats(character);
+  const profession = character.profession
+    ? PROFESSION_BY_ID[character.profession.id]
+    : null;
+  const professionRequiredExperience = character.profession
+    ? getProfessionRequiredExperience(character.profession.level)
+    : 1;
+  const isProfessionMaxLevel = Boolean(
+    character.profession && character.profession.level >= MAX_PROFESSION_LEVEL
+  );
+  const professionPercentage = character.profession
+    ? isProfessionMaxLevel || professionRequiredExperience === 0
+      ? 100
+      : Math.min(
+        100,
+        (character.profession.experience / professionRequiredExperience) * 100
+      )
+    : 0;
+  const activeTitle = character.activeTitleId
+    ? TITLE_BY_ID[character.activeTitleId]
+    : null;
 
   return (
     <div className="rpg-panel rounded-lg p-5">
@@ -22,6 +48,11 @@ export function Character({ character }: CharacterProps) {
           <h2 className="text-2xl font-black text-stone-950">
             {character.name}
           </h2>
+          {activeTitle && (
+            <div className="mt-1 inline-flex rounded-md bg-amber-100 px-2 py-1 text-xs font-black uppercase tracking-wide text-amber-800">
+              {activeTitle.title}
+            </div>
+          )}
           <p className="font-semibold text-stone-600">
             Nível {character.level} {character.race.name} {character.class.name}
           </p>
@@ -64,6 +95,16 @@ export function Character({ character }: CharacterProps) {
           color="bg-emerald-600"
           percentage={expPercentage}
         />
+
+        {character.profession && profession && (
+          <ResourceBar
+            label={`${profession.name} Nv. ${character.profession.level}`}
+            value={character.profession.experience}
+            max={professionRequiredExperience}
+            color="bg-emerald-700"
+            percentage={professionPercentage}
+          />
+        )}
 
         <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold text-stone-700">
           <div className="flex items-center gap-2">

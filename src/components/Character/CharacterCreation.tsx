@@ -9,8 +9,10 @@ import {
   Target,
 } from 'lucide-react';
 import { CLASSES } from '../../data/classes';
+import { CLASS_PASSIVE_DESCRIPTIONS } from '../../data/classPassives';
+import { PROFESSIONS } from '../../data/professions';
 import { RACES } from '../../data/races';
-import { Attributes, CharacterClass, Race } from '../../types/game';
+import { Attributes, CharacterClass, ProfessionId, Race } from '../../types/game';
 
 const TOTAL_ATTRIBUTE_POINTS = 10;
 const MIN_ATTRIBUTE_VALUE = 0;
@@ -21,7 +23,8 @@ interface CharacterCreationProps {
     name: string,
     race: Race,
     characterClass: CharacterClass,
-    attributes: Attributes
+    attributes: Attributes,
+    professionId: ProfessionId
   ) => void;
   onBack: () => void;
 }
@@ -34,6 +37,9 @@ export function CharacterCreation({
   const [selectedRace, setSelectedRace] = useState<Race>(RACES[0]);
   const [selectedClass, setSelectedClass] = useState<CharacterClass>(
     CLASSES[0]
+  );
+  const [selectedProfession, setSelectedProfession] = useState<ProfessionId>(
+    PROFESSIONS[0].id
   );
   const [attributes, setAttributes] = useState<Attributes>({
     strength: 0,
@@ -70,7 +76,7 @@ export function CharacterCreation({
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     if (name.trim() && remainingPoints === 0) {
-      onCreateCharacter(name, selectedRace, selectedClass, attributes);
+      onCreateCharacter(name, selectedRace, selectedClass, attributes, selectedProfession);
     }
   };
 
@@ -171,6 +177,9 @@ export function CharacterCreation({
                 <div className="font-semibold text-stone-600">
                   {selectedRace.name} {selectedClass.name}
                 </div>
+                <div className="text-sm font-bold text-emerald-700">
+                  {PROFESSIONS.find((profession) => profession.id === selectedProfession)?.name}
+                </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                   <SummaryTile label="Vida" value={selectedClass.baseHealth + selectedRace.bonuses.health} />
                   <SummaryTile label="Recurso" value={selectedClass.baseResource} />
@@ -231,7 +240,31 @@ export function CharacterCreation({
                     <div>Vida base: {characterClass.baseHealth}</div>
                     <div>Recurso: {characterClass.baseResource}</div>
                     <div>Ouro inicial: {characterClass.startingGold}</div>
+                    <div className="mt-2 text-emerald-700">
+                      Passiva: {CLASS_PASSIVE_DESCRIPTIONS[characterClass.id]}
+                    </div>
                   </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rpg-panel rounded-lg p-5">
+            <SectionTitle title="Profissão" subtitle="Escolha uma especialização de coleta" />
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {PROFESSIONS.map((profession) => (
+                <button
+                  key={profession.id}
+                  type="button"
+                  onClick={() => setSelectedProfession(profession.id)}
+                  className={`rounded-lg border p-4 text-left transition-colors ${
+                    selectedProfession === profession.id
+                      ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200'
+                      : 'border-stone-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/50'
+                  }`}
+                >
+                  <h3 className="font-black text-stone-950">{profession.name}</h3>
+                  <p className="mt-1 text-sm text-stone-600">{profession.description}</p>
                 </button>
               ))}
             </div>
