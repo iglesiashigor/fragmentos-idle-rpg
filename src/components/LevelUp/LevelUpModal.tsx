@@ -26,6 +26,16 @@ export function LevelUpModal({
 }: LevelUpModalProps) {
   const isEvenLevel = level % 2 === 0;
   const usesMana = character.class.resourceType === 'mana';
+  const availableSpells = SPELLS.filter(
+    (spell) =>
+      !spell.requirements?.class ||
+      spell.requirements.class.includes(character.class.id)
+  );
+  const availableAbilities = ABILITIES.filter(
+    (ability) =>
+      !ability.requirements?.class ||
+      ability.requirements.class.includes(character.class.id)
+  );
 
   const getSpellStatus = (spell: Spell) => {
     const existingSpell = character.spells.find(s => s.id === spell.id);
@@ -71,7 +81,7 @@ export function LevelUpModal({
             <div className="space-y-3">
               {usesMana ? (
                 // Spells for mana users
-                SPELLS.map((spell) => {
+                availableSpells.map((spell) => {
                   const status = getSpellStatus(spell);
                   return (
                     <button
@@ -103,7 +113,7 @@ export function LevelUpModal({
                 })
               ) : (
                 // Abilities for stamina users
-                ABILITIES.map((ability) => {
+                availableAbilities.map((ability) => {
                   const status = getAbilityStatus(ability);
                   return (
                     <button
