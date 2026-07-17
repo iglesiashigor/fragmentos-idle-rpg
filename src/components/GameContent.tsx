@@ -1,5 +1,3 @@
-import { useState } from 'react';
-import { Backpack, Map } from 'lucide-react';
 import { Character } from './Character';
 import { GameMap } from './GameMap';
 import { Town } from './Town';
@@ -21,7 +19,6 @@ interface GameContentProps {
 
 export function GameContent({ character: initialCharacter, onCharacterUpdate, onLogout, onCreateNew }: GameContentProps) {
   const gameState = useGameState(initialCharacter, onCharacterUpdate);
-  const [activeTab, setActiveTab] = useState<'map' | 'inventory'>('map');
 
   const handleEquipItem = (item: InventoryItem) => {
     const slot = item.type === 'weapon' ? 'weapon' : 'armor';
@@ -127,79 +124,60 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
     <div className="app-bg">
       <div className="page-wrap space-y-6">
         <UserProfile username={initialCharacter.name} onLogout={onLogout} />
-        <Character character={gameState.character} />
-        
-        <div className="rpg-panel overflow-hidden rounded-lg">
-          <div className="flex border-b border-stone-200">
-            <button
-              onClick={() => setActiveTab('map')}
-              className={`rpg-tab flex-1 ${
-                activeTab === 'map'
-                  ? 'rpg-tab-active'
-                  : 'rpg-tab-inactive'
-              }`}
-            >
-              <Map className="h-4 w-4" />
-              Mapa
-            </button>
-            <button
-              onClick={() => setActiveTab('inventory')}
-              className={`rpg-tab flex-1 ${
-                activeTab === 'inventory'
-                  ? 'rpg-tab-active'
-                  : 'rpg-tab-inactive'
-              }`}
-            >
-              <Backpack className="h-4 w-4" />
-              Inventário
-            </button>
+
+        <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+          <div className="space-y-6">
+            <Character character={gameState.character} />
+            <InventoryPanel
+              inventory={gameState.character.inventory}
+              equipment={gameState.character.equipment}
+              onEquipItem={handleEquipItem}
+              onUnequipItem={handleUnequipItem}
+              onUsePotion={handleUsePotion}
+              currentHealth={gameState.character.health}
+              maxHealth={gameState.character.maxHealth}
+            />
           </div>
 
-          <div className="p-4 sm:p-6">
-            {activeTab === 'map' ? (
-              <>
-                <GameMap
-                  locations={gameState.mapLocations}
-                  onLocationSelect={gameState.handleLocationSelect}
-                />
+          <div className="rpg-panel rounded-lg p-4 sm:p-6">
+            <div className="mb-4">
+              <h2 className="text-2xl font-black text-stone-950">Mapa</h2>
+              <p className="text-sm font-semibold text-stone-500">
+                Escolha um destino para continuar a aventura
+              </p>
+            </div>
+            <GameMap
+              locations={gameState.mapLocations}
+              onLocationSelect={gameState.handleLocationSelect}
+            />
 
-                {gameState.currentLocation && (
-                  <div className="mt-6">
-                    <h2 className="mb-4 text-2xl font-black text-stone-950">{gameState.currentLocation.name}</h2>
-                    {gameState.currentLocation.type === 'town' ? (
-                      <Town 
-                        gold={gameState.character.gold} 
-                        inventory={gameState.character.inventory}
-                        currentHealth={gameState.character.health}
-                        maxHealth={gameState.character.maxHealth}
-                        onBuyItem={gameState.handleBuyItem}
-                        onSellItem={gameState.handleSellItem}
-                        onRest={gameState.handleRest}
-                      />
-                    ) : (
-                      gameState.enemy && (
-                        <Combat
-                          player={gameState.character}
-                          enemy={gameState.enemy}
-                          onAttack={gameState.handleAttack}
-                          onCastSpell={gameState.handleCastSpell}
-                          onUseAbility={gameState.handleUseAbility}
-                        />
-                      )
-                    )}
-                  </div>
+            {gameState.currentLocation && (
+              <div className="mt-6">
+                <h2 className="mb-4 text-2xl font-black text-stone-950">
+                  {gameState.currentLocation.name}
+                </h2>
+                {gameState.currentLocation.type === 'town' ? (
+                  <Town
+                    gold={gameState.character.gold}
+                    inventory={gameState.character.inventory}
+                    currentHealth={gameState.character.health}
+                    maxHealth={gameState.character.maxHealth}
+                    onBuyItem={gameState.handleBuyItem}
+                    onSellItem={gameState.handleSellItem}
+                    onRest={gameState.handleRest}
+                  />
+                ) : (
+                  gameState.enemy && (
+                    <Combat
+                      player={gameState.character}
+                      enemy={gameState.enemy}
+                      onAttack={gameState.handleAttack}
+                      onCastSpell={gameState.handleCastSpell}
+                      onUseAbility={gameState.handleUseAbility}
+                    />
+                  )
                 )}
-              </>
-            ) : (
-              <InventoryPanel
-                inventory={gameState.character.inventory}
-                equipment={gameState.character.equipment}
-                onEquipItem={handleEquipItem}
-                onUnequipItem={handleUnequipItem}
-                onUsePotion={handleUsePotion}
-                currentHealth={gameState.character.health}
-                maxHealth={gameState.character.maxHealth}
-              />
+              </div>
             )}
           </div>
         </div>
