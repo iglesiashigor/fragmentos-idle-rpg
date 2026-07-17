@@ -1,8 +1,16 @@
-import React, { useState } from 'react';
+import { FormEvent, ReactNode, useState } from 'react';
+import {
+  ArrowLeft,
+  Brain,
+  Dumbbell,
+  Shield,
+  Sparkles,
+  Sword,
+  Target,
+} from 'lucide-react';
 import { CLASSES } from '../../data/classes';
 import { RACES } from '../../data/races';
-import { Race, CharacterClass, Attributes } from '../../types/game';
-import { Sword, Shield, Brain, Target, Dumbbell } from 'lucide-react';
+import { Attributes, CharacterClass, Race } from '../../types/game';
 
 const TOTAL_ATTRIBUTE_POINTS = 10;
 const MIN_ATTRIBUTE_VALUE = 0;
@@ -15,10 +23,12 @@ interface CharacterCreationProps {
     characterClass: CharacterClass,
     attributes: Attributes
   ) => void;
+  onBack: () => void;
 }
 
 export function CharacterCreation({
   onCreateCharacter,
+  onBack,
 }: CharacterCreationProps) {
   const [name, setName] = useState('');
   const [selectedRace, setSelectedRace] = useState<Race>(RACES[0]);
@@ -57,8 +67,8 @@ export function CharacterCreation({
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault();
     if (name.trim() && remainingPoints === 0) {
       onCreateCharacter(name, selectedRace, selectedClass, attributes);
     }
@@ -67,51 +77,43 @@ export function CharacterCreation({
   const renderAttributeControl = (
     attribute: keyof Attributes,
     label: string,
-    icon: React.ReactNode
+    icon: ReactNode
   ) => {
-    const finalValue = attributes[attribute];
+    const baseValue = attributes[attribute];
     const modifier = selectedClass.attributeModifiers[attribute];
-    const modifiedValue = Math.round(finalValue * modifier);
+    const modifiedValue = Math.round(baseValue * modifier);
 
     return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      <div className="rounded-md border border-stone-200 bg-white p-3">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 font-bold text-stone-800">
             {icon}
-            <label className="text-sm font-medium text-gray-700">{label}</label>
+            <span>{label}</span>
           </div>
-          <div className="text-sm">
-            <span className="font-medium">{finalValue}</span>
-            <span className="text-gray-500 ml-2">(Final: {modifiedValue})</span>
+          <div className="text-sm font-semibold text-stone-500">
+            {baseValue} <span className="text-amber-700">→ {modifiedValue}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() =>
-              handleAttributeChange(attribute, attributes[attribute] - 1)
-            }
-            className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 disabled:opacity-50"
-            disabled={attributes[attribute] <= MIN_ATTRIBUTE_VALUE}
+            onClick={() => handleAttributeChange(attribute, baseValue - 1)}
+            className="flex h-8 w-8 items-center justify-center rounded-md bg-stone-700 font-bold text-white hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-300"
+            disabled={baseValue <= MIN_ATTRIBUTE_VALUE}
           >
             -
           </button>
-          <div className="flex-1 h-2 bg-gray-200 rounded-full">
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-stone-200">
             <div
-              className="h-2 bg-blue-500 rounded-full"
-              style={{ width: `${(finalValue / MAX_ATTRIBUTE_VALUE) * 100}%` }}
+              className="h-2 bg-amber-600"
+              style={{ width: `${(baseValue / MAX_ATTRIBUTE_VALUE) * 100}%` }}
             />
           </div>
           <button
             type="button"
-            onClick={() =>
-              handleAttributeChange(attribute, attributes[attribute] + 1)
-            }
-            className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600 disabled:opacity-50"
-            disabled={
-              attributes[attribute] >= MAX_ATTRIBUTE_VALUE ||
-              remainingPoints <= 0
-            }
+            onClick={() => handleAttributeChange(attribute, baseValue + 1)}
+            className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-600 font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+            disabled={baseValue >= MAX_ATTRIBUTE_VALUE || remainingPoints <= 0}
           >
             +
           </button>
@@ -121,159 +123,173 @@ export function CharacterCreation({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl">
-        <h2 className="text-2xl font-bold text-center mb-6">
-          Criar Personagem
-        </h2>
+    <div className="app-bg">
+      <div className="page-wrap">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nome do Personagem
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full p-2 border rounded-md"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Raça
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              {RACES.map((race) => (
-                <button
-                  key={race.id}
-                  type="button"
-                  onClick={() => setSelectedRace(race)}
-                  className={`p-4 border rounded-lg text-left ${
-                    selectedRace.id === race.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'hover:bg-gray-50'
-                  }`}
-                >
-                  <h3 className="font-medium">{race.name}</h3>
-                  <p className="text-sm text-gray-600">{race.description}</p>
-                  <div className="mt-2 text-sm">
-                    <div>Vida: {race.bonuses.health}</div>
-                    <div>Dano: {race.bonuses.damage}</div>
-                    <div>Defesa: {race.bonuses.defense}</div>
-                  </div>
-                </button>
-              ))}
+          <div className="rpg-panel-dark rounded-lg p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-amber-300">
+                  <Sparkles className="h-4 w-4" />
+                  Novo aventureiro
+                </div>
+                <h1 className="mt-1 text-3xl font-black text-white">
+                  Criar Personagem
+                </h1>
+              </div>
+              <button
+                type="button"
+                onClick={onBack}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-stone-800 px-4 py-2 font-semibold text-stone-200 transition-colors hover:bg-stone-700"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Voltar
+              </button>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Classe
-            </label>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
+            <div className="rpg-panel rounded-lg p-5">
+              <label className="mb-2 block text-sm font-bold text-stone-700">
+                Nome do Personagem
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 font-semibold shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                required
+              />
+
+              <div className="mt-6 rounded-md border border-amber-200 bg-amber-50 p-4">
+                <div className="text-sm font-bold uppercase tracking-wide text-amber-700">
+                  Resumo
+                </div>
+                <div className="mt-2 text-xl font-black text-stone-950">
+                  {name.trim() || 'Sem nome'}
+                </div>
+                <div className="font-semibold text-stone-600">
+                  {selectedRace.name} {selectedClass.name}
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                  <SummaryTile label="Vida" value={selectedClass.baseHealth + selectedRace.bonuses.health} />
+                  <SummaryTile label="Recurso" value={selectedClass.baseResource} />
+                  <SummaryTile label="Ouro" value={selectedClass.startingGold} />
+                  <SummaryTile label="Pontos" value={remainingPoints} />
+                </div>
+              </div>
+            </div>
+
+            <div className="rpg-panel rounded-lg p-5">
+              <SectionTitle title="Raça" subtitle="Escolha a origem do personagem" />
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {RACES.map((race) => (
+                  <button
+                    key={race.id}
+                    type="button"
+                    onClick={() => setSelectedRace(race)}
+                    className={`rounded-lg border p-4 text-left transition-colors ${
+                      selectedRace.id === race.id
+                        ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'
+                        : 'border-stone-200 bg-white hover:border-amber-300 hover:bg-amber-50/50'
+                    }`}
+                  >
+                    <h3 className="font-black text-stone-950">{race.name}</h3>
+                    <p className="mt-1 text-sm text-stone-600">{race.description}</p>
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-stone-600">
+                      <span>Vida +{race.bonuses.health}</span>
+                      <span>Dano +{race.bonuses.damage}</span>
+                      <span>Defesa +{race.bonuses.defense}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="rpg-panel rounded-lg p-5">
+            <SectionTitle title="Classe" subtitle="Define estilo de combate e evolução" />
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
               {CLASSES.map((characterClass) => (
                 <button
                   key={characterClass.id}
                   type="button"
                   onClick={() => setSelectedClass(characterClass)}
-                  className={`p-4 border rounded-lg text-left ${
+                  className={`rounded-lg border p-4 text-left transition-colors ${
                     selectedClass.id === characterClass.id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'hover:bg-gray-50'
+                      ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'
+                      : 'border-stone-200 bg-white hover:border-amber-300 hover:bg-amber-50/50'
                   }`}
                 >
-                  <h3 className="font-medium">{characterClass.name}</h3>
-                  <p className="text-sm text-gray-600">
+                  <h3 className="font-black text-stone-950">
+                    {characterClass.name}
+                  </h3>
+                  <p className="mt-1 text-sm text-stone-600">
                     {characterClass.description}
                   </p>
-                  <div className="mt-2 text-sm">
-                    <div>Vida Base: {characterClass.baseHealth}</div>
-                    <div>Ouro Inicial: {characterClass.startingGold}</div>
-                    <div className="mt-1 font-medium">Modificadores:</div>
-                    <div>
-                      Força: x{characterClass.attributeModifiers.strength}
-                    </div>
-                    <div>
-                      Esforço: x{characterClass.attributeModifiers.effort}
-                    </div>
-                    <div>
-                      Resistência: x
-                      {characterClass.attributeModifiers.resistance}
-                    </div>
-                    <div>
-                      Inteligência: x
-                      {characterClass.attributeModifiers.intelligence}
-                    </div>
-                    <div>
-                      Acurácia: x{characterClass.attributeModifiers.accuracy}
-                    </div>
+                  <div className="mt-3 text-xs font-semibold text-stone-600">
+                    <div>Vida base: {characterClass.baseHealth}</div>
+                    <div>Recurso: {characterClass.baseResource}</div>
+                    <div>Ouro inicial: {characterClass.startingGold}</div>
                   </div>
                 </button>
               ))}
             </div>
           </div>
 
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <label className="text-sm font-medium text-gray-700">
-                Atributos
-              </label>
+          <div className="rpg-panel rounded-lg p-5">
+            <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <SectionTitle title="Atributos" subtitle="Distribua todos os pontos disponíveis" />
               <span
-                className={`text-sm font-medium ${
-                  remainingPoints === 0 ? 'text-green-500' : 'text-blue-500'
+                className={`rounded-md px-3 py-2 text-sm font-black ${
+                  remainingPoints === 0
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-amber-100 text-amber-700'
                 }`}
               >
                 Pontos restantes: {remainingPoints}
               </span>
             </div>
-            <div className="space-y-4 bg-gray-50 p-4 rounded-lg">
-              {renderAttributeControl(
-                'strength',
-                'Força',
-                <Sword className="w-4 h-4" />
-              )}
-              {renderAttributeControl(
-                'effort',
-                'Esforço',
-                <Dumbbell className="w-4 h-4" />
-              )}
-              {renderAttributeControl(
-                'resistance',
-                'Resistência',
-                <Shield className="w-4 h-4" />
-              )}
-              {renderAttributeControl(
-                'intelligence',
-                'Inteligência',
-                <Brain className="w-4 h-4" />
-              )}
-              {renderAttributeControl(
-                'accuracy',
-                'Acurácia',
-                <Target className="w-4 h-4" />
-              )}
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+              {renderAttributeControl('strength', 'Força', <Sword className="h-4 w-4" />)}
+              {renderAttributeControl('effort', 'Esforço', <Dumbbell className="h-4 w-4" />)}
+              {renderAttributeControl('resistance', 'Resistência', <Shield className="h-4 w-4" />)}
+              {renderAttributeControl('intelligence', 'Inteligência', <Brain className="h-4 w-4" />)}
+              {renderAttributeControl('accuracy', 'Acurácia', <Target className="h-4 w-4" />)}
             </div>
           </div>
 
           <button
             type="submit"
             disabled={!name.trim() || remainingPoints !== 0}
-            className={`w-full py-2 px-4 rounded-md transition-colors ${
-              !name.trim() || remainingPoints !== 0
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-500 hover:bg-blue-600 text-white'
-            }`}
+            className="rpg-button-primary w-full py-3 text-lg"
           >
             {!name.trim()
               ? 'Digite um nome'
               : remainingPoints !== 0
-              ? `Distribua os ${remainingPoints} pontos restantes`
-              : 'Criar Personagem'}
+                ? `Distribua os ${remainingPoints} pontos restantes`
+                : 'Criar Personagem'}
           </button>
         </form>
       </div>
+    </div>
+  );
+}
+
+function SectionTitle({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <div className="mb-4">
+      <h2 className="text-xl font-black text-stone-950">{title}</h2>
+      <p className="text-sm font-semibold text-stone-500">{subtitle}</p>
+    </div>
+  );
+}
+
+function SummaryTile({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded bg-white p-2">
+      <div className="text-xs font-semibold text-stone-500">{label}</div>
+      <div className="font-black text-stone-950">{value}</div>
     </div>
   );
 }
