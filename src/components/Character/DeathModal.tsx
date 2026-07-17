@@ -9,8 +9,8 @@ interface DeathModalProps {
 
 export function DeathModal({ characterName, killedBy, onRespawn, onCreateNew }: DeathModalProps) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full text-center">
+    <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div className="relative z-[101] bg-white rounded-lg p-6 max-w-md w-full text-center">
         <div className="flex justify-center mb-4">
           <Skull className="w-16 h-16 text-red-500" />
         </div>
