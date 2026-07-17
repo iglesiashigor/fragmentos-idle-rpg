@@ -1,5 +1,5 @@
 import { MapLocation } from '../types/game';
-import { Hammer, Home, Sparkles, Sword } from 'lucide-react';
+import { Hammer, Home, Landmark, Leaf, Pickaxe, Sparkles, Sword, TreePine } from 'lucide-react';
 
 interface GameMapProps {
   locations: MapLocation[];
@@ -32,7 +32,7 @@ export function GameMap({ locations, onLocationSelect }: GameMapProps) {
           ) : location.type === 'event' ? (
             <Sparkles className="w-6 h-6" />
           ) : location.type === 'gathering' ? (
-            <Hammer className="w-6 h-6" />
+            <GatheringIcon resourcePool={location.resourcePool} />
           ) : (
             <Home className="w-6 h-6" />
           )}
@@ -40,4 +40,20 @@ export function GameMap({ locations, onLocationSelect }: GameMapProps) {
       ))}
     </div>
   );
+}
+
+function GatheringIcon({ resourcePool }: { resourcePool?: string }) {
+  if (resourcePool === 'forest') {
+    return <TreePine className="w-6 h-6" />;
+  }
+  if (resourcePool === 'quarry') {
+    return <Pickaxe className="w-6 h-6" />;
+  }
+  if (resourcePool === 'grove') {
+    return <Leaf className="w-6 h-6" />;
+  }
+  if (resourcePool === 'ruins') {
+    return <Landmark className="w-6 h-6" />;
+  }
+  return <Hammer className="w-6 h-6" />;
 }
