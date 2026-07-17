@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import { Shield, Sword, FlaskRound as Flask, Package } from 'lucide-react';
 import { InventoryItem, Equipment } from '../../types/game';
 
@@ -19,7 +19,7 @@ export function InventoryPanel({
   onUnequipItem,
   onUsePotion,
 }: InventoryPanelProps) {
-  const [activeTab, setActiveTab] = React.useState<'equipment' | 'potions' | 'loot'>('equipment');
+  const [activeTab, setActiveTab] = useState<'equipment' | 'potions' | 'loot'>('equipment');
   
   const equippableItems = inventory.filter(
     (item) => item.type === 'weapon' || item.type === 'armor'
@@ -49,13 +49,13 @@ export function InventoryPanel({
 
   return (
     <div>
-      <div className="flex gap-4 mb-6">
+      <div className="mb-6 flex flex-wrap gap-3">
         <button
           onClick={() => setActiveTab('equipment')}
-          className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+          className={`flex items-center gap-2 rounded-md px-4 py-2 font-semibold transition-colors ${
             activeTab === 'equipment'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-200 text-gray-700'
+              ? 'bg-amber-600 text-white'
+              : 'bg-stone-200 text-stone-700 hover:bg-stone-300'
           }`}
         >
           <Sword className="w-4 h-4" />
@@ -63,10 +63,10 @@ export function InventoryPanel({
         </button>
         <button
           onClick={() => setActiveTab('potions')}
-          className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+          className={`flex items-center gap-2 rounded-md px-4 py-2 font-semibold transition-colors ${
             activeTab === 'potions'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-200 text-gray-700'
+              ? 'bg-amber-600 text-white'
+              : 'bg-stone-200 text-stone-700 hover:bg-stone-300'
           }`}
         >
           <Flask className="w-4 h-4" />
@@ -74,10 +74,10 @@ export function InventoryPanel({
         </button>
         <button
           onClick={() => setActiveTab('loot')}
-          className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+          className={`flex items-center gap-2 rounded-md px-4 py-2 font-semibold transition-colors ${
             activeTab === 'loot'
-              ? 'bg-blue-500 text-white'
-              : 'bg-gray-200 text-gray-700'
+              ? 'bg-amber-600 text-white'
+              : 'bg-stone-200 text-stone-700 hover:bg-stone-300'
           }`}
         >
           <Package className="w-4 h-4" />
@@ -89,7 +89,7 @@ export function InventoryPanel({
         <div className="space-y-6">
           {/* Equipment Slots */}
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="border rounded-lg p-4">
+            <div className="rpg-item rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <Sword className="w-5 h-5 text-gray-600" />
                 <h3 className="font-medium">Arma</h3>
@@ -112,7 +112,7 @@ export function InventoryPanel({
               )}
             </div>
 
-            <div className="border rounded-lg p-4">
+            <div className="rpg-item rounded-lg">
               <div className="flex items-center gap-2 mb-2">
                 <Shield className="w-5 h-5 text-gray-600" />
                 <h3 className="font-medium">Armadura</h3>
@@ -139,9 +139,9 @@ export function InventoryPanel({
           {/* Inventory Items */}
           <div>
             <h3 className="font-medium mb-3">Itens Equipáveis</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {equippableItems.map((item) => (
-                <div key={item.id} className="border rounded-lg p-3">
+                <div key={item.id} className="rpg-item rounded-lg">
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-medium">{item.name}</p>
@@ -170,9 +170,9 @@ export function InventoryPanel({
         </div>
       ) : activeTab === 'potions' ? (
         <div>
-          <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {potions.map((potion) => (
-              <div key={potion.id} className="border rounded-lg p-4">
+              <div key={potion.id} className="rpg-item rounded-lg">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -192,7 +192,7 @@ export function InventoryPanel({
                     disabled={potion.quantity <= 0}
                     className={`ml-4 px-3 py-1 rounded ${
                       potion.quantity > 0
-                        ? 'bg-green-500 text-white hover:bg-green-600'
+                        ? 'bg-emerald-600 text-white hover:bg-emerald-700'
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
                   >
@@ -211,9 +211,9 @@ export function InventoryPanel({
       ) : (
         <div>
           <h3 className="font-medium mb-3">Itens Coletados</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {lootItems.map((item) => (
-              <div key={item.id} className="border rounded-lg p-4">
+              <div key={item.id} className="rpg-item rounded-lg">
                 <div className="flex items-start gap-3">
                   <Package className="w-5 h-5 text-gray-500 flex-shrink-0 mt-1" />
                   <div>

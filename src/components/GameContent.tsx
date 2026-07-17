@@ -1,4 +1,5 @@
-import React from 'react';
+import { useState } from 'react';
+import { Backpack, Map } from 'lucide-react';
 import { Character } from './Character';
 import { GameMap } from './GameMap';
 import { Town } from './Town';
@@ -20,7 +21,7 @@ interface GameContentProps {
 
 export function GameContent({ character: initialCharacter, onCharacterUpdate, onLogout, onCreateNew }: GameContentProps) {
   const gameState = useGameState(initialCharacter, onCharacterUpdate);
-  const [activeTab, setActiveTab] = React.useState<'map' | 'inventory'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'inventory'>('map');
 
   const handleEquipItem = (item: InventoryItem) => {
     const slot = item.type === 'weapon' ? 'weapon' : 'armor';
@@ -123,36 +124,38 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="app-bg">
+      <div className="page-wrap space-y-6">
         <UserProfile username={initialCharacter.name} onLogout={onLogout} />
         <Character character={gameState.character} />
         
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="flex border-b">
+        <div className="rpg-panel overflow-hidden rounded-lg">
+          <div className="flex border-b border-stone-200">
             <button
               onClick={() => setActiveTab('map')}
-              className={`flex-1 px-4 py-3 text-center font-medium ${
+              className={`rpg-tab flex-1 ${
                 activeTab === 'map'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                  ? 'rpg-tab-active'
+                  : 'rpg-tab-inactive'
               }`}
             >
+              <Map className="h-4 w-4" />
               Mapa
             </button>
             <button
               onClick={() => setActiveTab('inventory')}
-              className={`flex-1 px-4 py-3 text-center font-medium ${
+              className={`rpg-tab flex-1 ${
                 activeTab === 'inventory'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                  ? 'rpg-tab-active'
+                  : 'rpg-tab-inactive'
               }`}
             >
+              <Backpack className="h-4 w-4" />
               Inventário
             </button>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {activeTab === 'map' ? (
               <>
                 <GameMap
@@ -161,8 +164,8 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                 />
 
                 {gameState.currentLocation && (
-                  <div className="mt-8">
-                    <h2 className="text-2xl font-bold mb-4">{gameState.currentLocation.name}</h2>
+                  <div className="mt-6">
+                    <h2 className="mb-4 text-2xl font-black text-stone-950">{gameState.currentLocation.name}</h2>
                     {gameState.currentLocation.type === 'town' ? (
                       <Town 
                         gold={gameState.character.gold} 

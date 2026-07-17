@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SavedCharacter } from '../../types/game';
-import { UserCircle2, Plus, Swords, Trash2 } from 'lucide-react';
+import { Crown, Plus, Swords, Trash2, UserCircle2 } from 'lucide-react';
 
 interface CharacterSelectionProps {
   characters: SavedCharacter[];
@@ -28,61 +28,62 @@ export function CharacterSelection({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl">
-        <h2 className="text-2xl font-bold text-center mb-6">
-          Seus Personagens
-        </h2>
+    <div className="app-bg flex items-center justify-center px-4">
+      <div className="rpg-panel w-full max-w-3xl rounded-lg p-8">
+        <div className="mb-6 flex items-center justify-center gap-3 text-stone-950">
+          <Crown className="h-7 w-7 text-amber-600" />
+          <h2 className="text-3xl font-black">Seus Personagens</h2>
+        </div>
 
         <div className="grid grid-cols-1 gap-4 mb-6">
           {characters.map((character) => (
             <div
               key={character.id}
-              className="relative border rounded-lg hover:bg-gray-50 transition-colors"
+              className="rpg-item relative rounded-lg"
             >
               {showDeleteConfirm === character.id ? (
                 <div className="p-4">
-                  <p className="text-center mb-4">
+                  <p className="text-center font-semibold text-stone-700 mb-4">
                     Tem certeza que deseja excluir {character.name}?
                   </p>
                   <div className="flex justify-center gap-4">
                     <button
                       onClick={() => handleConfirmDelete(character.id)}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                      className="rpg-button-danger"
                     >
                       Confirmar
                     </button>
                     <button
                       onClick={() => setShowDeleteConfirm(null)}
-                      className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                      className="rpg-button-secondary"
                     >
                       Cancelar
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center p-4">
+                <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
                   <div className="flex-shrink-0 mr-4">
-                    <UserCircle2 className="w-12 h-12 text-blue-500" />
+                    <UserCircle2 className="w-12 h-12 text-amber-600" />
                   </div>
                   <div className="flex-grow">
-                    <h3 className="font-medium text-lg">{character.name}</h3>
-                    <p className="text-sm text-gray-600">
+                    <h3 className="font-bold text-xl text-stone-950">{character.name}</h3>
+                    <p className="text-sm font-medium text-stone-600">
                       Nível {character.level} {character.race.name}{' '}
                       {character.class.name}
                     </p>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={() => handleDeleteClick(character.id)}
-                      className="p-2 text-red-500 hover:text-red-600 transition-colors"
+                      className="rounded-md p-2 text-red-600 transition-colors hover:bg-red-50"
                       title="Excluir personagem"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => onSelectCharacter(character)}
-                      className="flex items-center gap-2 text-blue-500 hover:text-blue-600"
+                      className="rpg-button-primary"
                     >
                       <Swords className="w-5 h-5" />
                       <span>Jogar</span>
@@ -96,15 +97,15 @@ export function CharacterSelection({
           {characters.length < MAX_CHARACTERS && (
             <button
               onClick={onCreateNew}
-              className="flex items-center justify-center p-4 border-2 border-dashed rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center rounded-lg border-2 border-dashed border-stone-300 p-4 font-semibold text-stone-600 transition-colors hover:border-amber-400 hover:bg-amber-50 hover:text-stone-950"
             >
-              <Plus className="w-6 h-6 text-gray-400 mr-2" />
-              <span className="text-gray-600">Criar Novo Personagem</span>
+              <Plus className="w-6 h-6 mr-2" />
+              <span>Criar Novo Personagem</span>
             </button>
           )}
         </div>
 
-        <div className="text-center text-sm text-gray-500">
+        <div className="text-center text-sm font-medium text-stone-500">
           {characters.length} de {MAX_CHARACTERS} personagens criados
         </div>
       </div>

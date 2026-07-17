@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User } from 'lucide-react';
+import { Castle, User } from 'lucide-react';
 
 interface LoginFormProps {
   onLogin: (email: string, password: string) => void;
@@ -21,19 +21,24 @@ export function LoginForm({ onLogin, onRegister }: LoginFormProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        <div className="flex items-center justify-center mb-6">
-          <User className="w-12 h-12 text-blue-500" />
+    <div className="app-bg flex items-center justify-center px-4">
+      <div className="rpg-panel w-full max-w-md rounded-lg p-8">
+        <div className="mb-6 flex items-center justify-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-stone-900 text-amber-300">
+            <Castle className="h-8 w-8" />
+          </div>
         </div>
-        <h2 className="text-2xl font-bold text-center mb-6">
+        <h1 className="text-center text-3xl font-black text-stone-950">
+          Fragmentos
+        </h1>
+        <h2 className="mb-6 mt-2 text-center text-lg font-semibold text-stone-600">
           {isRegistering ? 'Criar Conta' : 'Login'}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-semibold text-stone-700"
             >
               E-mail
             </label>
@@ -42,14 +47,14 @@ export function LoginForm({ onLogin, onRegister }: LoginFormProps) {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-stone-300 bg-white px-3 py-2 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
               required
             />
           </div>
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-semibold text-stone-700"
             >
               Senha
             </label>
@@ -58,20 +63,21 @@ export function LoginForm({ onLogin, onRegister }: LoginFormProps) {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              className="mt-1 block w-full rounded-md border border-stone-300 bg-white px-3 py-2 shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
               required
             />
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
+            className="rpg-button-primary w-full"
           >
+            <User className="h-4 w-4" />
             {isRegistering ? 'Criar Conta' : 'Entrar'}
           </button>
           <button
             type="button"
             onClick={() => setIsRegistering(!isRegistering)}
-            className="w-full text-blue-500 hover:text-blue-600 transition-colors"
+            className="w-full rounded-md px-4 py-2 text-sm font-semibold text-stone-600 transition-colors hover:bg-stone-100 hover:text-stone-950"
           >
             {isRegistering
               ? 'Já tem uma conta? Entre'

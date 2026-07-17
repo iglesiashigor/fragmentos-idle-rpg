@@ -1,4 +1,4 @@
-import { Shield, Sword, Backpack } from 'lucide-react';
+import { Backpack, Shield, Sword } from 'lucide-react';
 import { Character as CharacterType } from '../types/game';
 import { calculateRequiredExperience } from '../utils/experience';
 import { calculateCharacterStats } from '../utils/combatStats';
@@ -9,118 +9,128 @@ interface CharacterProps {
 
 export function Character({ character }: CharacterProps) {
   const requiredExp = calculateRequiredExperience(character.level);
-  const expPercentage = (character.experience / requiredExp) * 100;
+  const expPercentage = Math.min(
+    100,
+    (character.experience / requiredExp) * 100
+  );
   const combatStats = calculateCharacterStats(character);
 
   return (
-    <div className="bg-white rounded-lg p-4 shadow-md">
-      <div className="flex justify-between items-start mb-4">
+    <div className="rpg-panel rounded-lg p-5">
+      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-xl font-bold">{character.name}</h2>
-          <p className="text-gray-600">Nivel {character.level}</p>
+          <h2 className="text-2xl font-black text-stone-950">
+            {character.name}
+          </h2>
+          <p className="font-semibold text-stone-600">
+            Nível {character.level} {character.race.name} {character.class.name}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-yellow-600">🪙</span>
-          <span>{character.gold} Ouro</span>
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 font-bold text-amber-800">
+          {character.gold} Ouro
         </div>
       </div>
 
-      <div className="space-y-2">
-        {/* Health Bar */}
-        <div>
-          <div className="flex justify-between text-sm mb-1">
-            <span>Vida</span>
-            <span>{character.health}/{character.maxHealth}</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-4">
-            <div
-              className="bg-red-500 rounded-full h-4"
-              style={{ width: `${(character.health / character.maxHealth) * 100}%` }}
-            />
-          </div>
-        </div>
+      <div className="space-y-3">
+        <ResourceBar
+          label="Vida"
+          value={character.health}
+          max={character.maxHealth}
+          color="bg-red-600"
+        />
 
-        {/* Mana/Stamina Bar */}
         {character.mana !== undefined && (
-          <div>
-            <div className="flex justify-between text-sm mb-1">
-              <span>Mana</span>
-              <span>{character.mana}/{character.maxMana}</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-4">
-              <div
-                className="bg-blue-500 rounded-full h-4"
-                style={{ width: `${(character.mana / character.maxMana!) * 100}%` }}
-              />
-            </div>
-          </div>
+          <ResourceBar
+            label="Mana"
+            value={character.mana}
+            max={character.maxMana || 1}
+            color="bg-sky-600"
+          />
         )}
 
         {character.stamina !== undefined && (
-          <div>
-            <div className="flex justify-between text-sm mb-1">
-              <span>Estamina</span>
-              <span>{character.stamina}/{character.maxStamina}</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-4">
-              <div
-                className="bg-yellow-500 rounded-full h-4"
-                style={{ width: `${(character.stamina / character.maxStamina!) * 100}%` }}
-              />
-            </div>
-          </div>
+          <ResourceBar
+            label="Estamina"
+            value={character.stamina}
+            max={character.maxStamina || 1}
+            color="bg-amber-500"
+          />
         )}
 
-        {/* Experience Bar */}
-        <div>
-          <div className="flex justify-between text-sm mb-1">
-            <span>Experiencia</span>
-            <span>{character.experience}/{requiredExp}</span>
+        <ResourceBar
+          label="Experiência"
+          value={character.experience}
+          max={requiredExp}
+          color="bg-emerald-600"
+          percentage={expPercentage}
+        />
+
+        <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold text-stone-700">
+          <div className="flex items-center gap-2">
+            <Sword className="h-5 w-5 text-stone-600" />
+            <span>{character.equipment.weapon?.name || 'Sem arma'}</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-4">
-            <div
-              className="bg-blue-500 rounded-full h-4"
-              style={{ width: `${expPercentage}%` }}
-            />
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-stone-600" />
+            <span>{character.equipment.armor?.name || 'Sem armadura'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Backpack className="h-5 w-5 text-stone-600" />
+            <span>{character.inventory.length} itens</span>
           </div>
         </div>
 
-        <div className="flex gap-4 mt-4">
-          <div className="flex items-center gap-2">
-            <Sword className="w-5 h-5" />
-            <span>{character.equipment.weapon?.name || 'No weapon'}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            <span>{character.equipment.armor?.name || 'No armor'}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Backpack className="w-5 h-5" />
-            <span>{character.inventory.length} items</span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-4 text-sm">
-          <div className="rounded bg-gray-50 p-2">
-            <div className="text-gray-500">Ataque</div>
-            <div className="font-semibold">{Math.round(combatStats.attack)}</div>
-          </div>
-          <div className="rounded bg-gray-50 p-2">
-            <div className="text-gray-500">Magia</div>
-            <div className="font-semibold">{Math.round(combatStats.magicPower)}</div>
-          </div>
-          <div className="rounded bg-gray-50 p-2">
-            <div className="text-gray-500">Defesa</div>
-            <div className="font-semibold">{Math.round(combatStats.defense)}</div>
-          </div>
-          <div className="rounded bg-gray-50 p-2">
-            <div className="text-gray-500">Crítico</div>
-            <div className="font-semibold">
-              {Math.round(combatStats.criticalChance * 100)}%
-            </div>
-          </div>
+        <div className="grid grid-cols-2 gap-2 pt-4 text-sm md:grid-cols-4">
+          <StatTile label="Ataque" value={Math.round(combatStats.attack)} />
+          <StatTile label="Magia" value={Math.round(combatStats.magicPower)} />
+          <StatTile label="Defesa" value={Math.round(combatStats.defense)} />
+          <StatTile
+            label="Crítico"
+            value={`${Math.round(combatStats.criticalChance * 100)}%`}
+          />
         </div>
       </div>
+    </div>
+  );
+}
+
+interface ResourceBarProps {
+  label: string;
+  value: number;
+  max: number;
+  color: string;
+  percentage?: number;
+}
+
+function ResourceBar({
+  label,
+  value,
+  max,
+  color,
+  percentage,
+}: ResourceBarProps) {
+  const width = percentage ?? Math.min(100, (value / max) * 100);
+
+  return (
+    <div>
+      <div className="mb-1 flex justify-between text-sm">
+        <span className="font-semibold">{label}</span>
+        <span>
+          {value}/{max}
+        </span>
+      </div>
+      <div className="h-4 w-full overflow-hidden rounded-full bg-stone-200">
+        <div className={`h-4 ${color}`} style={{ width: `${width}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function StatTile({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="rounded-md bg-stone-100 p-2">
+      <div className="text-stone-500">{label}</div>
+      <div className="font-bold text-stone-950">{value}</div>
     </div>
   );
 }
