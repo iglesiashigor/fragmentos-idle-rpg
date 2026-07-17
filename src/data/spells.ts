@@ -8,6 +8,9 @@ export const SPELLS: Spell[] = [
     manaCost: 20,
     level: 1,
     description: 'Lança uma poderosa bola de fogo contra o inimigo',
+    requirements: {
+      class: ['mage', 'shaman'],
+    },
   },
   {
     id: 'magic_missile',
@@ -16,6 +19,9 @@ export const SPELLS: Spell[] = [
     manaCost: 20,
     level: 1,
     description: 'Dispara dardos de energia mágica contra o alvo',
+    requirements: {
+      class: ['mage', 'summoner', 'illusionist'],
+    },
   },
   {
     id: 'ice_shard',
@@ -24,6 +30,9 @@ export const SPELLS: Spell[] = [
     manaCost: 20,
     level: 1,
     description: 'Lança fragmentos afiados de gelo',
+    requirements: {
+      class: ['mage', 'shaman'],
+    },
   },
   {
     id: 'shadow_bolt',
@@ -32,5 +41,8 @@ export const SPELLS: Spell[] = [
     manaCost: 20,
     level: 1,
     description: 'Dispara uma seta de energia sombria',
+    requirements: {
+      class: ['summoner', 'illusionist'],
+    },
   }
 ];
