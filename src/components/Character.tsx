@@ -1,6 +1,7 @@
 import { Shield, Sword, Backpack } from 'lucide-react';
 import { Character as CharacterType } from '../types/game';
 import { calculateRequiredExperience } from '../utils/experience';
+import { calculateCharacterStats } from '../utils/combatStats';
 
 interface CharacterProps {
   character: CharacterType;
@@ -9,6 +10,7 @@ interface CharacterProps {
 export function Character({ character }: CharacterProps) {
   const requiredExp = calculateRequiredExperience(character.level);
   const expPercentage = (character.experience / requiredExp) * 100;
+  const combatStats = calculateCharacterStats(character);
 
   return (
     <div className="bg-white rounded-lg p-4 shadow-md">
@@ -95,6 +97,27 @@ export function Character({ character }: CharacterProps) {
           <div className="flex items-center gap-2">
             <Backpack className="w-5 h-5" />
             <span>{character.inventory.length} items</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pt-4 text-sm">
+          <div className="rounded bg-gray-50 p-2">
+            <div className="text-gray-500">Ataque</div>
+            <div className="font-semibold">{Math.round(combatStats.attack)}</div>
+          </div>
+          <div className="rounded bg-gray-50 p-2">
+            <div className="text-gray-500">Magia</div>
+            <div className="font-semibold">{Math.round(combatStats.magicPower)}</div>
+          </div>
+          <div className="rounded bg-gray-50 p-2">
+            <div className="text-gray-500">Defesa</div>
+            <div className="font-semibold">{Math.round(combatStats.defense)}</div>
+          </div>
+          <div className="rounded bg-gray-50 p-2">
+            <div className="text-gray-500">Crítico</div>
+            <div className="font-semibold">
+              {Math.round(combatStats.criticalChance * 100)}%
+            </div>
           </div>
         </div>
       </div>

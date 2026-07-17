@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   SavedCharacter,
   Item,
@@ -18,12 +18,65 @@ import {
 } from '../utils/locationManager';
 import { generateRandomEvent } from '../utils/randomEvents';
 import { calculateRequiredExperience, checkLevelUp } from '../utils/experience';
+import {
+  calculateAbilityDamage,
+  calculateBasicAttackDamage,
+  calculateEnemyDamage,
+  calculateMaxHealth,
+  calculateMaxResource,
+  calculateSpellDamage,
+} from '../utils/combatStats';
 
 export function useGameState(
   initialCharacter: SavedCharacter,
   onCharacterUpdate: (character: SavedCharacter) => void
 ) {
-  const [character, setCharacter] = useState<SavedCharacter>(initialCharacter);
+  const normalizeCharacter = (savedCharacter: SavedCharacter) => {
+    const maxHealth = calculateMaxHealth(savedCharacter);
+    const maxResource = calculateMaxResource(savedCharacter);
+    const healthRatio =
+      savedCharacter.maxHealth > 0
+        ? savedCharacter.health / savedCharacter.maxHealth
+        : 1;
+    const normalizedCharacter: SavedCharacter = {
+      ...savedCharacter,
+      maxHealth,
+      health:
+        savedCharacter.health <= 0
+          ? 0
+          : Math.max(1, Math.min(maxHealth, Math.round(maxHealth * healthRatio))),
+    };
+
+    if (savedCharacter.maxMana !== undefined) {
+      const manaRatio =
+        savedCharacter.maxMana > 0
+          ? (savedCharacter.mana || 0) / savedCharacter.maxMana
+          : 1;
+      normalizedCharacter.maxMana = maxResource;
+      normalizedCharacter.mana = Math.min(
+        maxResource,
+        Math.round(maxResource * manaRatio)
+      );
+    }
+
+    if (savedCharacter.maxStamina !== undefined) {
+      const staminaRatio =
+        savedCharacter.maxStamina > 0
+          ? (savedCharacter.stamina || 0) / savedCharacter.maxStamina
+          : 1;
+      normalizedCharacter.maxStamina = maxResource;
+      normalizedCharacter.stamina = Math.min(
+        maxResource,
+        Math.round(maxResource * staminaRatio)
+      );
+    }
+
+    return normalizedCharacter;
+  };
+
+  const [character, setCharacter] = useState<SavedCharacter>(() =>
+    normalizeCharacter(initialCharacter)
+  );
   const [currentLocation, setCurrentLocation] = useState<MapLocation | null>(null);
   const [enemy, setEnemy] = useState<Enemy | null>(null);
   const [mapLocations, setMapLocations] = useState(INITIAL_LOCATIONS);
@@ -35,6 +88,20 @@ export function useGameState(
   const [showDeathModal, setShowDeathModal] = useState(false);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [attributePoints, setAttributePoints] = useState(0);
+  const hasSavedNormalizedCharacter = useRef(false);
+
+  useEffect(() => {
+    if (hasSavedNormalizedCharacter.current) return;
+
+    if (
+      character.maxHealth !== initialCharacter.maxHealth ||
+      character.maxMana !== initialCharacter.maxMana ||
+      character.maxStamina !== initialCharacter.maxStamina
+    ) {
+      hasSavedNormalizedCharacter.current = true;
+      onCharacterUpdate(character);
+    }
+  }, [character, initialCharacter, onCharacterUpdate]);
 
   const updateCharacter = (updates: Partial<SavedCharacter>) => {
     const updatedCharacter = { ...character, ...updates } as SavedCharacter;
@@ -48,7 +115,35 @@ export function useGameState(
         ...character.attributes,
         [attribute]: character.attributes[attribute] + 1,
       };
-      updateCharacter({ attributes: updatedAttributes });
+      const updatedCharacter = {
+        ...character,
+        attributes: updatedAttributes,
+      };
+      const newMaxHealth = calculateMaxHealth(updatedCharacter);
+      const newMaxResource = calculateMaxResource(updatedCharacter);
+      const updates: Partial<SavedCharacter> = {
+        attributes: updatedAttributes,
+        maxHealth: newMaxHealth,
+        health: Math.min(character.health + (newMaxHealth - character.maxHealth), newMaxHealth),
+      };
+
+      if (character.maxMana !== undefined) {
+        updates.maxMana = newMaxResource;
+        updates.mana = Math.min(
+          (character.mana || 0) + (newMaxResource - character.maxMana),
+          newMaxResource
+        );
+      }
+
+      if (character.maxStamina !== undefined) {
+        updates.maxStamina = newMaxResource;
+        updates.stamina = Math.min(
+          (character.stamina || 0) + (newMaxResource - character.maxStamina),
+          newMaxResource
+        );
+      }
+
+      updateCharacter(updates);
       setAttributePoints(points => points - 1);
     }
   };
@@ -140,22 +235,29 @@ export function useGameState(
         setAttributePoints(3); // Give 3 points to distribute
       }
 
+      const leveledCharacter = {
+        ...baseCharacter,
+        level: newLevel,
+      };
+      const newMaxHealth = calculateMaxHealth(leveledCharacter);
+      const newMaxResource = calculateMaxResource(leveledCharacter);
+
       // Restore health, mana, and stamina on level up
       const updates: Partial<SavedCharacter> = {
         level: newLevel,
         experience: remainingExp,
-        maxHealth: baseCharacter.maxHealth + 10,
-        health: baseCharacter.maxHealth + 10,
+        maxHealth: newMaxHealth,
+        health: newMaxHealth,
       };
 
       if (baseCharacter.maxMana !== undefined) {
-        updates.maxMana = baseCharacter.maxMana + 5;
-        updates.mana = baseCharacter.maxMana + 5;
+        updates.maxMana = newMaxResource;
+        updates.mana = newMaxResource;
       }
 
       if (baseCharacter.maxStamina !== undefined) {
-        updates.maxStamina = baseCharacter.maxStamina + 5;
-        updates.stamina = baseCharacter.maxStamina + 5;
+        updates.maxStamina = newMaxResource;
+        updates.stamina = newMaxResource;
       }
 
       setShowLevelUpModal(true);
@@ -191,7 +293,7 @@ export function useGameState(
     if (!enemy) return;
 
     // Player attacks enemy
-    const playerDamage = 10 + (character.equipment.weapon?.power || 0);
+    const playerDamage = calculateBasicAttackDamage(character);
     const newEnemyHealth = enemy.health - playerDamage;
 
     if (newEnemyHealth <= 0) {
@@ -200,10 +302,7 @@ export function useGameState(
     }
 
     // Enemy attacks player
-    const enemyDamage = Math.max(
-      0,
-      5 + (enemy.level * 2) - (character.equipment.armor?.power || 0)
-    );
+    const enemyDamage = calculateEnemyDamage(enemy, character);
     const newPlayerHealth = character.health - enemyDamage;
 
     if (newPlayerHealth <= 0) {
@@ -222,7 +321,7 @@ export function useGameState(
     // Check if player has enough mana
     if (character.mana < spell.manaCost) return;
 
-    const newEnemyHealth = enemy.health - spell.damage;
+    const newEnemyHealth = enemy.health - calculateSpellDamage(character, spell.damage);
     const newMana = character.mana - spell.manaCost;
 
     if (newEnemyHealth <= 0) {
@@ -231,10 +330,7 @@ export function useGameState(
     }
 
     // Enemy attacks player
-    const enemyDamage = Math.max(
-      0,
-      5 + (enemy.level * 2) - (character.equipment.armor?.power || 0)
-    );
+    const enemyDamage = calculateEnemyDamage(enemy, character);
     const newPlayerHealth = character.health - enemyDamage;
 
     if (newPlayerHealth <= 0) {
@@ -256,7 +352,7 @@ export function useGameState(
     // Check if player has enough stamina
     if (character.stamina < ability.staminaCost) return;
 
-    const newEnemyHealth = enemy.health - ability.damage;
+    const newEnemyHealth = enemy.health - calculateAbilityDamage(character, ability.damage);
     const newStamina = character.stamina - ability.staminaCost;
 
     if (newEnemyHealth <= 0) {
@@ -265,10 +361,7 @@ export function useGameState(
     }
 
     // Enemy attacks player
-    const enemyDamage = Math.max(
-      0,
-      5 + (enemy.level * 2) - (character.equipment.armor?.power || 0)
-    );
+    const enemyDamage = calculateEnemyDamage(enemy, character);
     const newPlayerHealth = character.health - enemyDamage;
 
     if (newPlayerHealth <= 0) {

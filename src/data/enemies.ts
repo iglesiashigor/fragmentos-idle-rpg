@@ -4,9 +4,9 @@ import { LOOT, RARE_ITEMS } from './items';
 const BOSS_TYPES = [
   {
     name: 'Dragão Ancião',
-    baseHealth: 200,
-    baseDamage: 50,
-    baseExp: 100,
+    baseHealth: 180,
+    baseDamage: 30,
+    baseExp: 120,
     loot: [
       { item: RARE_ITEMS[0], chance: 0.4 }, // Espada Lendária
       { item: RARE_ITEMS[1], chance: 0.3 }, // Armadura do Dragão
@@ -15,9 +15,9 @@ const BOSS_TYPES = [
   },
   {
     name: 'Lich Supremo',
-    baseHealth: 200,
-    baseDamage: 50,
-    baseExp: 100,
+    baseHealth: 160,
+    baseDamage: 34,
+    baseExp: 130,
     loot: [
       { item: RARE_ITEMS[2], chance: 0.4 }, // Cajado do Poder
       { item: RARE_ITEMS[3], chance: 0.3 }, // Manto das Sombras
@@ -26,9 +26,9 @@ const BOSS_TYPES = [
   },
   {
     name: 'Golem Ancestral',
-    baseHealth: 200,
-    baseDamage: 50,
-    baseExp: 100,
+    baseHealth: 220,
+    baseDamage: 26,
+    baseExp: 125,
     loot: [
       { item: RARE_ITEMS[4], chance: 0.4 }, // Martelo Titânico
       { item: RARE_ITEMS[5], chance: 0.3 }, // Armadura de Cristal
@@ -46,7 +46,7 @@ export function generateBoss(level: number): Enemy {
     .map(lootItem => lootItem.item);
 
   // Boss stats scale with level
-  const scalingFactor = 1 + (level * 0.5); // Stronger scaling for bosses
+  const scalingFactor = 1 + level * 0.35; // Stronger scaling for bosses
 
   return {
     name: bossType.name,
@@ -64,35 +64,39 @@ export function generateEnemy(level: number): Enemy {
   const types = [
     { 
       name: 'Goblim', 
-      baseHealth: 50, 
+      baseHealth: 42,
+      baseDamage: 8,
       baseLoot: [
         { item: LOOT[2], chance: 0.4 },
       ],
-      baseExp: 25 
+      baseExp: 28 
     },
     { 
       name: 'Lobo', 
-      baseHealth: 50, 
+      baseHealth: 36,
+      baseDamage: 10,
       baseLoot: [
         { item: LOOT[1], chance: 0.8 },
       ],
-      baseExp: 25 
+      baseExp: 24 
     },
     { 
       name: 'Bandido', 
-      baseHealth: 50, 
+      baseHealth: 46,
+      baseDamage: 9,
       baseLoot: [
         { item: LOOT[2], chance: 0.4 },
       ],
-      baseExp: 25 
+      baseExp: 30 
     },
     { 
       name: 'Ogros', 
-      baseHealth: 50, 
+      baseHealth: 58,
+      baseDamage: 12,
       baseLoot: [
         { item: LOOT[0], chance: 0.9 },
       ],
-      baseExp: 25 
+      baseExp: 35 
     },
   ];
 
@@ -105,8 +109,9 @@ export function generateEnemy(level: number): Enemy {
 
   return {
     name: enemyType.name,
-    health: enemyType.baseHealth + level * 20,
-    maxHealth: enemyType.baseHealth + level * 20,
+    health: enemyType.baseHealth + level * 22,
+    maxHealth: enemyType.baseHealth + level * 22,
+    damage: enemyType.baseDamage + level * 4,
     level,
     loot,
     experience: enemyType.baseExp * level,

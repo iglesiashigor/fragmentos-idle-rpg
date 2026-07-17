@@ -1,4 +1,9 @@
 import { Character, Spell, Ability } from '../types/game';
+import {
+  calculateAbilityBase,
+  calculateBasicAttackBase,
+  calculateSpellBase,
+} from '../utils/combatStats';
 
 interface CombatProps {
   player: Character;
@@ -14,6 +19,8 @@ interface CombatProps {
 }
 
 export function Combat({ player, enemy, onAttack, onCastSpell, onUseAbility }: CombatProps) {
+  const basicDamage = calculateBasicAttackBase(player);
+
   const hasResource = (cost: number, type: 'mana' | 'stamina') => {
     if (type === 'mana' && player.mana !== undefined) {
       return player.mana >= cost;
@@ -91,6 +98,7 @@ export function Combat({ player, enemy, onAttack, onCastSpell, onUseAbility }: C
           className="w-full py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600"
         >
           Ataque Básico
+          <span className="ml-2 text-red-100">~{basicDamage} dano</span>
         </button>
 
         {player.class.resourceType === 'mana' && player.spells.length > 0 && (
@@ -107,7 +115,9 @@ export function Combat({ player, enemy, onAttack, onCastSpell, onUseAbility }: C
                 }`}
               >
                 <div className="text-sm font-medium">{spell.name}</div>
-                <div className="text-xs">Dano: {spell.damage} | Mana: {spell.manaCost}</div>
+                <div className="text-xs">
+                  Dano: ~{calculateSpellBase(player, spell.damage)} | Mana: {spell.manaCost}
+                </div>
                 {spell.level > 1 && (
                   <div className="text-xs text-blue-200">Nível {spell.level}</div>
                 )}
@@ -130,7 +140,9 @@ export function Combat({ player, enemy, onAttack, onCastSpell, onUseAbility }: C
                 }`}
               >
                 <div className="text-sm font-medium">{ability.name}</div>
-                <div className="text-xs">Dano: {ability.damage} | Stamina: {ability.staminaCost}</div>
+                <div className="text-xs">
+                  Dano: ~{calculateAbilityBase(player, ability.damage)} | Stamina: {ability.staminaCost}
+                </div>
                 {ability.level > 1 && (
                   <div className="text-xs text-yellow-200">Nível {ability.level}</div>
                 )}

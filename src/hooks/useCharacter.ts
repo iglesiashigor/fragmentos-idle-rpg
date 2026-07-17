@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Character, Race, CharacterClass, DeadCharacter, Attributes } from '../types/game';
+import { calculateMaxHealth, calculateMaxResource } from '../utils/combatStats';
 
 export function useCharacter() {
   const [deadCharacters, setDeadCharacters] = useState<DeadCharacter[]>([]);
@@ -10,7 +11,6 @@ export function useCharacter() {
     characterClass: CharacterClass,
     attributes: Attributes
   ): Character => {
-    const maxHealth = characterClass.baseHealth + race.bonuses.health;
     const startingInventory = characterClass.startingEquipment.map(item => ({
       ...item,
       quantity: 1,
@@ -38,13 +38,13 @@ export function useCharacter() {
           stamina: characterClass.baseResource,
           maxStamina: characterClass.baseResource,
           mana: undefined,
-          maxMana: undefined,
-        };
+        maxMana: undefined,
+      };
 
-    return {
+    const baseCharacter = {
       name,
-      health: maxHealth,
-      maxHealth,
+      health: 1,
+      maxHealth: 1,
       ...resourceSetup,
       gold: characterClass.startingGold,
       equipment: {
@@ -59,6 +59,19 @@ export function useCharacter() {
       race,
       class: characterClass,
       attributes: finalAttributes,
+    };
+
+    const maxHealth = calculateMaxHealth(baseCharacter);
+    const maxResource = calculateMaxResource(baseCharacter);
+
+    return {
+      ...baseCharacter,
+      health: maxHealth,
+      maxHealth,
+      mana: characterClass.resourceType === 'mana' ? maxResource : undefined,
+      maxMana: characterClass.resourceType === 'mana' ? maxResource : undefined,
+      stamina: characterClass.resourceType === 'stamina' ? maxResource : undefined,
+      maxStamina: characterClass.resourceType === 'stamina' ? maxResource : undefined,
     };
   };
 
