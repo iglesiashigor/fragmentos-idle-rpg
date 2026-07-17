@@ -26,6 +26,10 @@ import {
   calculateMaxResource,
   calculateSpellDamage,
 } from '../utils/combatStats';
+import {
+  addItemToInventory,
+  canAddItemToInventory,
+} from '../utils/inventory';
 
 export function useGameState(
   initialCharacter: SavedCharacter,
@@ -210,15 +214,6 @@ export function useGameState(
     }
     
     setShowLevelUpModal(false);
-  };
-
-  const addItemToInventory = (item: Item, inventory = character.inventory) => {
-    const existingItem = inventory.find((i) => i.id === item.id);
-    return existingItem
-      ? inventory.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-        )
-      : [...inventory, { ...item, quantity: 1 }];
   };
 
   const getLevelUpUpdates = (
@@ -429,14 +424,9 @@ export function useGameState(
       const updatedInventory = [...rewardBaseCharacter.inventory];
       
       enemy.loot.forEach(lootItem => {
-        const existingItem = updatedInventory.find(item => item.id === lootItem.id);
-        if (existingItem) {
-          existingItem.quantity += 1;
-        } else {
-          updatedInventory.push({
-            ...lootItem,
-            quantity: 1
-          });
+        if (canAddItemToInventory(lootItem, updatedInventory)) {
+          const nextInventory = addItemToInventory(lootItem, updatedInventory);
+          updatedInventory.splice(0, updatedInventory.length, ...nextInventory);
         }
       });
       
@@ -501,14 +491,11 @@ export function useGameState(
   };
 
   const handleBuyItem = (item: Item) => {
-    if (character.gold >= item.price) {
-      const existingItem = character.inventory.find((i) => i.id === item.id);
-
-      const updatedInventory = existingItem
-        ? character.inventory.map((i) =>
-            i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
-          )
-        : [...character.inventory, { ...item, quantity: 1 }];
+    if (
+      character.gold >= item.price &&
+      canAddItemToInventory(item, character.inventory)
+    ) {
+      const updatedInventory = addItemToInventory(item, character.inventory);
 
       updateCharacter({
         gold: character.gold - item.price,
@@ -519,19 +506,36 @@ export function useGameState(
 
   const handleSellItem = (item: InventoryItem) => {
     const sellPrice = Math.floor(item.price * 0.7);
+    const isSameInventoryItem = (
+      first: InventoryItem,
+      second: InventoryItem
+    ) =>
+      first.instanceId && second.instanceId
+        ? first.instanceId === second.instanceId
+        : first.id === second.id;
     
     // Check if the item is currently equipped
     const updatedEquipment = { ...character.equipment };
-    if (item.type === 'weapon' && character.equipment.weapon?.id === item.id) {
+    if (
+      item.type === 'weapon' &&
+      character.equipment.weapon &&
+      isSameInventoryItem(character.equipment.weapon, item)
+    ) {
       updatedEquipment.weapon = null;
-    } else if (item.type === 'armor' && character.equipment.armor?.id === item.id) {
+    } else if (
+      item.type === 'armor' &&
+      character.equipment.armor &&
+      isSameInventoryItem(character.equipment.armor, item)
+    ) {
       updatedEquipment.armor = null;
     }
 
     // Update inventory
+    let removedItem = false;
     const updatedInventory = character.inventory
       .map((i) => {
-        if (i.id === item.id) {
+        if (!removedItem && isSameInventoryItem(i, item)) {
+          removedItem = true;
           return { ...i, quantity: i.quantity - 1, equipped: false };
         }
         return i;
@@ -549,9 +553,12 @@ export function useGameState(
     if (!randomEventReward || !currentLocation) return;
 
     if (randomEventReward.type === 'item') {
-      updateCharacter({
-        inventory: addItemToInventory(randomEventReward.reward as Item),
-      });
+      const rewardItem = randomEventReward.reward as Item;
+      if (canAddItemToInventory(rewardItem, character.inventory)) {
+        updateCharacter({
+          inventory: addItemToInventory(rewardItem, character.inventory),
+        });
+      }
     } else if (character.class.resourceType === 'mana') {
       const spell = randomEventReward.reward as Spell;
       const existingSpell = character.spells.find((s) => s.id === spell.id);

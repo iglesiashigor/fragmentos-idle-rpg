@@ -20,15 +20,23 @@ interface GameContentProps {
 export function GameContent({ character: initialCharacter, onCharacterUpdate, onLogout, onCreateNew }: GameContentProps) {
   const gameState = useGameState(initialCharacter, onCharacterUpdate);
 
+  const isSameInventoryItem = (
+    first: InventoryItem,
+    second: InventoryItem
+  ) =>
+    first.instanceId && second.instanceId
+      ? first.instanceId === second.instanceId
+      : first.id === second.id;
+
   const handleEquipItem = (item: InventoryItem) => {
     const slot = item.type === 'weapon' ? 'weapon' : 'armor';
     const currentEquipped = gameState.character.equipment[slot];
 
     const updatedInventory = gameState.character.inventory.map(invItem => {
-      if (invItem.id === item.id) {
+      if (isSameInventoryItem(invItem, item)) {
         return { ...invItem, equipped: true };
       }
-      if (currentEquipped && invItem.id === currentEquipped.id) {
+      if (currentEquipped && isSameInventoryItem(invItem, currentEquipped)) {
         return { ...invItem, equipped: false };
       }
       return invItem;
@@ -50,7 +58,9 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
     if (!currentEquipped) return;
 
     const updatedInventory = gameState.character.inventory.map(item => 
-      item.id === currentEquipped.id ? { ...item, equipped: false } : item
+      isSameInventoryItem(item, currentEquipped)
+        ? { ...item, equipped: false }
+        : item
     );
 
     const updatedEquipment = {

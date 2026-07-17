@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ARMORS, POTIONS, WEAPONS } from '../data/items';
 import { InventoryItem, Item } from '../types/game';
+import { canAddItemToInventory } from '../utils/inventory';
 import { Inn } from './Inn';
 
 interface TownProps {
@@ -70,9 +71,27 @@ export function Town({
         </div>
       ) : (
         <div className="space-y-6">
-          <ShopSection title="Armas" items={WEAPONS} gold={gold} onBuyItem={onBuyItem} />
-          <ShopSection title="Armaduras" items={ARMORS} gold={gold} onBuyItem={onBuyItem} />
-          <ShopSection title="Poções" items={POTIONS} gold={gold} onBuyItem={onBuyItem} />
+          <ShopSection
+            title="Armas"
+            items={WEAPONS}
+            gold={gold}
+            inventory={inventory}
+            onBuyItem={onBuyItem}
+          />
+          <ShopSection
+            title="Armaduras"
+            items={ARMORS}
+            gold={gold}
+            inventory={inventory}
+            onBuyItem={onBuyItem}
+          />
+          <ShopSection
+            title="Poções"
+            items={POTIONS}
+            gold={gold}
+            inventory={inventory}
+            onBuyItem={onBuyItem}
+          />
         </div>
       )}
     </div>
@@ -106,11 +125,13 @@ function ShopSection({
   title,
   items,
   gold,
+  inventory,
   onBuyItem,
 }: {
   title: string;
   items: Item[];
   gold: number;
+  inventory: InventoryItem[];
   onBuyItem: (item: Item) => void;
 }) {
   return (
@@ -121,7 +142,7 @@ function ShopSection({
           <button
             key={item.id}
             onClick={() => onBuyItem(item)}
-            disabled={gold < item.price}
+            disabled={gold < item.price || !canAddItemToInventory(item, inventory)}
             className="rpg-item rounded-lg text-left disabled:cursor-not-allowed disabled:opacity-50"
           >
             <div className="font-bold text-stone-950">{item.name}</div>

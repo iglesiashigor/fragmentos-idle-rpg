@@ -14,8 +14,13 @@ export function useCharacter() {
     const startingInventory = characterClass.startingEquipment.map(item => ({
       ...item,
       quantity: 1,
+      instanceId: crypto.randomUUID(),
       equipped: item.type === 'weapon' || item.type === 'armor',
     }));
+    const startingWeapon =
+      startingInventory.find((item) => item.type === 'weapon') || null;
+    const startingArmor =
+      startingInventory.find((item) => item.type === 'armor') || null;
     
     // Apply class modifiers to attributes
     const finalAttributes = {
@@ -48,8 +53,8 @@ export function useCharacter() {
       ...resourceSetup,
       gold: characterClass.startingGold,
       equipment: {
-        weapon: characterClass.startingEquipment.find(item => item.type === 'weapon') || null,
-        armor: characterClass.startingEquipment.find(item => item.type === 'armor') || null,
+        weapon: startingWeapon,
+        armor: startingArmor,
       },
       spells: characterClass.startingSpells,
       abilities: characterClass.startingAbilities,

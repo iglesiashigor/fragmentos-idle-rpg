@@ -68,11 +68,12 @@ export interface Item {
 export interface InventoryItem extends Item {
   quantity: number;
   equipped?: boolean;
+  instanceId?: string;
 }
 
 export interface Equipment {
-  weapon: Item | null;
-  armor: Item | null;
+  weapon: InventoryItem | null;
+  armor: InventoryItem | null;
 }
 
 export interface Spell {

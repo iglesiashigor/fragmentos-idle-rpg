@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { FlaskRound as Flask, Package, Shield, Sword } from 'lucide-react';
 import { Equipment, InventoryItem } from '../../types/game';
+import { MAX_INVENTORY_SLOTS } from '../../utils/inventory';
 
 interface InventoryPanelProps {
   inventory: InventoryItem[];
@@ -20,7 +21,14 @@ export function InventoryPanel({
   onUsePotion,
 }: InventoryPanelProps) {
   const bagItems = inventory;
-  const emptySlots = Math.max(0, 24 - bagItems.length);
+  const emptySlots = Math.max(0, MAX_INVENTORY_SLOTS - bagItems.length);
+  const isSameInventoryItem = (
+    first: InventoryItem,
+    second: InventoryItem
+  ) =>
+    first.instanceId && second.instanceId
+      ? first.instanceId === second.instanceId
+      : first.id === second.id;
 
   return (
     <div className="rpg-panel rounded-lg p-5">
@@ -32,7 +40,7 @@ export function InventoryPanel({
           </p>
         </div>
         <div className="rounded-md bg-stone-900 px-3 py-1 text-sm font-bold text-amber-300">
-          {bagItems.length}/24
+          {bagItems.length}/{MAX_INVENTORY_SLOTS}
         </div>
       </div>
 
@@ -63,9 +71,10 @@ export function InventoryPanel({
           <BagSlot
             key={item.id}
             item={item}
-            equipped={
-              equipment.weapon?.id === item.id || equipment.armor?.id === item.id
-            }
+            equipped={Boolean(
+              (equipment.weapon && isSameInventoryItem(equipment.weapon, item)) ||
+              (equipment.armor && isSameInventoryItem(equipment.armor, item))
+            )}
             onEquipItem={onEquipItem}
             onUsePotion={onUsePotion}
           />
