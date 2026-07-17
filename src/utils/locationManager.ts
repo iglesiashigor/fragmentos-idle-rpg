@@ -16,13 +16,35 @@ export function generateEventId(): string {
 export function generateRandomLocation(): MapLocation {
   const x = 20 + Math.random() * 60; // Keep within 20-80% of map
   const y = 20 + Math.random() * 60;
+  const eventRoll = Math.random();
   
-  // Only generate events if we're below MAX_EVENTS
-  // and there's a 10% chance
-  if (Math.random() < 0.1) {
+  if (eventRoll < 0.12) {
+    const pools = ['forest', 'quarry', 'grove', 'ruins'];
+    const resourcePool = pools[Math.floor(Math.random() * pools.length)];
+    const names: Record<string, string> = {
+      forest: 'Bosque Antigo',
+      quarry: 'Pedreira',
+      grove: 'Clareira de Ervas',
+      ruins: 'Ruinas Abandonadas',
+    };
+    return {
+      id: generateEventId(),
+      type: 'gathering',
+      eventKind: 'gathering',
+      resourcePool,
+      x,
+      y,
+      name: names[resourcePool],
+      level: Math.floor(Math.random() * 3) + 1,
+    };
+  }
+
+  // Only generate rare events if we're below MAX_EVENTS
+  if (eventRoll < 0.2) {
     return {
       id: generateEventId(),
       type: 'event',
+      eventKind: 'discovery',
       x,
       y,
       name: 'Evento Misterioso',

@@ -69,7 +69,7 @@ export function InventoryPanel({
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
         {bagItems.map((item) => (
           <BagSlot
-            key={item.id}
+            key={item.instanceId || item.id}
             item={item}
             equipped={Boolean(
               (equipment.weapon && isSameInventoryItem(equipment.weapon, item)) ||
@@ -170,7 +170,8 @@ function BagSlot({
             {item.type === 'weapon' && `Poder ${item.power || 0}`}
             {item.type === 'armor' && `Defesa ${item.power || 0}`}
             {item.type === 'potion' && 'Poção'}
-            {item.type === 'loot' && `${item.price} ouro`}
+            {item.type === 'loot' &&
+              (item.resourceCategory ? 'Recurso' : `${item.price} ouro`)}
           </div>
         </div>
       </div>

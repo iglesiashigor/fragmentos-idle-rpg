@@ -1,5 +1,6 @@
 import { Enemy } from '../types/game';
 import { LOOT, RARE_ITEMS } from './items';
+import { RESOURCE_BY_ID } from './resources';
 
 const BOSS_TYPES = [
   {
@@ -68,6 +69,7 @@ export function generateEnemy(level: number): Enemy {
       baseDamage: 8,
       baseLoot: [
         { item: LOOT[2], chance: 0.4 },
+        { item: RESOURCE_BY_ID.fiber, chance: 0.35 },
       ],
       baseExp: 28 
     },
@@ -77,6 +79,7 @@ export function generateEnemy(level: number): Enemy {
       baseDamage: 10,
       baseLoot: [
         { item: LOOT[1], chance: 0.8 },
+        { item: RESOURCE_BY_ID.hide, chance: 0.75 },
       ],
       baseExp: 24 
     },
@@ -86,6 +89,7 @@ export function generateEnemy(level: number): Enemy {
       baseDamage: 9,
       baseLoot: [
         { item: LOOT[2], chance: 0.4 },
+        { item: RESOURCE_BY_ID.wood, chance: 0.45 },
       ],
       baseExp: 30 
     },
@@ -95,6 +99,7 @@ export function generateEnemy(level: number): Enemy {
       baseDamage: 12,
       baseLoot: [
         { item: LOOT[0], chance: 0.9 },
+        { item: RESOURCE_BY_ID.stone, chance: 0.5 },
       ],
       baseExp: 35 
     },

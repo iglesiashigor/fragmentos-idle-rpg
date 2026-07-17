@@ -8,6 +8,7 @@ import {
   InventoryItem,
   Attributes,
   Ability,
+  Quest,
 } from '../types/game';
 import { generateEnemy } from '../data/enemies';
 import {
@@ -16,7 +17,11 @@ import {
   MAX_ENEMIES,
   MAX_EVENTS,
 } from '../utils/locationManager';
-import { generateRandomEvent } from '../utils/randomEvents';
+import {
+  generateGatheringEvent,
+  generateRandomEvent,
+  RandomEventReward,
+} from '../utils/randomEvents';
 import { calculateRequiredExperience, checkLevelUp } from '../utils/experience';
 import {
   calculateAbilityDamage,
@@ -29,7 +34,20 @@ import {
 import {
   addItemToInventory,
   canAddItemToInventory,
+  hasMaterials,
+  removeMaterialsFromInventory,
 } from '../utils/inventory';
+import {
+  createActiveQuest,
+  isQuestReadyToClaim,
+  updateQuestsForCollect,
+  updateQuestsForKill,
+} from '../utils/questManager';
+import {
+  CraftingRecipe,
+  getEquipmentUpgradeCost,
+  MAX_EQUIPMENT_UPGRADE,
+} from '../data/recipes';
 
 export function useGameState(
   initialCharacter: SavedCharacter,
@@ -44,6 +62,8 @@ export function useGameState(
         : 1;
     const normalizedCharacter: SavedCharacter = {
       ...savedCharacter,
+      quests: savedCharacter.quests || [],
+      completedQuestIds: savedCharacter.completedQuestIds || [],
       maxHealth,
       health:
         savedCharacter.health <= 0
@@ -88,7 +108,7 @@ export function useGameState(
   const [randomEventReward, setRandomEventReward] = useState<{
     type: 'spell' | 'item';
     reward: Spell | Item;
-  } | null>(null);
+  } | RandomEventReward | null>(null);
   const [showDeathModal, setShowDeathModal] = useState(false);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [attributePoints, setAttributePoints] = useState(0);
@@ -275,10 +295,16 @@ export function useGameState(
         )
       );
       setShowRandomEvent(true);
+    } else if (location.type === 'gathering') {
+      setEnemy(null);
+      setRandomEventReward(
+        generateGatheringEvent(location.level || 1, location.resourcePool)
+      );
+      setShowRandomEvent(true);
     } else {
       setEnemy(null);
     }
-    if (location.type !== 'event') {
+    if (location.type !== 'event' && location.type !== 'gathering') {
       setShowRandomEvent(false);
       setRandomEventReward(null);
     }
@@ -386,7 +412,7 @@ export function useGameState(
       ).length;
       
       const newEventCount = remainingLocations.filter(
-        (loc) => loc.type === 'event'
+        (loc) => loc.type === 'event' || loc.type === 'gathering'
       ).length;
 
       const newLocations = [...remainingLocations];
@@ -395,7 +421,11 @@ export function useGameState(
       if (newEnemyCount < MAX_ENEMIES) {
         const newLocation = generateRandomLocation();
         // Only add if it's an enemy or if we have room for more events
-        if (newLocation.type === 'enemy' || (newLocation.type === 'event' && newEventCount < MAX_EVENTS)) {
+        if (
+          newLocation.type === 'enemy' ||
+          ((newLocation.type === 'event' || newLocation.type === 'gathering') &&
+            newEventCount < MAX_EVENTS)
+        ) {
           newLocations.push(newLocation);
         }
       }
@@ -420,6 +450,8 @@ export function useGameState(
     };
 
     // Add loot items to inventory
+    let collectedItems: { itemId: string; quantity: number }[] = [];
+
     if (enemy.loot && enemy.loot.length > 0) {
       const updatedInventory = [...rewardBaseCharacter.inventory];
       
@@ -427,11 +459,21 @@ export function useGameState(
         if (canAddItemToInventory(lootItem, updatedInventory)) {
           const nextInventory = addItemToInventory(lootItem, updatedInventory);
           updatedInventory.splice(0, updatedInventory.length, ...nextInventory);
+          collectedItems = [
+            ...collectedItems,
+            { itemId: lootItem.id, quantity: 1 },
+          ];
         }
       });
       
       updates.inventory = updatedInventory;
     }
+
+    const activeQuests = rewardBaseCharacter.quests || [];
+    updates.quests = updateQuestsForCollect(
+      updateQuestsForKill(activeQuests, enemy.name),
+      collectedItems
+    );
 
     const updatedCharacter = {
       ...rewardBaseCharacter,
@@ -552,7 +594,22 @@ export function useGameState(
   const handleClaimRandomEvent = () => {
     if (!randomEventReward || !currentLocation) return;
 
-    if (randomEventReward.type === 'item') {
+    if (randomEventReward.type === 'resource') {
+      let updatedInventory = [...character.inventory];
+      const collectedItems: { itemId: string; quantity: number }[] = [];
+
+      randomEventReward.rewards.forEach(({ item, quantity }) => {
+        if (canAddItemToInventory(item, updatedInventory)) {
+          updatedInventory = addItemToInventory(item, updatedInventory, quantity);
+          collectedItems.push({ itemId: item.id, quantity });
+        }
+      });
+
+      updateCharacter({
+        inventory: updatedInventory,
+        quests: updateQuestsForCollect(character.quests || [], collectedItems),
+      });
+    } else if (randomEventReward.type === 'item') {
       const rewardItem = randomEventReward.reward as Item;
       if (canAddItemToInventory(rewardItem, character.inventory)) {
         updateCharacter({
@@ -585,6 +642,135 @@ export function useGameState(
     setCurrentLocation(null);
   };
 
+  const handleAcceptQuest = (quest: Quest) => {
+    if ((character.quests || []).some((activeQuest) => activeQuest.id === quest.id)) {
+      return;
+    }
+
+    updateCharacter({
+      quests: [
+        ...(character.quests || []),
+        createActiveQuest(quest, character.inventory),
+      ],
+    });
+  };
+
+  const handleClaimQuestReward = (quest: Quest) => {
+    if (!isQuestReadyToClaim(quest)) return;
+
+    const remainingQuests = (character.quests || []).filter(
+      (activeQuest) => activeQuest.id !== quest.id
+    );
+    const rewardInventory = [...character.inventory];
+
+    (quest.rewards.items || []).forEach((item) => {
+      if (canAddItemToInventory(item, rewardInventory)) {
+        const updatedInventory = addItemToInventory(item, rewardInventory);
+        rewardInventory.splice(0, rewardInventory.length, ...updatedInventory);
+      }
+    });
+
+    const rewardedCharacter = {
+      ...character,
+      gold: character.gold + quest.rewards.gold,
+      experience: character.experience + quest.rewards.experience,
+      inventory: rewardInventory,
+      quests: remainingQuests,
+      completedQuestIds: [...(character.completedQuestIds || []), quest.id],
+    };
+    const levelUpUpdates = getLevelUpUpdates(
+      rewardedCharacter,
+      rewardedCharacter.experience
+    );
+
+    updateCharacter({
+      gold: rewardedCharacter.gold,
+      experience: rewardedCharacter.experience,
+      inventory: rewardInventory,
+      quests: remainingQuests,
+      completedQuestIds: rewardedCharacter.completedQuestIds,
+      ...levelUpUpdates,
+    });
+  };
+
+  const handleCraftRecipe = (recipe: CraftingRecipe) => {
+    if (
+      character.gold < recipe.goldCost ||
+      !hasMaterials(character.inventory, recipe.materials) ||
+      !canAddItemToInventory(recipe.result, character.inventory)
+    ) {
+      return;
+    }
+
+    const inventoryWithoutMaterials = removeMaterialsFromInventory(
+      character.inventory,
+      recipe.materials
+    );
+    const updatedInventory = addItemToInventory(
+      recipe.result,
+      inventoryWithoutMaterials,
+      recipe.quantity
+    );
+
+    updateCharacter({
+      gold: character.gold - recipe.goldCost,
+      inventory: updatedInventory,
+    });
+  };
+
+  const handleUpgradeItem = (item: InventoryItem) => {
+    if (item.type !== 'weapon' && item.type !== 'armor') return;
+    if ((item.upgradeLevel || 0) >= MAX_EQUIPMENT_UPGRADE) return;
+
+    const cost = getEquipmentUpgradeCost(item);
+    if (character.gold < cost.goldCost || !hasMaterials(character.inventory, cost.materials)) {
+      return;
+    }
+
+    const nextUpgradeLevel = (item.upgradeLevel || 0) + 1;
+    const baseName = item.name.replace(/\s\+\d+$/, '');
+    const upgradedItem: InventoryItem = {
+      ...item,
+      name: `${baseName} +${nextUpgradeLevel}`,
+      power: (item.power || 0) + 2,
+      upgradeLevel: nextUpgradeLevel,
+    };
+    const isSameInventoryItem = (
+      first: InventoryItem,
+      second: InventoryItem
+    ) =>
+      first.instanceId && second.instanceId
+        ? first.instanceId === second.instanceId
+        : first.id === second.id;
+    const inventoryWithoutMaterials = removeMaterialsFromInventory(
+      character.inventory,
+      cost.materials
+    );
+    const updatedInventory = inventoryWithoutMaterials.map((inventoryItem) =>
+      isSameInventoryItem(inventoryItem, item) ? upgradedItem : inventoryItem
+    );
+    const updatedEquipment = { ...character.equipment };
+
+    if (
+      character.equipment.weapon &&
+      isSameInventoryItem(character.equipment.weapon, item)
+    ) {
+      updatedEquipment.weapon = upgradedItem;
+    }
+    if (
+      character.equipment.armor &&
+      isSameInventoryItem(character.equipment.armor, item)
+    ) {
+      updatedEquipment.armor = upgradedItem;
+    }
+
+    updateCharacter({
+      gold: character.gold - cost.goldCost,
+      inventory: updatedInventory,
+      equipment: updatedEquipment,
+    });
+  };
+
   return {
     character,
     currentLocation,
@@ -605,6 +791,10 @@ export function useGameState(
     handleBuyItem,
     handleSellItem,
     handleClaimRandomEvent,
+    handleAcceptQuest,
+    handleClaimQuestReward,
+    handleCraftRecipe,
+    handleUpgradeItem,
     handleAttributeIncrease,
     handleSpellSelect,
     handleAbilitySelect,

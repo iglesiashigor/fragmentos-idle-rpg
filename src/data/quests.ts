@@ -1,0 +1,51 @@
+import { Quest } from '../types/game';
+
+export const QUESTS: Quest[] = [
+  {
+    id: 'hunter_start',
+    name: 'Limpar a Trilha',
+    description: 'Derrote criaturas que ameacam a estrada proxima da cidade.',
+    type: 'kill',
+    requirements: { level: 1 },
+    objectives: [{ target: 'any_enemy', label: 'Inimigos derrotados', amount: 3, current: 0 }],
+    rewards: { gold: 60, experience: 45 },
+    status: 'available',
+  },
+  {
+    id: 'wolf_pelts',
+    name: 'Lobos na Cerca',
+    description: 'Os fazendeiros precisam que voce reduza a ameaca dos lobos.',
+    type: 'kill',
+    requirements: { level: 2, previousQuests: ['hunter_start'] },
+    objectives: [{ target: 'Lobo', label: 'Lobos derrotados', amount: 2, current: 0 }],
+    rewards: { gold: 90, experience: 70 },
+    status: 'available',
+  },
+  {
+    id: 'forest_supplies',
+    name: 'Suprimentos do Bosque',
+    description: 'Colete materiais simples para manter a cidade abastecida.',
+    type: 'collect',
+    requirements: { level: 1 },
+    objectives: [
+      { target: 'wood', label: 'Madeira coletada', amount: 5, current: 0 },
+      { target: 'herb', label: 'Ervas coletadas', amount: 3, current: 0 },
+    ],
+    rewards: { gold: 70, experience: 55 },
+    status: 'available',
+  },
+  {
+    id: 'blacksmith_order',
+    name: 'Pedido do Ferreiro',
+    description: 'Traga pedra e minerio para o ferreiro preparar novos reforcos.',
+    type: 'collect',
+    requirements: { level: 2, previousQuests: ['forest_supplies'] },
+    objectives: [
+      { target: 'stone', label: 'Pedras coletadas', amount: 4, current: 0 },
+      { target: 'iron_ore', label: 'Minerio coletado', amount: 2, current: 0 },
+    ],
+    rewards: { gold: 110, experience: 85 },
+    status: 'available',
+  },
+];
+

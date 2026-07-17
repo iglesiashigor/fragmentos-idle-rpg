@@ -168,6 +168,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                 </h2>
                 {gameState.currentLocation.type === 'town' ? (
                   <Town
+                    character={gameState.character}
                     gold={gameState.character.gold}
                     inventory={gameState.character.inventory}
                     currentHealth={gameState.character.health}
@@ -175,6 +176,10 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                     onBuyItem={gameState.handleBuyItem}
                     onSellItem={gameState.handleSellItem}
                     onRest={gameState.handleRest}
+                    onAcceptQuest={gameState.handleAcceptQuest}
+                    onClaimQuestReward={gameState.handleClaimQuestReward}
+                    onCraftRecipe={gameState.handleCraftRecipe}
+                    onUpgradeItem={gameState.handleUpgradeItem}
                   />
                 ) : (
                   gameState.enemy && (

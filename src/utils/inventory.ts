@@ -23,7 +23,8 @@ export function canAddItemToInventory(item: Item, inventory: InventoryItem[]) {
 
 export function addItemToInventory(
   item: Item,
-  inventory: InventoryItem[]
+  inventory: InventoryItem[],
+  quantity = 1
 ): InventoryItem[] {
   if (isStackableItem(item)) {
     const existingItem = inventory.find(
@@ -33,7 +34,7 @@ export function addItemToInventory(
     if (existingItem) {
       return inventory.map((inventoryItem) =>
         inventoryItem.id === item.id
-          ? { ...inventoryItem, quantity: inventoryItem.quantity + 1 }
+          ? { ...inventoryItem, quantity: inventoryItem.quantity + quantity }
           : inventoryItem
       );
     }
@@ -47,8 +48,34 @@ export function addItemToInventory(
     ...inventory,
     {
       ...item,
-      quantity: 1,
+      quantity: isStackableItem(item) ? quantity : 1,
       instanceId: isStackableItem(item) ? undefined : crypto.randomUUID(),
     },
   ];
+}
+
+export function getItemQuantity(inventory: InventoryItem[], itemId: string) {
+  return inventory.find((item) => item.id === itemId)?.quantity || 0;
+}
+
+export function hasMaterials(
+  inventory: InventoryItem[],
+  materials: { itemId: string; quantity: number }[]
+) {
+  return materials.every(
+    (material) => getItemQuantity(inventory, material.itemId) >= material.quantity
+  );
+}
+
+export function removeMaterialsFromInventory(
+  inventory: InventoryItem[],
+  materials: { itemId: string; quantity: number }[]
+) {
+  return inventory
+    .map((item) => {
+      const material = materials.find((cost) => cost.itemId === item.id);
+      if (!material) return item;
+      return { ...item, quantity: item.quantity - material.quantity };
+    })
+    .filter((item) => item.quantity > 0);
 }

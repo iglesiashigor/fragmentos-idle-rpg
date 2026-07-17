@@ -1,4 +1,5 @@
 import { Item, Spell } from '../types/game';
+import { RESOURCE_BY_ID, RESOURCE_POOLS } from '../data/resources';
 
 export const RARE_WEAPONS: Item[] = [
   {
@@ -38,10 +39,20 @@ export const RARE_SPELLS: Spell[] = [
   },
 ];
 
+export interface GatheringReward {
+  type: 'resource';
+  sourceName: string;
+  rewards: { item: Item; quantity: number }[];
+}
+
+export type RandomEventReward =
+  | { type: 'spell' | 'item'; reward: Spell | Item }
+  | GatheringReward;
+
 export function generateRandomEvent(
   level: number,
   allowSpells = true
-): { type: 'spell' | 'item'; reward: Spell | Item } {
+): RandomEventReward {
   const isSpell = allowSpells && Math.random() > 0.5;
   
   if (isSpell) {
@@ -62,5 +73,24 @@ export function generateRandomEvent(
       ...item,
       power: (item.power || 0) + level * 2,
     },
+  };
+}
+
+export function generateGatheringEvent(
+  level: number,
+  resourcePool = 'forest'
+): GatheringReward {
+  const pool = RESOURCE_POOLS[resourcePool] || RESOURCE_POOLS.forest;
+  const rewards = pool.items
+    .map((itemId) => ({
+      item: RESOURCE_BY_ID[itemId],
+      quantity: Math.max(1, Math.floor(Math.random() * 2) + level),
+    }))
+    .filter((reward) => Boolean(reward.item));
+
+  return {
+    type: 'resource',
+    sourceName: pool.name,
+    rewards,
   };
 }

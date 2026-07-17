@@ -1,5 +1,5 @@
 import { MapLocation } from '../types/game';
-import { Sword, Home, Sparkles } from 'lucide-react';
+import { Hammer, Home, Sparkles, Sword } from 'lucide-react';
 
 interface GameMapProps {
   locations: MapLocation[];
@@ -19,7 +19,9 @@ export function GameMap({ locations, onLocationSelect }: GameMapProps) {
               ? 'bg-red-700 text-white shadow-red-950/50'
               : location.type === 'event'
                 ? 'bg-amber-500 text-stone-950 shadow-amber-950/30'
-                : 'bg-sky-700 text-white shadow-sky-950/40'
+                : location.type === 'gathering'
+                  ? 'bg-emerald-500 text-stone-950 shadow-emerald-950/30'
+                  : 'bg-sky-700 text-white shadow-sky-950/40'
           }`}
           style={{ left: `${location.x}%`, top: `${location.y}%` }}
           onClick={() => onLocationSelect(location)}
@@ -29,6 +31,8 @@ export function GameMap({ locations, onLocationSelect }: GameMapProps) {
             <Sword className="w-6 h-6" />
           ) : location.type === 'event' ? (
             <Sparkles className="w-6 h-6" />
+          ) : location.type === 'gathering' ? (
+            <Hammer className="w-6 h-6" />
           ) : (
             <Home className="w-6 h-6" />
           )}

@@ -57,6 +57,7 @@ export interface Item {
   manaRestore?: number;
   staminaRestore?: number;
   duration?: number;
+  resourceCategory?: 'wood' | 'herb' | 'stone' | 'ore' | 'hide' | 'fiber';
   rarity?: 'common' | 'rare' | 'epic' | 'legendary';
   requirements?: {
     level?: number;
@@ -69,6 +70,7 @@ export interface InventoryItem extends Item {
   quantity: number;
   equipped?: boolean;
   instanceId?: string;
+  upgradeLevel?: number;
 }
 
 export interface Equipment {
@@ -140,6 +142,8 @@ export interface Character {
   attributes: Attributes;
   effects?: StatusEffect[];
   skills?: Skill[];
+  quests?: Quest[];
+  completedQuestIds?: string[];
 }
 
 export interface SavedCharacter extends Character {
@@ -186,11 +190,13 @@ export interface EnemyAbility {
 
 export interface MapLocation {
   id: string;
-  type: 'town' | 'enemy' | 'event' | 'dungeon' | 'shop' | 'quest';
+  type: 'town' | 'enemy' | 'event' | 'gathering' | 'dungeon' | 'shop' | 'quest';
   name: string;
   x: number;
   y: number;
   level?: number;
+  eventKind?: 'discovery' | 'gathering';
+  resourcePool?: string;
   requirements?: {
     level?: number;
     quest?: string;
@@ -214,6 +220,7 @@ export interface Quest {
   };
   objectives: {
     target: string;
+    label?: string;
     amount: number;
     current: number;
   }[];

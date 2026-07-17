@@ -64,6 +64,8 @@ export function useCharacter() {
       race,
       class: characterClass,
       attributes: finalAttributes,
+      quests: [],
+      completedQuestIds: [],
     };
 
     const maxHealth = calculateMaxHealth(baseCharacter);
