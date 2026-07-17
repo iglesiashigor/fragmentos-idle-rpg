@@ -60,8 +60,8 @@ export function LevelUpModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full">
+    <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div className="relative z-[101] bg-white rounded-lg p-6 max-w-md w-full">
         <div className="flex items-center gap-2 mb-6">
           {isEvenLevel ? (
             <Sparkles className="w-6 h-6 text-yellow-500" />
