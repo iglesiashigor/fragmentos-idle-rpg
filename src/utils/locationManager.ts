@@ -13,9 +13,25 @@ export function generateEventId(): string {
   return `event_${lastEventId}_${Date.now()}`;
 }
 
+function randomMapPosition() {
+  return {
+    x: 20 + Math.random() * 60,
+    y: 20 + Math.random() * 60,
+  };
+}
+
+export function generateRandomEnemyLocation(): MapLocation {
+  return {
+    id: generateEnemyId(),
+    type: 'enemy',
+    ...randomMapPosition(),
+    name: 'Inimigo Desconhecido',
+    level: Math.floor(Math.random() * 3) + 1,
+  };
+}
+
 export function generateRandomLocation(): MapLocation {
-  const x = 20 + Math.random() * 60; // Keep within 20-80% of map
-  const y = 20 + Math.random() * 60;
+  const { x, y } = randomMapPosition();
   const eventRoll = Math.random();
   
   if (eventRoll < 0.12) {
@@ -52,14 +68,7 @@ export function generateRandomLocation(): MapLocation {
     };
   }
 
-  return {
-    id: generateEnemyId(),
-    type: 'enemy',
-    x,
-    y,
-    name: 'Inimigo Desconhecido',
-    level: Math.floor(Math.random() * 3) + 1,
-  };
+  return generateRandomEnemyLocation();
 }
 
 export const MAX_ENEMIES = 5;
