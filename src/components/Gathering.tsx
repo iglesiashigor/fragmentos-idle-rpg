@@ -66,12 +66,12 @@ export function Gathering({
       </div>
 
       {!isKnownResourcePool ? (
-        <WarningBox text="Este ponto de coleta ainda n?o tem uma profiss?o associada." />
+        <WarningBox text="Este ponto de coleta ainda não tem uma profissão associada." />
       ) : isDepleted ? (
         <WarningBox text={`Este ponto esgotou. Volte em ${resetMinutes} min.`} />
       ) : (
         <div className="mb-4 rounded-md border border-emerald-200 bg-white p-4 text-sm font-semibold text-emerald-800">
-          {requiredProfession?.name} Nv. {professionLevel}: colete para ganhar recursos e XP de profiss?o.
+          {requiredProfession?.name} Nv. {professionLevel}: colete para ganhar recursos e XP de profissão.
           <div className="mt-2 text-stone-600">
             Coletas restantes: {effectiveRemaining}
           </div>

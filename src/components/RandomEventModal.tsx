@@ -31,8 +31,8 @@ export function RandomEventModal({ reward, onClaim }: RandomEventModalProps) {
             <h2 className="text-2xl font-black text-stone-950">Descoberta Especial!</h2>
             <p className="text-sm font-semibold text-stone-500">
               {isResource
-                ? `Voc? coletou recursos em ${reward.sourceName}.`
-                : `Voc? encontrou ${isSpell ? 'uma nova magia' : 'um item raro'}.`}
+                ? `Você coletou recursos em ${reward.sourceName}.`
+                : `Você encontrou ${isSpell ? 'uma nova magia' : 'um item raro'}.`}
             </p>
           </div>
         </div>

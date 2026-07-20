@@ -5,19 +5,19 @@ import { RESOURCE_BY_ID, RESOURCE_POOLS } from '../data/resources';
 export const RARE_SPELLS: Spell[] = [
   {
     id: 'lightning_bolt',
-    name: 'Lightning Bolt',
+    name: 'Raio',
     damage: 35,
     manaCost: 25,
     level: 1,
-    description: 'Strikes enemies with lightning',
+    description: 'Atinge inimigos com uma descarga elétrica',
   },
   {
     id: 'meteor',
-    name: 'Meteor Strike',
+    name: 'Chuva de Meteoros',
     damage: 45,
     manaCost: 40,
     level: 1,
-    description: 'Calls down a devastating meteor',
+    description: 'Invoca meteoros devastadores contra o inimigo',
   },
 ];
 

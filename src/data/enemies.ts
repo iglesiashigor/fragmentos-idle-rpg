@@ -1,15 +1,15 @@
-﻿import { Enemy } from '../types/game';
+import { Enemy } from '../types/game';
 import { LOOT, RARE_ITEMS } from './items';
 
 const BOSS_TYPES = [
   {
-    name: 'DragÃ£o AnciÃ£o',
+    name: 'Dragão Ancião',
     baseHealth: 210,
     baseDamage: 26,
     baseExp: 120,
     loot: [
-      { item: RARE_ITEMS[0], chance: 0.4 }, // Espada LendÃ¡ria
-      { item: RARE_ITEMS[1], chance: 0.3 }, // Armadura do DragÃ£o
+      { item: RARE_ITEMS[0], chance: 0.4 }, // Espada Lendária
+      { item: RARE_ITEMS[1], chance: 0.3 }, // Armadura do Dragão
       { item: RARE_ITEMS[6], chance: 0.25 },
       { item: LOOT[0], chance: 1.0 }, // Garantido
     ],
@@ -32,7 +32,7 @@ const BOSS_TYPES = [
     baseDamage: 23,
     baseExp: 125,
     loot: [
-      { item: RARE_ITEMS[4], chance: 0.4 }, // Martelo TitÃ¢nico
+      { item: RARE_ITEMS[4], chance: 0.4 }, // Martelo Titânico
       { item: RARE_ITEMS[5], chance: 0.3 }, // Armadura de Cristal
       { item: RARE_ITEMS[8], chance: 0.25 },
       { item: RARE_ITEMS[9], chance: 0.25 },

@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { FlaskRound, Package, Shield, ShoppingCart, Sword } from 'lucide-react';
 import { ARMORS, BOOTS, GLOVES, HELMETS, PANTS, POTIONS, WEAPONS } from '../data/items';
 import {
@@ -513,7 +513,7 @@ function ShopItemCard({
           }`}
         >
           <ShoppingCart className="h-3.5 w-3.5" />
-          {canBuy ? 'Comprar' : 'Indispon?vel'}
+          {canBuy ? 'Comprar' : 'Indisponível'}
         </div>
       </div>
     </button>
@@ -537,11 +537,11 @@ function getItemTypeLabel(item: Item) {
   const labels: Record<Item['type'], string> = {
     weapon: 'Arma',
     armor: 'Peitoral',
-    helmet: 'Cabe?a',
+    helmet: 'Cabeça',
     gloves: 'Luvas',
-    pants: 'Cal?as',
+    pants: 'Calças',
     boots: 'Botas',
-    potion: 'Po??o',
+    potion: 'Poção',
     loot: 'Item',
   };
   return labels[item.type];

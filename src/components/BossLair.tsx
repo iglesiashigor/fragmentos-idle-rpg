@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Crown } from 'lucide-react';
 import { SavedCharacter } from '../types/game';
 

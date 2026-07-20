@@ -19,8 +19,8 @@ export interface CraftingRecipe {
 export const CRAFTING_RECIPES: CraftingRecipe[] = [
   {
     id: 'craft_health_potion',
-    name: 'Po??o de Cura',
-    description: 'Prepara uma po??o simples usando ervas frescas.',
+    name: 'Poção de Cura',
+    description: 'Prepara uma poção simples usando ervas frescas.',
     result: POTIONS[0],
     quantity: 1,
     goldCost: 5,
@@ -28,7 +28,7 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
   },
   {
     id: 'craft_stamina_potion',
-    name: 'Po??o de Estamina',
+    name: 'Poção de Estamina',
     description: 'Mistura ervas e fibra para recuperar energia.',
     result: POTIONS[2],
     quantity: 1,

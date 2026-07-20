@@ -1,4 +1,4 @@
-﻿import { MapLocation } from '../types/game';
+import { MapLocation } from '../types/game';
 
 let lastEnemyId = 0;
 let lastEventId = 0;
@@ -124,7 +124,7 @@ export const INITIAL_LOCATIONS: MapLocation[] = [
     type: 'boss_lair',
     x: 49.2,
     y: 78.3,
-    name: 'Covil do Chefao',
+    name: 'Covil do Chefão',
     level: 1,
   },
 ];
