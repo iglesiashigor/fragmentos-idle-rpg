@@ -1,4 +1,4 @@
-import { MapLocation } from '../types/game';
+﻿import { MapLocation } from '../types/game';
 
 let lastEnemyId = 0;
 let lastEventId = 0;
@@ -76,16 +76,16 @@ export const MAX_EVENTS = 1; // Only allow 1 event at a time
 
 export const INITIAL_LOCATIONS: MapLocation[] = [
   { id: 'town_1', type: 'town', x: 50, y: 50, name: 'Cidade' },
-  { id: 'enemy_1', type: 'enemy', x: 30, y: 30, name: 'Encontro 1', level: 1 },
-  { id: 'enemy_2', type: 'enemy', x: 70, y: 30, name: 'Encontro 2', level: 2 },
-  { id: 'enemy_3', type: 'enemy', x: 30, y: 70, name: 'Encontro 3', level: 3 },
+  { id: 'enemy_1', type: 'enemy', x: 38, y: 40, name: 'Encontro 1', level: 1 },
+  { id: 'enemy_2', type: 'enemy', x: 62, y: 42, name: 'Encontro 2', level: 2 },
+  { id: 'enemy_3', type: 'enemy', x: 39, y: 68, name: 'Encontro 3', level: 3 },
   {
     id: 'gathering_forest',
     type: 'gathering',
     eventKind: 'gathering',
     resourcePool: 'forest',
-    x: 18,
-    y: 52,
+    x: 21,
+    y: 31,
     name: 'Bosque Antigo',
     level: 1,
   },
@@ -95,7 +95,7 @@ export const INITIAL_LOCATIONS: MapLocation[] = [
     eventKind: 'gathering',
     resourcePool: 'grove',
     x: 76,
-    y: 64,
+    y: 60,
     name: 'Clareira de Ervas',
     level: 1,
   },
@@ -104,8 +104,8 @@ export const INITIAL_LOCATIONS: MapLocation[] = [
     type: 'gathering',
     eventKind: 'gathering',
     resourcePool: 'quarry',
-    x: 82,
-    y: 24,
+    x: 74,
+    y: 22,
     name: 'Pedreira',
     level: 1,
   },
@@ -114,8 +114,8 @@ export const INITIAL_LOCATIONS: MapLocation[] = [
     type: 'gathering',
     eventKind: 'gathering',
     resourcePool: 'ruins',
-    x: 18,
-    y: 82,
+    x: 19,
+    y: 73,
     name: 'Ruinas Abandonadas',
     level: 1,
   },
@@ -123,8 +123,8 @@ export const INITIAL_LOCATIONS: MapLocation[] = [
     id: 'boss_lair_1',
     type: 'boss_lair',
     x: 50,
-    y: 86,
-    name: 'Covil do Chefão',
+    y: 79,
+    name: 'Covil do Chefao',
     level: 1,
   },
 ];
