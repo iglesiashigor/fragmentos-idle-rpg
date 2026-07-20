@@ -613,7 +613,7 @@ export function useGameState(
     updateCharacter({
       gold: character.gold - BOSS_LAIR_ENTRY_COST,
     });
-    setEnemy(generateBoss(Math.max(character.level + 1, getEncounterLevel(character.level))));
+    setEnemy(generateBoss(Math.max(1, character.level)));
     setLastCombatRewards(null);
   };
 
