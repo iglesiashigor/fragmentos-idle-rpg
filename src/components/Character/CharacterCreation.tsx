@@ -1,4 +1,4 @@
-import { FormEvent, ReactNode, useState } from 'react';
+﻿import { FormEvent, ReactNode, useState } from 'react';
 import {
   ArrowLeft,
   Brain,
@@ -10,9 +10,8 @@ import {
 } from 'lucide-react';
 import { CLASSES } from '../../data/classes';
 import { CLASS_PASSIVE_DESCRIPTIONS } from '../../data/classPassives';
-import { PROFESSIONS } from '../../data/professions';
 import { RACES } from '../../data/races';
-import { Attributes, CharacterClass, ProfessionId, Race } from '../../types/game';
+import { Attributes, CharacterClass, Race } from '../../types/game';
 
 const TOTAL_ATTRIBUTE_POINTS = 10;
 const MIN_ATTRIBUTE_VALUE = 0;
@@ -23,8 +22,7 @@ interface CharacterCreationProps {
     name: string,
     race: Race,
     characterClass: CharacterClass,
-    attributes: Attributes,
-    professionId: ProfessionId
+    attributes: Attributes
   ) => void;
   onBack: () => void;
 }
@@ -37,9 +35,6 @@ export function CharacterCreation({
   const [selectedRace, setSelectedRace] = useState<Race>(RACES[0]);
   const [selectedClass, setSelectedClass] = useState<CharacterClass>(
     CLASSES[0]
-  );
-  const [selectedProfession, setSelectedProfession] = useState<ProfessionId>(
-    PROFESSIONS[0].id
   );
   const [attributes, setAttributes] = useState<Attributes>({
     strength: 0,
@@ -76,7 +71,7 @@ export function CharacterCreation({
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     if (name.trim() && remainingPoints === 0) {
-      onCreateCharacter(name, selectedRace, selectedClass, attributes, selectedProfession);
+      onCreateCharacter(name, selectedRace, selectedClass, attributes);
     }
   };
 
@@ -97,7 +92,7 @@ export function CharacterCreation({
             <span>{label}</span>
           </div>
           <div className="text-sm font-semibold text-stone-500">
-            {baseValue} <span className="text-amber-700">→ {modifiedValue}</span>
+            {baseValue} <span className="text-amber-700">â†’ {modifiedValue}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -177,9 +172,6 @@ export function CharacterCreation({
                 <div className="font-semibold text-stone-600">
                   {selectedRace.name} {selectedClass.name}
                 </div>
-                <div className="text-sm font-bold text-emerald-700">
-                  {PROFESSIONS.find((profession) => profession.id === selectedProfession)?.name}
-                </div>
                 <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
                   <SummaryTile label="Vida" value={selectedClass.baseHealth + selectedRace.bonuses.health} />
                   <SummaryTile label="Recurso" value={selectedClass.baseResource} />
@@ -190,7 +182,7 @@ export function CharacterCreation({
             </div>
 
             <div className="rpg-panel rounded-lg p-5">
-              <SectionTitle title="Raça" subtitle="Escolha a origem do personagem" />
+              <SectionTitle title="RaÃ§a" subtitle="Escolha a origem do personagem" />
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {RACES.map((race) => (
                   <button
@@ -217,7 +209,7 @@ export function CharacterCreation({
           </div>
 
           <div className="rpg-panel rounded-lg p-5">
-            <SectionTitle title="Classe" subtitle="Define estilo de combate e evolução" />
+            <SectionTitle title="Classe" subtitle="Define estilo de combate e evoluÃ§Ã£o" />
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
               {CLASSES.map((characterClass) => (
                 <button
@@ -250,29 +242,17 @@ export function CharacterCreation({
           </div>
 
           <div className="rpg-panel rounded-lg p-5">
-            <SectionTitle title="Profissão" subtitle="Escolha uma especialização de coleta" />
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-              {PROFESSIONS.map((profession) => (
-                <button
-                  key={profession.id}
-                  type="button"
-                  onClick={() => setSelectedProfession(profession.id)}
-                  className={`rounded-lg border p-4 text-left transition-colors ${
-                    selectedProfession === profession.id
-                      ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200'
-                      : 'border-stone-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/50'
-                  }`}
-                >
-                  <h3 className="font-black text-stone-950">{profession.name}</h3>
-                  <p className="mt-1 text-sm text-stone-600">{profession.description}</p>
-                </button>
-              ))}
+          <div className="rpg-panel rounded-lg p-5">
+            <SectionTitle title="Profissoes" subtitle="Todas evoluem conforme os pontos de coleta usados" />
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">
+              Lenhador, Coletor, Minerador e Explorador ficam disponiveis desde o inicio. Cada uma ganha XP no ponto de coleta correspondente.
             </div>
+          </div>
           </div>
 
           <div className="rpg-panel rounded-lg p-5">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <SectionTitle title="Atributos" subtitle="Distribua todos os pontos disponíveis" />
+              <SectionTitle title="Atributos" subtitle="Distribua todos os pontos disponÃ­veis" />
               <span
                 className={`rounded-md px-3 py-2 text-sm font-black ${
                   remainingPoints === 0
@@ -284,11 +264,11 @@ export function CharacterCreation({
               </span>
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-              {renderAttributeControl('strength', 'Força', <Sword className="h-4 w-4" />)}
-              {renderAttributeControl('effort', 'Esforço', <Dumbbell className="h-4 w-4" />)}
-              {renderAttributeControl('resistance', 'Resistência', <Shield className="h-4 w-4" />)}
-              {renderAttributeControl('intelligence', 'Inteligência', <Brain className="h-4 w-4" />)}
-              {renderAttributeControl('accuracy', 'Acurácia', <Target className="h-4 w-4" />)}
+              {renderAttributeControl('strength', 'ForÃ§a', <Sword className="h-4 w-4" />)}
+              {renderAttributeControl('effort', 'EsforÃ§o', <Dumbbell className="h-4 w-4" />)}
+              {renderAttributeControl('resistance', 'ResistÃªncia', <Shield className="h-4 w-4" />)}
+              {renderAttributeControl('intelligence', 'InteligÃªncia', <Brain className="h-4 w-4" />)}
+              {renderAttributeControl('accuracy', 'AcurÃ¡cia', <Target className="h-4 w-4" />)}
             </div>
           </div>
 

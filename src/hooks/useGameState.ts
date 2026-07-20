@@ -82,14 +82,20 @@ export function useGameState(
       ...savedCharacter,
       quests: savedCharacter.quests || [],
       completedQuestIds: savedCharacter.completedQuestIds || [],
-      professions: savedCharacter.profession
-        ? {
-            ...(savedCharacter.professions || {}),
-            [savedCharacter.profession.id]: savedCharacter.profession,
-          }
-        : savedCharacter.professions || {},
-      activeProfessionId:
-        savedCharacter.activeProfessionId || savedCharacter.profession?.id,
+      professions: {
+        ...Object.fromEntries(
+          Object.keys(PROFESSION_BY_ID).map((professionId) => [
+            professionId,
+            createProfession(professionId as ProfessionId),
+          ])
+        ),
+        ...(savedCharacter.professions || {}),
+        ...(savedCharacter.profession
+          ? { [savedCharacter.profession.id]: savedCharacter.profession }
+          : {}),
+      },
+      profession: undefined,
+      activeProfessionId: undefined,
       gatheringNodes: savedCharacter.gatheringNodes || {},
       stats: savedCharacter.stats || {
         kills: 0,
@@ -711,8 +717,15 @@ export function useGameState(
     if (randomEventReward.type === 'resource') {
       let updatedInventory = [...character.inventory];
       const collectedItems: { itemId: string; quantity: number }[] = [];
+      const professionDefinition = getProfessionForResourcePool(
+        currentLocation.resourcePool
+      );
+      const currentProfession = professionDefinition
+        ? character.professions?.[professionDefinition.id] ||
+          createProfession(professionDefinition.id)
+        : undefined;
       const professionUpdate = getGatheringProfessionUpdate(
-        character.profession,
+        currentProfession,
         currentLocation.resourcePool
       );
 
@@ -727,7 +740,14 @@ export function useGameState(
       updateCharacter({
         inventory: updatedInventory,
         quests: updateQuestsForCollect(character.quests || [], collectedItems),
-        profession: professionUpdate.profession,
+        profession: undefined,
+        professions: professionUpdate.profession
+          ? {
+              ...(character.professions || {}),
+              [professionUpdate.profession.id]: professionUpdate.profession,
+            }
+          : character.professions,
+        activeProfessionId: undefined,
       });
     } else if (randomEventReward.type === 'item') {
       const rewardItem = randomEventReward.reward as Item;
@@ -772,11 +792,14 @@ export function useGameState(
 
   const canGatherAtCurrentLocation = () => {
     if (!currentLocation || currentLocation.type !== 'gathering') return false;
-    if (!character.profession) return false;
+    return Boolean(getProfessionForResourcePool(currentLocation.resourcePool));
+  };
 
-    const professionDefinition = PROFESSION_BY_ID[character.profession.id];
-    return professionDefinition.resourcePools.includes(
-      currentLocation.resourcePool || ''
+  const getProfessionForResourcePool = (resourcePool?: string) => {
+    if (!resourcePool) return undefined;
+
+    return Object.values(PROFESSION_BY_ID).find((profession) =>
+      profession.resourcePools.includes(resourcePool)
     );
   };
 
@@ -822,8 +845,15 @@ export function useGameState(
     let updatedInventory = [...character.inventory];
     const collectedItems: { itemId: string; quantity: number }[] = [];
     const displayedRewards: { name: string; quantity: number }[] = [];
+    const professionDefinition = getProfessionForResourcePool(
+      currentLocation.resourcePool
+    );
+    const currentProfession = professionDefinition
+      ? character.professions?.[professionDefinition.id] ||
+        createProfession(professionDefinition.id)
+      : undefined;
     const professionUpdate = getGatheringProfessionUpdate(
-      character.profession,
+      currentProfession,
       currentLocation.resourcePool
     );
 
@@ -840,14 +870,14 @@ export function useGameState(
     updateCharacter({
       inventory: updatedInventory,
       quests: updateQuestsForCollect(character.quests || [], collectedItems),
-      profession: professionUpdate.profession,
+      profession: undefined,
       professions: professionUpdate.profession
         ? {
             ...(character.professions || {}),
             [professionUpdate.profession.id]: professionUpdate.profession,
           }
         : character.professions,
-      activeProfessionId: professionUpdate.profession?.id || character.activeProfessionId,
+      activeProfessionId: undefined,
       gatheringNodes: {
         ...(character.gatheringNodes || {}),
         [currentLocation.id]: {
@@ -884,28 +914,6 @@ export function useGameState(
         ...(character.quests || []),
         createActiveQuest(quest, character.inventory),
       ],
-    });
-  };
-
-  const handleChooseProfession = (professionId: ProfessionId) => {
-    if (
-      character.profession &&
-      character.profession.level < MAX_PROFESSION_LEVEL
-    ) {
-      return;
-    }
-    const nextProfession =
-      character.professions?.[professionId] || createProfession(professionId);
-    updateCharacter({
-      profession: nextProfession,
-      activeProfessionId: professionId,
-      professions: {
-        ...(character.professions || {}),
-        ...(character.profession
-          ? { [character.profession.id]: character.profession }
-          : {}),
-        [professionId]: nextProfession,
-      },
     });
   };
 
@@ -1147,7 +1155,6 @@ export function useGameState(
     handleClaimQuestReward,
     handleCraftRecipe,
     handleUpgradeItem,
-    handleChooseProfession,
     handleSetActiveTitle,
     handleAttributeIncrease,
     handleSpellSelect,

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Character, Race, CharacterClass, DeadCharacter, Attributes, ProfessionId } from '../types/game';
+import { Character, Race, CharacterClass, DeadCharacter, Attributes } from '../types/game';
 import { calculateMaxHealth, calculateMaxResource } from '../utils/combatStats';
-import { createProfession } from '../data/professions';
+import { createProfession, PROFESSIONS } from '../data/professions';
 
 export function useCharacter() {
   const [deadCharacters, setDeadCharacters] = useState<DeadCharacter[]>([]);
@@ -10,8 +10,7 @@ export function useCharacter() {
     name: string, 
     race: Race, 
     characterClass: CharacterClass,
-    attributes: Attributes,
-    professionId: ProfessionId
+    attributes: Attributes
   ): Character => {
     const startingInventory = characterClass.startingEquipment.map(item => ({
       ...item,
@@ -68,11 +67,14 @@ export function useCharacter() {
       attributes: finalAttributes,
       quests: [],
       completedQuestIds: [],
-      profession: createProfession(professionId),
-      professions: {
-        [professionId]: createProfession(professionId),
-      },
-      activeProfessionId: professionId,
+      profession: undefined,
+      professions: Object.fromEntries(
+        PROFESSIONS.map((profession) => [
+          profession.id,
+          createProfession(profession.id),
+        ])
+      ),
+      activeProfessionId: undefined,
       gatheringNodes: {},
       stats: {
         kills: 0,

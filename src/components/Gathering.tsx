@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Hammer } from 'lucide-react';
-import { PROFESSIONS, PROFESSION_BY_ID } from '../data/professions';
+import { PROFESSIONS } from '../data/professions';
 import { RESOURCE_BY_ID, RESOURCE_POOLS } from '../data/resources';
 import { GatheringNodeState, MapLocation, SavedCharacter } from '../types/game';
 
@@ -25,16 +25,15 @@ export function Gathering({
   const requiredProfession = PROFESSIONS.find((profession) =>
     profession.resourcePools.includes(resourcePool)
   );
-  const currentProfession = character.profession
-    ? PROFESSION_BY_ID[character.profession.id]
-    : null;
-  const hasRightProfession = Boolean(
-    character.profession && currentProfession?.resourcePools.includes(resourcePool)
-  );
+  const professionProgress = requiredProfession
+    ? character.professions?.[requiredProfession.id]
+    : undefined;
+  const professionLevel = professionProgress?.level || 1;
+  const isKnownResourcePool = Boolean(pool && requiredProfession);
   const isDepleted = Boolean(
     nodeState && nodeState.remaining <= 0 && nodeState.resetAt > now
   );
-  const canGather = hasRightProfession && !isDepleted;
+  const canGather = isKnownResourcePool && !isDepleted;
   const effectiveRemaining =
     nodeState && nodeState.remaining <= 0 && nodeState.resetAt <= now
       ? 5
@@ -66,17 +65,13 @@ export function Gathering({
         </div>
       </div>
 
-      {!character.profession ? (
-        <WarningBox text="Escolha uma profissão na cidade antes de coletar." />
-      ) : !hasRightProfession ? (
-        <WarningBox
-          text={`Sua profissão atual é ${currentProfession?.name}. Este ponto exige ${requiredProfession?.name}.`}
-        />
+      {!isKnownResourcePool ? (
+        <WarningBox text="Este ponto de coleta ainda nao tem uma profissao associada." />
       ) : isDepleted ? (
         <WarningBox text={`Este ponto esgotou. Volte em ${resetMinutes} min.`} />
       ) : (
         <div className="mb-4 rounded-md border border-emerald-200 bg-white p-4 text-sm font-semibold text-emerald-800">
-          {currentProfession?.name} Nv. {character.profession.level}: colete para ganhar recursos e XP de profissão.
+          {requiredProfession?.name} Nv. {professionLevel}: colete para ganhar recursos e XP de profissao.
           <div className="mt-2 text-stone-600">
             Coletas restantes: {effectiveRemaining}
           </div>

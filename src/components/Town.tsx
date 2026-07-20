@@ -1,10 +1,9 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { TITLE_ACHIEVEMENTS } from '../data/achievements';
 import { ARMORS, POTIONS, WEAPONS } from '../data/items';
 import {
   getProfessionRequiredExperience,
   MAX_PROFESSION_LEVEL,
-  PROFESSION_BY_ID,
   PROFESSIONS,
 } from '../data/professions';
 import {
@@ -15,7 +14,7 @@ import {
   MaterialCost,
 } from '../data/recipes';
 import { RESOURCE_BY_ID } from '../data/resources';
-import { InventoryItem, Item, ProfessionId, Quest, SavedCharacter } from '../types/game';
+import { InventoryItem, Item, Quest, SavedCharacter } from '../types/game';
 import {
   canAddItemToInventory,
   getItemQuantity,
@@ -40,7 +39,6 @@ interface TownProps {
   onClaimQuestReward: (quest: Quest) => void;
   onCraftRecipe: (recipe: CraftingRecipe) => void;
   onUpgradeItem: (item: InventoryItem) => void;
-  onChooseProfession: (professionId: ProfessionId) => void;
   onSetActiveTitle: (titleId?: string) => void;
 }
 
@@ -59,12 +57,9 @@ export function Town({
   onClaimQuestReward,
   onCraftRecipe,
   onUpgradeItem,
-  onChooseProfession,
   onSetActiveTitle,
 }: TownProps) {
-  const [activeTab, setActiveTab] = useState<TownTabId>(
-    character.profession ? 'shop' : 'profession'
-  );
+  const [activeTab, setActiveTab] = useState<TownTabId>('shop');
 
   return (
     <div className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
@@ -78,8 +73,8 @@ export function Town({
       <div className="mb-6 flex flex-wrap gap-3">
         <TownTab label="Loja" active={activeTab === 'shop'} onClick={() => setActiveTab('shop')} />
         <TownTab label="Taverna" active={activeTab === 'inn'} onClick={() => setActiveTab('inn')} />
-        <TownTab label="Missões" active={activeTab === 'quests'} onClick={() => setActiveTab('quests')} />
-        <TownTab label="Profissão" active={activeTab === 'profession'} onClick={() => setActiveTab('profession')} />
+        <TownTab label="MissÃµes" active={activeTab === 'quests'} onClick={() => setActiveTab('quests')} />
+        <TownTab label="ProfissÃ£o" active={activeTab === 'profession'} onClick={() => setActiveTab('profession')} />
         <TownTab label="Conquistas" active={activeTab === 'achievements'} onClick={() => setActiveTab('achievements')} />
         <TownTab label="Oficina" active={activeTab === 'craft'} onClick={() => setActiveTab('craft')} />
         <TownTab label="Vender" active={activeTab === 'sell'} onClick={() => setActiveTab('sell')} />
@@ -101,10 +96,7 @@ export function Town({
           onClaimQuestReward={onClaimQuestReward}
         />
       ) : activeTab === 'profession' ? (
-        <ProfessionPanel
-          character={character}
-          onChooseProfession={onChooseProfession}
-        />
+        <ProfessionPanel character={character} />
       ) : activeTab === 'achievements' ? (
         <AchievementPanel
           character={character}
@@ -134,7 +126,7 @@ export function Town({
             onBuyItem={onBuyItem}
           />
           <ShopSection
-            title="Poções"
+            title="PoÃ§Ãµes"
             items={POTIONS}
             gold={gold}
             inventory={inventory}
@@ -178,7 +170,7 @@ function SellPanel({
 }) {
   return (
     <div>
-      <h3 className="mb-4 text-lg font-bold text-stone-950">Seu inventário</h3>
+      <h3 className="mb-4 text-lg font-bold text-stone-950">Seu inventÃ¡rio</h3>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {inventory.map((item) => (
           <SellItemCard
@@ -213,7 +205,7 @@ function SellItemCard({
       </div>
       {isEquipped ? (
         <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-2 text-sm font-bold text-amber-800">
-          Item equipado não pode ser vendido.
+          Item equipado nÃ£o pode ser vendido.
         </div>
       ) : (
         <>
@@ -243,93 +235,61 @@ function SellItemCard({
   );
 }
 
-function ProfessionPanel({
-  character,
-  onChooseProfession,
-}: {
-  character: SavedCharacter;
-  onChooseProfession: (professionId: ProfessionId) => void;
-}) {
-  if (character.profession) {
-    const profession = PROFESSION_BY_ID[character.profession.id];
-    const requiredExperience = getProfessionRequiredExperience(
-      character.profession.level
-    );
-    const isMaxLevel = character.profession.level >= MAX_PROFESSION_LEVEL;
-    const progress = Math.min(
-      100,
-      isMaxLevel || requiredExperience === 0
-        ? 100
-        : (character.profession.experience / requiredExperience) * 100
-    );
-
-    return (
-      <div className="rpg-item rounded-lg">
-        <div className="text-sm font-bold uppercase tracking-wide text-emerald-700">
-          Profissão atual
-        </div>
-        <h3 className="mt-1 text-2xl font-black text-stone-950">
-          {profession.name}
-        </h3>
-        <p className="mt-1 text-sm text-stone-600">{profession.description}</p>
-        <div className="mt-4 flex justify-between text-sm font-bold text-stone-700">
-          <span>Nível {character.profession.level}</span>
-          <span>
-            {isMaxLevel
-              ? 'Nível máximo'
-              : `${character.profession.experience}/${requiredExperience} XP`}
-          </span>
-        </div>
-        <div className="mt-2 h-3 overflow-hidden rounded-full bg-stone-200">
-          <div
-            className="h-full rounded-full bg-emerald-600"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-        {isMaxLevel && (
-          <div className="mt-5">
-            <div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-800">
-              Você chegou ao nível máximo. Agora pode trocar de profissão.
-            </div>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-              {PROFESSIONS.filter((option) => option.id !== character.profession?.id).map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => onChooseProfession(option.id)}
-                  className="rpg-item rounded-lg text-left"
-                >
-                  <h4 className="font-black text-stone-950">{option.name}</h4>
-                  <p className="mt-1 text-sm text-stone-600">{option.description}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
+function ProfessionPanel({ character }: { character: SavedCharacter }) {
   return (
     <div>
-      <h3 className="mb-3 text-lg font-bold text-stone-950">
-        Escolha uma profissão
-      </h3>
+      <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+        <h3 className="text-lg font-black text-stone-950">Profissoes</h3>
+        <p className="text-sm font-semibold text-stone-600">
+          Todas evoluem em paralelo. Colete nos pontos do mapa para ganhar XP na profissao correspondente.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {PROFESSIONS.map((profession) => (
-          <button
-            key={profession.id}
-            onClick={() => onChooseProfession(profession.id)}
-            className="rpg-item rounded-lg text-left"
-          >
-            <h4 className="font-black text-stone-950">{profession.name}</h4>
-            <p className="mt-1 text-sm text-stone-600">
-              {profession.description}
-            </p>
-          </button>
-        ))}
+        {PROFESSIONS.map((profession) => {
+          const progressData = character.professions?.[profession.id] || {
+            id: profession.id,
+            level: 1,
+            experience: 0,
+          };
+          const requiredExperience = getProfessionRequiredExperience(
+            progressData.level
+          );
+          const isMaxLevel = progressData.level >= MAX_PROFESSION_LEVEL;
+          const progress = Math.min(
+            100,
+            isMaxLevel || requiredExperience === 0
+              ? 100
+              : (progressData.experience / requiredExperience) * 100
+          );
+
+          return (
+            <div key={profession.id} className="rpg-item rounded-lg">
+              <h4 className="font-black text-stone-950">{profession.name}</h4>
+              <p className="mt-1 text-sm text-stone-600">
+                {profession.description}
+              </p>
+              <div className="mt-4 flex justify-between text-sm font-bold text-stone-700">
+                <span>Nivel {progressData.level}</span>
+                <span>
+                  {isMaxLevel
+                    ? 'Nivel maximo'
+                    : `${progressData.experience}/${requiredExperience} XP`}
+                </span>
+              </div>
+              <div className="mt-2 h-3 overflow-hidden rounded-full bg-stone-200">
+                <div
+                  className="h-full rounded-full bg-emerald-600"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
+
 }
 
 function QuestPanel({
@@ -347,9 +307,9 @@ function QuestPanel({
   return (
     <div className="space-y-6">
       <section>
-        <h3 className="mb-3 text-lg font-bold text-stone-950">Missões ativas</h3>
+        <h3 className="mb-3 text-lg font-bold text-stone-950">MissÃµes ativas</h3>
         {activeQuests.length === 0 ? (
-          <EmptyState text="Nenhuma missão ativa." />
+          <EmptyState text="Nenhuma missÃ£o ativa." />
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {activeQuests.map((quest) => {
@@ -375,9 +335,9 @@ function QuestPanel({
       </section>
 
       <section>
-        <h3 className="mb-3 text-lg font-bold text-stone-950">Novas missões</h3>
+        <h3 className="mb-3 text-lg font-bold text-stone-950">Novas missÃµes</h3>
         {availableQuests.length === 0 ? (
-          <EmptyState text="Nenhuma missão nova disponível agora." />
+          <EmptyState text="Nenhuma missÃ£o nova disponÃ­vel agora." />
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {availableQuests.map((quest) => (
@@ -390,7 +350,7 @@ function QuestPanel({
                   onClick={() => onAcceptQuest(quest)}
                   className="rpg-button-primary mt-4 w-full"
                 >
-                  Aceitar missão
+                  Aceitar missÃ£o
                 </button>
               </div>
             ))}
@@ -413,7 +373,7 @@ function AchievementPanel({
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-        <h3 className="text-lg font-black text-stone-950">Títulos</h3>
+        <h3 className="text-lg font-black text-stone-950">TÃ­tulos</h3>
         <p className="text-sm font-semibold text-stone-600">
           Escolha uma tag desbloqueada para aparecer no personagem.
         </p>
@@ -421,7 +381,7 @@ function AchievementPanel({
           onClick={() => onSetActiveTitle(undefined)}
           className="rpg-button-secondary mt-3"
         >
-          Remover título ativo
+          Remover tÃ­tulo ativo
         </button>
       </div>
 
@@ -449,7 +409,7 @@ function AchievementPanel({
                 disabled={!isUnlocked || isActive}
                 className="rpg-button-primary mt-4 w-full disabled:bg-stone-300 disabled:text-stone-500"
               >
-                {isActive ? 'Título ativo' : isUnlocked ? 'Usar título' : 'Bloqueado'}
+                {isActive ? 'TÃ­tulo ativo' : isUnlocked ? 'Usar tÃ­tulo' : 'Bloqueado'}
               </button>
             </div>
           );
@@ -526,7 +486,7 @@ function CraftPanel({
                     {item.type === 'weapon' ? 'Poder' : 'Defesa'} atual: {item.power || 0}
                   </p>
                   <p className="text-sm font-semibold text-emerald-700">
-                    Próximo nível: +2 {item.type === 'weapon' ? 'poder' : 'defesa'}
+                    PrÃ³ximo nÃ­vel: +2 {item.type === 'weapon' ? 'poder' : 'defesa'}
                   </p>
                   {!isMaxed && (
                     <>
@@ -541,7 +501,7 @@ function CraftPanel({
                     disabled={!canUpgrade}
                     className="rpg-button-primary mt-4 w-full disabled:bg-stone-300 disabled:text-stone-500"
                   >
-                    {isMaxed ? 'Melhoria máxima' : `Melhorar para +${upgradeLevel + 1}`}
+                    {isMaxed ? 'Melhoria mÃ¡xima' : `Melhorar para +${upgradeLevel + 1}`}
                   </button>
                 </div>
               );

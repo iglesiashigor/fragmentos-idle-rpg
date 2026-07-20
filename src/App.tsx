@@ -4,7 +4,7 @@ import { GameContent } from './components/GameContent';
 import { CharacterSelection } from './components/Character/CharacterSelection';
 import { CharacterCreation } from './components/Character/CharacterCreation';
 import { useAuth } from './hooks/useAuth';
-import { SavedCharacter, Race, CharacterClass, Attributes, ProfessionId } from './types/game';
+import { SavedCharacter, Race, CharacterClass, Attributes } from './types/game';
 import { useCharacter } from './hooks/useCharacter';
 
 function App() {
@@ -39,8 +39,8 @@ function App() {
   };
 
   if (showCharacterCreation) {
-    const handleCreateCharacter = (name: string, race: Race, characterClass: CharacterClass, attributes: Attributes, professionId: ProfessionId) => {
-      const newCharacter = createCharacter(name, race, characterClass, attributes, professionId);
+    const handleCreateCharacter = (name: string, race: Race, characterClass: CharacterClass, attributes: Attributes) => {
+      const newCharacter = createCharacter(name, race, characterClass, attributes);
       const savedCharacter: SavedCharacter = {
         ...newCharacter,
         id: Date.now().toString(),

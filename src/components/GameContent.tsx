@@ -183,7 +183,6 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                     onClaimQuestReward={gameState.handleClaimQuestReward}
                     onCraftRecipe={gameState.handleCraftRecipe}
                     onUpgradeItem={gameState.handleUpgradeItem}
-                    onChooseProfession={gameState.handleChooseProfession}
                     onSetActiveTitle={gameState.handleSetActiveTitle}
                   />
                 ) : gameState.currentLocation.type === 'gathering' ? (
