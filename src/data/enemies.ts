@@ -4,8 +4,8 @@ import { LOOT, RARE_ITEMS } from './items';
 const BOSS_TYPES = [
   {
     name: 'Dragão Ancião',
-    baseHealth: 180,
-    baseDamage: 30,
+    baseHealth: 210,
+    baseDamage: 26,
     baseExp: 120,
     loot: [
       { item: RARE_ITEMS[0], chance: 0.4 }, // Espada Lendária
@@ -15,8 +15,8 @@ const BOSS_TYPES = [
   },
   {
     name: 'Lich Supremo',
-    baseHealth: 160,
-    baseDamage: 34,
+    baseHealth: 190,
+    baseDamage: 28,
     baseExp: 130,
     loot: [
       { item: RARE_ITEMS[2], chance: 0.4 }, // Cajado do Poder
@@ -26,8 +26,8 @@ const BOSS_TYPES = [
   },
   {
     name: 'Golem Ancestral',
-    baseHealth: 220,
-    baseDamage: 26,
+    baseHealth: 250,
+    baseDamage: 23,
     baseExp: 125,
     loot: [
       { item: RARE_ITEMS[4], chance: 0.4 }, // Martelo Titânico
@@ -45,14 +45,14 @@ export function generateBoss(level: number): Enemy {
     .filter(lootItem => Math.random() <= lootItem.chance)
     .map(lootItem => lootItem.item);
 
-  // Boss stats scale with level
-  const scalingFactor = 1 + level * 0.35; // Stronger scaling for bosses
+  const healthScalingFactor = 1 + level * 0.28;
+  const damageScalingFactor = 1 + level * 0.18;
 
   return {
     name: bossType.name,
-    health: Math.floor(bossType.baseHealth * scalingFactor),
-    maxHealth: Math.floor(bossType.baseHealth * scalingFactor),
-    damage: Math.floor(bossType.baseDamage * scalingFactor),
+    health: Math.floor(bossType.baseHealth * healthScalingFactor),
+    maxHealth: Math.floor(bossType.baseHealth * healthScalingFactor),
+    damage: Math.floor(bossType.baseDamage * damageScalingFactor),
     level,
     loot,
     experience: bossType.baseExp * level,
