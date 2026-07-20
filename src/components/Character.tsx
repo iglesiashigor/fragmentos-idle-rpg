@@ -1,7 +1,6 @@
 import { Backpack, Shield, Sword } from 'lucide-react';
 import { Character as CharacterType } from '../types/game';
 import { TITLE_BY_ID } from '../data/achievements';
-import { PROFESSIONS } from '../data/professions';
 import { calculateRequiredExperience } from '../utils/experience';
 import { calculateCharacterStats } from '../utils/combatStats';
 
@@ -16,14 +15,6 @@ export function Character({ character }: CharacterProps) {
     (character.experience / requiredExp) * 100
   );
   const combatStats = calculateCharacterStats(character);
-  const professions = PROFESSIONS.map((profession) => ({
-    definition: profession,
-    progress: character.professions?.[profession.id] || {
-      id: profession.id,
-      level: 1,
-      experience: 0,
-    },
-  }));
   const activeTitle = character.activeTitleId
     ? TITLE_BY_ID[character.activeTitleId]
     : null;
@@ -82,16 +73,6 @@ export function Character({ character }: CharacterProps) {
           color="bg-emerald-600"
           percentage={expPercentage}
         />
-
-        <div className="grid grid-cols-2 gap-2 text-sm md:grid-cols-4">
-          {professions.map(({ definition, progress }) => (
-            <StatTile
-              key={definition.id}
-              label={definition.name}
-              value={`Nv. ${progress.level}`}
-            />
-          ))}
-        </div>
 
         <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold text-stone-700">
           <div className="flex items-center gap-2">
