@@ -4,6 +4,7 @@ import { Equipment, InventoryItem } from '../../types/game';
 import {
   EQUIPMENT_SLOTS,
   EquipmentSlotId,
+  getBagItems,
   getEquipmentSlot,
   isEquipmentItem,
   MAX_INVENTORY_SLOTS,
@@ -17,6 +18,7 @@ interface InventoryPanelProps {
   onEquipItem: (item: InventoryItem) => void;
   onUnequipItem: (slot: EquipmentSlotId) => void;
   onUsePotion: (item: InventoryItem) => void;
+  notice?: string | null;
   framed?: boolean;
 }
 
@@ -35,17 +37,11 @@ export function InventoryPanel({
   onEquipItem,
   onUnequipItem,
   onUsePotion,
+  notice,
   framed = true,
 }: InventoryPanelProps) {
-  const bagItems = inventory;
+  const bagItems = getBagItems(inventory);
   const emptySlots = Math.max(0, MAX_INVENTORY_SLOTS - bagItems.length);
-  const isSameInventoryItem = (
-    first: InventoryItem,
-    second: InventoryItem
-  ) =>
-    first.instanceId && second.instanceId
-      ? first.instanceId === second.instanceId
-      : first.id === second.id;
 
   return (
     <div className={framed ? 'rpg-panel rounded-lg p-5' : ''}>
@@ -60,6 +56,12 @@ export function InventoryPanel({
           {bagItems.length}/{MAX_INVENTORY_SLOTS}
         </div>
       </div>
+
+      {notice && (
+        <div className="mb-4 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-800">
+          {notice}
+        </div>
+      )}
 
       <div className="mb-5 grid grid-cols-2 gap-3">
         {EQUIPMENT_SLOTS.map((slot) => (
@@ -85,9 +87,7 @@ export function InventoryPanel({
           <BagSlot
             key={item.instanceId || item.id}
             item={item}
-            equipped={EQUIPMENT_SLOTS.some(
-              (slot) => Boolean(equipment[slot] && isSameInventoryItem(equipment[slot], item))
-            )}
+            equipped={false}
             onEquipItem={onEquipItem}
             onUsePotion={onUsePotion}
           />
