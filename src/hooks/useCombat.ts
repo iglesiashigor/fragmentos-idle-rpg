@@ -9,7 +9,13 @@ export function useCombat() {
       // Enemy attacking
       const baseEnemyDamage = 5 + (attacker.level * 3);
       const scaledEnemyDamage = baseEnemyDamage * (1 + (attacker.level - 1) * 0.2);
-      const defenderArmor = (defender as Character).equipment.armor?.power || 0;
+      const defenderEquipment = (defender as Character).equipment;
+      const defenderArmor =
+        (defenderEquipment.armor?.power || 0) +
+        (defenderEquipment.helmet?.power || 0) +
+        (defenderEquipment.gloves?.power || 0) +
+        (defenderEquipment.pants?.power || 0) +
+        (defenderEquipment.boots?.power || 0);
       return Math.max(0, scaledEnemyDamage - defenderArmor);
     }
   };

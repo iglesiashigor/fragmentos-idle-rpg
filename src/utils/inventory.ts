@@ -1,6 +1,23 @@
 import { InventoryItem, Item } from '../types/game';
 
 export const MAX_INVENTORY_SLOTS = 12;
+export type EquipmentSlotId = 'weapon' | 'armor' | 'helmet' | 'gloves' | 'pants' | 'boots';
+export const EQUIPMENT_SLOTS: EquipmentSlotId[] = [
+  'weapon',
+  'helmet',
+  'armor',
+  'gloves',
+  'pants',
+  'boots',
+];
+
+export function isEquipmentItem(item: Pick<Item, 'type'>): item is Pick<Item, 'type'> & { type: EquipmentSlotId } {
+  return EQUIPMENT_SLOTS.includes(item.type as EquipmentSlotId);
+}
+
+export function getEquipmentSlot(item: Pick<Item, 'type'>): EquipmentSlotId | null {
+  return isEquipmentItem(item) ? item.type : null;
+}
 
 export function isStackableItem(item: Pick<Item, 'type'>) {
   return item.type === 'potion' || item.type === 'loot';

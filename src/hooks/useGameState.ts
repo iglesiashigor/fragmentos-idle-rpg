@@ -37,7 +37,9 @@ import {
 import {
   addItemToInventory,
   canAddItemToInventory,
+  EQUIPMENT_SLOTS,
   hasMaterials,
+  isEquipmentItem,
   removeMaterialsFromInventory,
 } from '../utils/inventory';
 import {
@@ -80,6 +82,14 @@ export function useGameState(
         : 1;
     const normalizedCharacter: SavedCharacter = {
       ...savedCharacter,
+      equipment: {
+        weapon: savedCharacter.equipment.weapon || null,
+        armor: savedCharacter.equipment.armor || null,
+        helmet: savedCharacter.equipment.helmet || null,
+        gloves: savedCharacter.equipment.gloves || null,
+        pants: savedCharacter.equipment.pants || null,
+        boots: savedCharacter.equipment.boots || null,
+      },
       quests: savedCharacter.quests || [],
       completedQuestIds: savedCharacter.completedQuestIds || [],
       professions: {
@@ -684,12 +694,10 @@ export function useGameState(
         ? first.instanceId === second.instanceId
         : first.id === second.id;
     
-    if (
-      (character.equipment.weapon &&
-        isSameInventoryItem(character.equipment.weapon, item)) ||
-      (character.equipment.armor &&
-        isSameInventoryItem(character.equipment.armor, item))
-    ) {
+    if (EQUIPMENT_SLOTS.some((slot) => {
+      const equippedItem = character.equipment[slot];
+      return equippedItem && isSameInventoryItem(equippedItem, item);
+    })) {
       return;
     }
 
@@ -998,7 +1006,7 @@ export function useGameState(
   };
 
   const handleUpgradeItem = (item: InventoryItem) => {
-    if (item.type !== 'weapon' && item.type !== 'armor') return;
+    if (!isEquipmentItem(item)) return;
     if ((item.upgradeLevel || 0) >= MAX_EQUIPMENT_UPGRADE) return;
 
     const cost = getEquipmentUpgradeCost(item);
@@ -1030,18 +1038,12 @@ export function useGameState(
     );
     const updatedEquipment = { ...character.equipment };
 
-    if (
-      character.equipment.weapon &&
-      isSameInventoryItem(character.equipment.weapon, item)
-    ) {
-      updatedEquipment.weapon = upgradedItem;
-    }
-    if (
-      character.equipment.armor &&
-      isSameInventoryItem(character.equipment.armor, item)
-    ) {
-      updatedEquipment.armor = upgradedItem;
-    }
+    EQUIPMENT_SLOTS.forEach((slot) => {
+      const equippedItem = character.equipment[slot];
+      if (equippedItem && isSameInventoryItem(equippedItem, item)) {
+        updatedEquipment[slot] = upgradedItem;
+      }
+    });
 
     updateCharacter({
       gold: character.gold - cost.goldCost,

@@ -1,6 +1,7 @@
 import { Gem, Sparkles } from 'lucide-react';
 import { Item, Spell } from '../types/game';
 import { RandomEventReward } from '../utils/randomEvents';
+import { getEquipmentSlot } from '../utils/inventory';
 
 interface RandomEventModalProps {
   reward: RandomEventReward;
@@ -13,10 +14,10 @@ export function RandomEventModal({ reward, onClaim }: RandomEventModalProps) {
   const itemReward = !isResource ? (reward.reward as Item) : null;
   const spellReward = !isResource ? (reward.reward as Spell) : null;
   const itemStat =
-    itemReward?.type === 'armor'
-      ? `Defesa: ${itemReward.power}`
-      : itemReward?.type === 'weapon'
+    itemReward?.type === 'weapon'
         ? `Poder: ${itemReward.power}`
+      : itemReward && getEquipmentSlot(itemReward)
+        ? `Defesa: ${itemReward.power}`
         : `Valor: ${itemReward?.price || 0} ouro`;
 
   return (
@@ -30,8 +31,8 @@ export function RandomEventModal({ reward, onClaim }: RandomEventModalProps) {
             <h2 className="text-2xl font-black text-stone-950">Descoberta Especial!</h2>
             <p className="text-sm font-semibold text-stone-500">
               {isResource
-                ? `Voce coletou recursos em ${reward.sourceName}.`
-                : `Voce encontrou ${isSpell ? 'uma nova magia' : 'um item raro'}.`}
+                ? `Voc? coletou recursos em ${reward.sourceName}.`
+                : `Voc? encontrou ${isSpell ? 'uma nova magia' : 'um item raro'}.`}
             </p>
           </div>
         </div>

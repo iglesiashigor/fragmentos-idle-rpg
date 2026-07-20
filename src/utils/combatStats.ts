@@ -54,7 +54,12 @@ export function calculateCharacterStats(
   character: Character
 ): CharacterCombatStats {
   const weaponPower = character.equipment.weapon?.power || 0;
-  const armorPower = character.equipment.armor?.power || 0;
+  const armorPower =
+    (character.equipment.armor?.power || 0) +
+    (character.equipment.helmet?.power || 0) +
+    (character.equipment.gloves?.power || 0) +
+    (character.equipment.pants?.power || 0) +
+    (character.equipment.boots?.power || 0);
   const passive = getClassPassive(character);
   const attack =
     8 +

@@ -19,8 +19,8 @@ export interface CraftingRecipe {
 export const CRAFTING_RECIPES: CraftingRecipe[] = [
   {
     id: 'craft_health_potion',
-    name: 'Pocao de Cura',
-    description: 'Prepara uma pocao simples usando ervas frescas.',
+    name: 'Po??o de Cura',
+    description: 'Prepara uma po??o simples usando ervas frescas.',
     result: POTIONS[0],
     quantity: 1,
     goldCost: 5,
@@ -28,7 +28,7 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
   },
   {
     id: 'craft_stamina_potion',
-    name: 'Pocao de Estamina',
+    name: 'Po??o de Estamina',
     description: 'Mistura ervas e fibra para recuperar energia.',
     result: POTIONS[2],
     quantity: 1,
@@ -100,7 +100,7 @@ export function getEquipmentUpgradeCost(item: InventoryItem): {
     goldCost: 30 * nextLevel,
       materials: [
         { itemId: 'iron_ore', quantity: oreCost },
-        { itemId: 'hide', quantity: nextLevel },
+        { itemId: 'couro', quantity: nextLevel },
         ...(rareMaterialCost ? [{ itemId: 'fiber', quantity: rareMaterialCost }] : []),
       ],
   };

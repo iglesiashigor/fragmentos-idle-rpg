@@ -7,6 +7,7 @@ import {
   PROFESSIONS,
 } from '../../data/professions';
 import { Attributes, Equipment, InventoryItem, SavedCharacter } from '../../types/game';
+import { EquipmentSlotId } from '../../utils/inventory';
 import { InventoryPanel } from '../Inventory/InventoryPanel';
 
 type CharacterTabId = 'inventory' | 'attributes' | 'professions' | 'achievements';
@@ -16,7 +17,7 @@ interface CharacterTabsProps {
   equipment: Equipment;
   inventory: InventoryItem[];
   onEquipItem: (item: InventoryItem) => void;
-  onUnequipItem: (slot: 'weapon' | 'armor') => void;
+  onUnequipItem: (slot: EquipmentSlotId) => void;
   onUsePotion: (item: InventoryItem) => void;
   onSetActiveTitle: (titleId?: string) => void;
 }

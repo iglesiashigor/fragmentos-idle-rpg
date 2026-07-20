@@ -23,7 +23,7 @@ export const WEAPONS: Item[] = [
     type: 'weapon',
     price: 85,
     power: 9,
-    description: 'Cajado magico',
+    description: 'Cajado mágico',
   },
 ];
 
@@ -34,7 +34,7 @@ export const ARMORS: Item[] = [
     type: 'armor',
     price: 65,
     power: 5,
-    description: 'Proteção basica',
+    description: 'Proteção básica para o peitoral',
   },
   {
     id: 'chainmail',
@@ -42,16 +42,101 @@ export const ARMORS: Item[] = [
     type: 'armor',
     price: 110,
     power: 9,
-    description: 'Sturdy chain armor',
+    description: 'Armadura pesada e resistente',
   },
   {
     id: 'robe',
-    name: 'Manto Magico',
+    name: 'Manto Mágico',
     type: 'armor',
     price: 80,
     power: 6,
-    description: 'Manto imbuido em magia',
+    description: 'Manto imbuído em magia',
   },
+];
+
+export const HELMETS: Item[] = [
+  {
+    id: 'iron_helmet',
+    name: 'Elmo de Ferro',
+    type: 'helmet',
+    price: 60,
+    power: 4,
+    description: 'Protege a cabeça contra golpes diretos',
+  },
+  {
+    id: 'mage_hat',
+    name: 'Chapéu de Mago',
+    type: 'helmet',
+    price: 70,
+    power: 3,
+    description: 'Chapéu leve usado por conjuradores',
+  },
+];
+
+export const GLOVES: Item[] = [
+  {
+    id: 'leather_gloves',
+    name: 'Luvas de Couro',
+    type: 'gloves',
+    price: 45,
+    power: 3,
+    description: 'Luvas simples para proteger as mãos',
+  },
+  {
+    id: 'iron_gauntlets',
+    name: 'Manoplas de Ferro',
+    type: 'gloves',
+    price: 75,
+    power: 5,
+    description: 'Manoplas pesadas para combate próximo',
+  },
+];
+
+export const PANTS: Item[] = [
+  {
+    id: 'traveler_pants',
+    name: 'Calças de Viajante',
+    type: 'pants',
+    price: 50,
+    power: 3,
+    description: 'Calças reforçadas para longas jornadas',
+  },
+  {
+    id: 'iron_leggings',
+    name: 'Grevas de Ferro',
+    type: 'pants',
+    price: 85,
+    power: 6,
+    description: 'Proteção pesada para as pernas',
+  },
+];
+
+export const BOOTS: Item[] = [
+  {
+    id: 'leather_boots',
+    name: 'Botas de Couro',
+    type: 'boots',
+    price: 45,
+    power: 3,
+    description: 'Botas resistentes para trilhas perigosas',
+  },
+  {
+    id: 'iron_boots',
+    name: 'Botas de Ferro',
+    type: 'boots',
+    price: 80,
+    power: 5,
+    description: 'Botas pesadas para proteção extra',
+  },
+];
+
+export const EQUIPMENT_ITEMS: Item[] = [
+  ...WEAPONS,
+  ...ARMORS,
+  ...HELMETS,
+  ...GLOVES,
+  ...PANTS,
+  ...BOOTS,
 ];
 
 export const POTIONS: Item[] = [
@@ -81,7 +166,7 @@ export const POTIONS: Item[] = [
     power: 45,
     staminaRestore: 45,
     description: 'Recupera 45 pontos de estamina',
-  }
+  },
 ];
 
 export const LOOT: Item[] = [
@@ -101,7 +186,7 @@ export const LOOT: Item[] = [
   },
   {
     id: 'porrete',
-    name: 'Porrete de madeira',
+    name: 'Porrete de Madeira',
     type: 'loot',
     price: 20,
     description: 'Pode ser vendido na loja',
@@ -160,7 +245,43 @@ export const RARE_ITEMS: Item[] = [
     type: 'armor',
     price: 1000,
     power: 50,
-    description: 'Armadura feita de cristais mágicos inquebraveis',
+    description: 'Armadura feita de cristais mágicos inquebráveis',
+    rarity: 'legendary',
+  },
+  {
+    id: 'dragon_helm',
+    name: 'Elmo do Dragão',
+    type: 'helmet',
+    price: 900,
+    power: 28,
+    description: 'Elmo forjado com escamas resistentes',
+    rarity: 'legendary',
+  },
+  {
+    id: 'shadow_gloves',
+    name: 'Luvas das Sombras',
+    type: 'gloves',
+    price: 850,
+    power: 24,
+    description: 'Luvas leves envoltas em energia sombria',
+    rarity: 'legendary',
+  },
+  {
+    id: 'crystal_leggings',
+    name: 'Grevas de Cristal',
+    type: 'pants',
+    price: 900,
+    power: 30,
+    description: 'Grevas cristalinas quase indestrutíveis',
+    rarity: 'legendary',
+  },
+  {
+    id: 'ancient_boots',
+    name: 'Botas Antigas',
+    type: 'boots',
+    price: 850,
+    power: 24,
+    description: 'Botas encontradas em ruínas esquecidas',
     rarity: 'legendary',
   },
 ];

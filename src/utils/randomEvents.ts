@@ -1,24 +1,6 @@
 import { Item, Spell } from '../types/game';
+import { RARE_ITEMS } from '../data/items';
 import { RESOURCE_BY_ID, RESOURCE_POOLS } from '../data/resources';
-
-export const RARE_WEAPONS: Item[] = [
-  {
-    id: 'legendary_sword',
-    name: 'Legendary Sword',
-    type: 'weapon',
-    price: 500,
-    power: 25,
-    description: 'A powerful ancient sword',
-  },
-  {
-    id: 'thunder_axe',
-    name: 'Thunder Axe',
-    type: 'weapon',
-    price: 600,
-    power: 30,
-    description: 'An axe imbued with lightning',
-  },
-];
 
 export const RARE_SPELLS: Spell[] = [
   {
@@ -66,7 +48,7 @@ export function generateRandomEvent(
     };
   }
 
-  const item = RARE_WEAPONS[Math.floor(Math.random() * RARE_WEAPONS.length)];
+  const item = RARE_ITEMS[Math.floor(Math.random() * RARE_ITEMS.length)];
   return {
     type: 'item',
     reward: {

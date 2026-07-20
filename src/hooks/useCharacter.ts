@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Character, Race, CharacterClass, DeadCharacter, Attributes } from '../types/game';
 import { calculateMaxHealth, calculateMaxResource } from '../utils/combatStats';
 import { createProfession, PROFESSIONS } from '../data/professions';
+import { getEquipmentSlot, isEquipmentItem } from '../utils/inventory';
 
 export function useCharacter() {
   const [deadCharacters, setDeadCharacters] = useState<DeadCharacter[]>([]);
@@ -16,12 +17,25 @@ export function useCharacter() {
       ...item,
       quantity: 1,
       instanceId: crypto.randomUUID(),
-      equipped: item.type === 'weapon' || item.type === 'armor',
+      equipped: isEquipmentItem(item),
     }));
-    const startingWeapon =
-      startingInventory.find((item) => item.type === 'weapon') || null;
-    const startingArmor =
-      startingInventory.find((item) => item.type === 'armor') || null;
+    const startingEquipment = startingInventory.reduce(
+      (equipment, item) => {
+        const slot = getEquipmentSlot(item);
+        if (slot) {
+          equipment[slot] = item;
+        }
+        return equipment;
+      },
+      {
+        weapon: null,
+        armor: null,
+        helmet: null,
+        gloves: null,
+        pants: null,
+        boots: null,
+      } as Character['equipment']
+    );
     
     // Apply class modifiers to attributes
     const finalAttributes = {
@@ -53,10 +67,7 @@ export function useCharacter() {
       maxHealth: 1,
       ...resourceSetup,
       gold: characterClass.startingGold,
-      equipment: {
-        weapon: startingWeapon,
-        armor: startingArmor,
-      },
+      equipment: startingEquipment,
       spells: characterClass.startingSpells,
       abilities: characterClass.startingAbilities,
       level: 1,

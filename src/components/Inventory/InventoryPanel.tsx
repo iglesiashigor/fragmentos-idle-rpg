@@ -1,7 +1,13 @@
 import { ReactNode } from 'react';
 import { FlaskRound as Flask, Package, Shield, Sword } from 'lucide-react';
 import { Equipment, InventoryItem } from '../../types/game';
-import { MAX_INVENTORY_SLOTS } from '../../utils/inventory';
+import {
+  EQUIPMENT_SLOTS,
+  EquipmentSlotId,
+  getEquipmentSlot,
+  isEquipmentItem,
+  MAX_INVENTORY_SLOTS,
+} from '../../utils/inventory';
 
 interface InventoryPanelProps {
   inventory: InventoryItem[];
@@ -9,10 +15,19 @@ interface InventoryPanelProps {
   currentHealth: number;
   maxHealth: number;
   onEquipItem: (item: InventoryItem) => void;
-  onUnequipItem: (slot: 'weapon' | 'armor') => void;
+  onUnequipItem: (slot: EquipmentSlotId) => void;
   onUsePotion: (item: InventoryItem) => void;
   framed?: boolean;
 }
+
+const EQUIPMENT_SLOT_LABELS: Record<EquipmentSlotId, string> = {
+  weapon: 'Arma',
+  helmet: 'Cabeça',
+  armor: 'Peitoral',
+  gloves: 'Luvas',
+  pants: 'Calças',
+  boots: 'Botas',
+};
 
 export function InventoryPanel({
   inventory,
@@ -47,18 +62,15 @@ export function InventoryPanel({
       </div>
 
       <div className="mb-5 grid grid-cols-2 gap-3">
-        <EquipmentSlot
-          title="Arma"
-          icon={<Sword className="h-5 w-5" />}
-          item={equipment.weapon}
-          onUnequip={() => onUnequipItem('weapon')}
-        />
-        <EquipmentSlot
-          title="Armadura"
-          icon={<Shield className="h-5 w-5" />}
-          item={equipment.armor}
-          onUnequip={() => onUnequipItem('armor')}
-        />
+        {EQUIPMENT_SLOTS.map((slot) => (
+          <EquipmentSlot
+            key={slot}
+            title={EQUIPMENT_SLOT_LABELS[slot]}
+            icon={slot === 'weapon' ? <Sword className="h-5 w-5" /> : <Shield className="h-5 w-5" />}
+            item={equipment[slot] || null}
+            onUnequip={() => onUnequipItem(slot)}
+          />
+        ))}
       </div>
 
       <div className="mb-3 flex items-center justify-between border-t border-stone-200 pt-4">
@@ -73,9 +85,8 @@ export function InventoryPanel({
           <BagSlot
             key={item.instanceId || item.id}
             item={item}
-            equipped={Boolean(
-              (equipment.weapon && isSameInventoryItem(equipment.weapon, item)) ||
-              (equipment.armor && isSameInventoryItem(equipment.armor, item))
+            equipped={EQUIPMENT_SLOTS.some(
+              (slot) => Boolean(equipment[slot] && isSameInventoryItem(equipment[slot], item))
             )}
             onEquipItem={onEquipItem}
             onUsePotion={onUsePotion}
@@ -101,7 +112,7 @@ function EquipmentSlot({
 }: {
   title: string;
   icon: ReactNode;
-  item: Equipment['weapon'];
+  item: InventoryItem | null;
   onUnequip: () => void;
 }) {
   return (
@@ -143,7 +154,7 @@ function BagSlot({
   onEquipItem: (item: InventoryItem) => void;
   onUsePotion: (item: InventoryItem) => void;
 }) {
-  const canEquip = item.type === 'weapon' || item.type === 'armor';
+  const canEquip = isEquipmentItem(item);
   const canUse = item.type === 'potion';
 
   return (
@@ -170,7 +181,7 @@ function BagSlot({
           </div>
           <div className="text-[11px] font-semibold text-stone-500">
             {item.type === 'weapon' && `Poder ${item.power || 0}`}
-            {item.type === 'armor' && `Defesa ${item.power || 0}`}
+            {getEquipmentSlot(item) && item.type !== 'weapon' && `Defesa ${item.power || 0}`}
             {item.type === 'potion' && 'Poção'}
             {item.type === 'loot' &&
               (item.resourceCategory ? 'Recurso' : `${item.price} ouro`)}
@@ -209,7 +220,7 @@ function ItemIcon({ item }: { item: InventoryItem }) {
   if (item.type === 'weapon') {
     return <Sword className={`${iconClass} text-red-700`} />;
   }
-  if (item.type === 'armor') {
+  if (getEquipmentSlot(item)) {
     return <Shield className={`${iconClass} text-sky-700`} />;
   }
   if (item.type === 'potion') {

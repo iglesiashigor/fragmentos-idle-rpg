@@ -12,6 +12,7 @@ import { CharacterTabs } from './Character/CharacterTabs';
 import { LevelUpModal } from './LevelUp/LevelUpModal';
 import { useGameState } from '../hooks/useGameState';
 import { SavedCharacter, InventoryItem } from '../types/game';
+import { EquipmentSlotId, getEquipmentSlot } from '../utils/inventory';
 
 interface GameContentProps {
   character: SavedCharacter;
@@ -32,7 +33,8 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
       : first.id === second.id;
 
   const handleEquipItem = (item: InventoryItem) => {
-    const slot = item.type === 'weapon' ? 'weapon' : 'armor';
+    const slot = getEquipmentSlot(item);
+    if (!slot) return;
     const currentEquipped = gameState.character.equipment[slot];
 
     const updatedInventory = gameState.character.inventory.map(invItem => {
@@ -56,7 +58,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
     });
   };
 
-  const handleUnequipItem = (slot: 'weapon' | 'armor') => {
+  const handleUnequipItem = (slot: EquipmentSlotId) => {
     const currentEquipped = gameState.character.equipment[slot];
     if (!currentEquipped) return;
 

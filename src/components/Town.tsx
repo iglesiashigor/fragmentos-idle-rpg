@@ -1,9 +1,10 @@
 ﻿import { useState } from 'react';
-import { ARMORS, POTIONS, WEAPONS } from '../data/items';
+import { ARMORS, BOOTS, GLOVES, HELMETS, PANTS, POTIONS, WEAPONS } from '../data/items';
 import {
   CRAFTING_RECIPES,
   CraftingRecipe,
   getEquipmentUpgradeCost,
+  getEquipmentUpgradePowerGain,
   MAX_EQUIPMENT_UPGRADE,
   MaterialCost,
 } from '../data/recipes';
@@ -13,6 +14,7 @@ import {
   canAddItemToInventory,
   getItemQuantity,
   hasMaterials,
+  isEquipmentItem,
 } from '../utils/inventory';
 import {
   getAvailableQuests,
@@ -104,6 +106,34 @@ export function Town({
           <ShopSection
             title="Armaduras"
             items={ARMORS}
+            gold={gold}
+            inventory={inventory}
+            onBuyItem={onBuyItem}
+          />
+          <ShopSection
+            title="Cabeça"
+            items={HELMETS}
+            gold={gold}
+            inventory={inventory}
+            onBuyItem={onBuyItem}
+          />
+          <ShopSection
+            title="Luvas"
+            items={GLOVES}
+            gold={gold}
+            inventory={inventory}
+            onBuyItem={onBuyItem}
+          />
+          <ShopSection
+            title="Calças"
+            items={PANTS}
+            gold={gold}
+            inventory={inventory}
+            onBuyItem={onBuyItem}
+          />
+          <ShopSection
+            title="Botas"
+            items={BOOTS}
             gold={gold}
             inventory={inventory}
             onBuyItem={onBuyItem}
@@ -301,7 +331,7 @@ function CraftPanel({
   onUpgradeItem: (item: InventoryItem) => void;
 }) {
   const equipmentItems = inventory.filter(
-    (item) => item.type === 'weapon' || item.type === 'armor'
+    (item) => isEquipmentItem(item)
   );
 
   return (
@@ -345,6 +375,7 @@ function CraftPanel({
               const upgradeLevel = item.upgradeLevel || 0;
               const isMaxed = upgradeLevel >= MAX_EQUIPMENT_UPGRADE;
               const cost = getEquipmentUpgradeCost(item);
+              const powerGain = getEquipmentUpgradePowerGain(item);
               const canUpgrade =
                 !isMaxed &&
                 gold >= cost.goldCost &&
@@ -356,7 +387,7 @@ function CraftPanel({
                     {item.type === 'weapon' ? 'Poder' : 'Defesa'} atual: {item.power || 0}
                   </p>
                   <p className="text-sm font-semibold text-emerald-700">
-                    Próximo nível: +2 {item.type === 'weapon' ? 'poder' : 'defesa'}
+                    Próximo nível: +{powerGain} {item.type === 'weapon' ? 'poder' : 'defesa'}
                   </p>
                   {!isMaxed && (
                     <>

@@ -62,7 +62,7 @@ export interface AttributeModifiers {
 export interface Item {
   id: string;
   name: string;
-  type: 'weapon' | 'armor' | 'potion' | 'loot';
+  type: 'weapon' | 'armor' | 'helmet' | 'gloves' | 'pants' | 'boots' | 'potion' | 'loot';
   description: string;
   price: number;
   power?: number;
@@ -89,6 +89,10 @@ export interface InventoryItem extends Item {
 export interface Equipment {
   weapon: InventoryItem | null;
   armor: InventoryItem | null;
+  helmet?: InventoryItem | null;
+  gloves?: InventoryItem | null;
+  pants?: InventoryItem | null;
+  boots?: InventoryItem | null;
 }
 
 export interface Spell {
