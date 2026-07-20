@@ -25,13 +25,13 @@ export const PROFESSIONS: ProfessionDefinition[] = [
   {
     id: 'miner',
     name: 'Minerador',
-    description: 'Especialista em pedra e minerios da pedreira.',
+    description: 'Especialista em pedra e minérios da pedreira.',
     resourcePools: ['quarry'],
   },
   {
     id: 'explorer',
     name: 'Explorador',
-    description: 'Especialista em ruinas e achados antigos.',
+    description: 'Especialista em ruínas e achados antigos.',
     resourcePools: ['ruins'],
   },
 ];

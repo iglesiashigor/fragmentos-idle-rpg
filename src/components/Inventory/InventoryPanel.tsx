@@ -11,6 +11,7 @@ interface InventoryPanelProps {
   onEquipItem: (item: InventoryItem) => void;
   onUnequipItem: (slot: 'weapon' | 'armor') => void;
   onUsePotion: (item: InventoryItem) => void;
+  framed?: boolean;
 }
 
 export function InventoryPanel({
@@ -19,6 +20,7 @@ export function InventoryPanel({
   onEquipItem,
   onUnequipItem,
   onUsePotion,
+  framed = true,
 }: InventoryPanelProps) {
   const bagItems = inventory;
   const emptySlots = Math.max(0, MAX_INVENTORY_SLOTS - bagItems.length);
@@ -31,7 +33,7 @@ export function InventoryPanel({
       : first.id === second.id;
 
   return (
-    <div className="rpg-panel rounded-lg p-5">
+    <div className={framed ? 'rpg-panel rounded-lg p-5' : ''}>
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="text-xl font-black text-stone-950">Inventário</h2>

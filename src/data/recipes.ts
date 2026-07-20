@@ -41,7 +41,7 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
   {
     id: 'craft_iron_sword',
     name: 'Espada de Ferro',
-    description: 'Forja uma espada confiavel com madeira e minerio.',
+    description: 'Forja uma espada confiável com madeira e minério.',
     result: WEAPONS[0],
     quantity: 1,
     goldCost: 25,
@@ -58,7 +58,7 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
     quantity: 1,
     goldCost: 20,
     materials: [
-      { itemId: 'hide', quantity: 3 },
+      { itemId: 'couro', quantity: 3 },
       { itemId: 'fiber', quantity: 2 },
     ],
   },

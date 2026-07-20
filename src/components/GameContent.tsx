@@ -8,7 +8,7 @@ import { RewardSummary } from './RewardSummary';
 import { RandomEventModal } from './RandomEventModal';
 import { UserProfile } from './Profile/UserProfile';
 import { DeathModal } from './Character/DeathModal';
-import { InventoryPanel } from './Inventory/InventoryPanel';
+import { CharacterTabs } from './Character/CharacterTabs';
 import { LevelUpModal } from './LevelUp/LevelUpModal';
 import { useGameState } from '../hooks/useGameState';
 import { SavedCharacter, InventoryItem } from '../types/game';
@@ -141,14 +141,14 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
         <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[440px_minmax(0,1fr)]">
           <div className="space-y-6">
             <Character character={gameState.character} />
-            <InventoryPanel
+            <CharacterTabs
+              character={gameState.character}
               inventory={gameState.character.inventory}
               equipment={gameState.character.equipment}
               onEquipItem={handleEquipItem}
               onUnequipItem={handleUnequipItem}
               onUsePotion={handleUsePotion}
-              currentHealth={gameState.character.health}
-              maxHealth={gameState.character.maxHealth}
+              onSetActiveTitle={gameState.handleSetActiveTitle}
             />
           </div>
 
@@ -183,7 +183,6 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                     onClaimQuestReward={gameState.handleClaimQuestReward}
                     onCraftRecipe={gameState.handleCraftRecipe}
                     onUpgradeItem={gameState.handleUpgradeItem}
-                    onSetActiveTitle={gameState.handleSetActiveTitle}
                   />
                 ) : gameState.currentLocation.type === 'gathering' ? (
                   <Gathering

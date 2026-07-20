@@ -4,7 +4,7 @@ export const QUESTS: Quest[] = [
   {
     id: 'hunter_start',
     name: 'Limpar a Trilha',
-    description: 'Derrote criaturas que ameacam a estrada proxima da cidade.',
+    description: 'Derrote criaturas que ameaçam a estrada próxima da cidade.',
     type: 'kill',
     requirements: { level: 1 },
     objectives: [{ target: 'any_enemy', label: 'Inimigos derrotados', amount: 3, current: 0 }],
@@ -14,7 +14,7 @@ export const QUESTS: Quest[] = [
   {
     id: 'wolf_pelts',
     name: 'Lobos na Cerca',
-    description: 'Os fazendeiros precisam que voce reduza a ameaca dos lobos.',
+    description: 'Os fazendeiros precisam que você reduza a ameaça dos lobos.',
     type: 'kill',
     requirements: { level: 2, previousQuests: ['hunter_start'] },
     objectives: [{ target: 'Lobo', label: 'Lobos derrotados', amount: 2, current: 0 }],
@@ -37,12 +37,12 @@ export const QUESTS: Quest[] = [
   {
     id: 'blacksmith_order',
     name: 'Pedido do Ferreiro',
-    description: 'Traga pedra e minerio para o ferreiro preparar novos reforcos.',
+    description: 'Traga pedra e minério para o ferreiro preparar novos reforços.',
     type: 'collect',
     requirements: { level: 1 },
     objectives: [
       { target: 'stone', label: 'Pedras coletadas', amount: 4, current: 0 },
-      { target: 'iron_ore', label: 'Minerio coletado', amount: 2, current: 0 },
+      { target: 'iron_ore', label: 'Minério coletado', amount: 2, current: 0 },
     ],
     rewards: { gold: 110, experience: 85 },
     status: 'available',
@@ -62,13 +62,12 @@ export const QUESTS: Quest[] = [
   },
   {
     id: 'ruins_relics',
-    name: 'Sinais nas Ruinas',
-    description: 'Explore as ruinas e traga materiais antigos para estudo.',
+    name: 'Sinais nas Ruínas',
+    description: 'Explore as ruínas e traga materiais antigos para estudo.',
     type: 'collect',
     requirements: { level: 1 },
     objectives: [
-      { target: 'stone', label: 'Pedras antigas', amount: 3, current: 0 },
-      { target: 'herb', label: 'Ervas raras', amount: 2, current: 0 },
+      { target: 'ancient_fragment', label: 'Fragmentos antigos', amount: 4, current: 0 },
     ],
     rewards: { gold: 90, experience: 70 },
     status: 'available',

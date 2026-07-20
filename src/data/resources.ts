@@ -15,7 +15,7 @@ export const RESOURCES: Item[] = [
     type: 'loot',
     price: 1,
     resourceCategory: 'herb',
-    description: 'Ervas medicinais usadas em pocoes e preparos.',
+    description: 'Ervas medicinais usadas em poções e preparos.',
   },
   {
     id: 'stone',
@@ -27,11 +27,11 @@ export const RESOURCES: Item[] = [
   },
   {
     id: 'iron_ore',
-    name: 'Minerio de Ferro',
+    name: 'Minério de Ferro',
     type: 'loot',
     price: 2,
     resourceCategory: 'ore',
-    description: 'Minerio resistente usado para armas e armaduras.',
+    description: 'Minério resistente usado para armas e armaduras.',
   },
   {
     id: 'hide',
@@ -39,7 +39,7 @@ export const RESOURCES: Item[] = [
     type: 'loot',
     price: 2,
     resourceCategory: 'hide',
-    description: 'Couro de criatura usado em armaduras e reforcos.',
+    description: 'Couro de criatura usado em armaduras e reforços.',
   },
   {
     id: 'fiber',
@@ -47,7 +47,15 @@ export const RESOURCES: Item[] = [
     type: 'loot',
     price: 1,
     resourceCategory: 'fiber',
-    description: 'Fibra natural usada para costura e amarracoes.',
+    description: 'Fibra natural usada para costura e amarrações.',
+  },
+  {
+    id: 'ancient_fragment',
+    name: 'Fragmento Antigo',
+    type: 'loot',
+    price: 2,
+    resourceCategory: 'stone',
+    description: 'Fragmento encontrado em ruínas, útil para estudos e trocas.',
   },
 ];
 
@@ -58,7 +66,7 @@ export const RESOURCE_BY_ID = Object.fromEntries(
 export const RESOURCE_POOLS: Record<string, { name: string; items: string[] }> = {
   forest: {
     name: 'Bosque Antigo',
-    items: ['wood', 'fiber', 'hide'],
+    items: ['wood'],
   },
   quarry: {
     name: 'Pedreira',
@@ -69,7 +77,7 @@ export const RESOURCE_POOLS: Record<string, { name: string; items: string[] }> =
     items: ['herb', 'fiber'],
   },
   ruins: {
-    name: 'Ruinas Abandonadas',
-    items: ['stone', 'iron_ore', 'wood', 'herb', 'hide'],
+    name: 'Ruínas Abandonadas',
+    items: ['ancient_fragment'],
   },
 };

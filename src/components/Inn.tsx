@@ -14,33 +14,31 @@ export function Inn({ gold, currentHealth, maxHealth, onRest }: InnProps) {
   const needsRest = currentHealth < maxHealth;
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-md">
-      <div className="flex items-center gap-3 mb-4">
-        <Bed className="w-6 h-6 text-blue-500" />
+    <div className="rounded-lg bg-white p-6 shadow-md">
+      <div className="mb-4 flex items-center gap-3">
+        <Bed className="h-6 w-6 text-blue-500" />
         <h3 className="text-xl font-bold">Taverna</h3>
       </div>
 
       <div className="mb-4">
         <p className="text-gray-600">Descanse para recuperar sua vida.</p>
-        <p className="text-yellow-600 font-medium">
-          Custo: 🪙 {REST_COST} Ouros
-        </p>
+        <p className="font-medium text-yellow-600">Custo: {REST_COST} ouros</p>
       </div>
 
       <button
         onClick={onRest}
         disabled={!canAffordRest || !needsRest}
-        className={`w-full py-2 px-4 rounded-lg text-white transition-colors ${
+        className={`w-full rounded-lg px-4 py-2 text-white transition-colors ${
           canAffordRest && needsRest
             ? 'bg-blue-500 hover:bg-blue-600'
-            : 'bg-gray-400 cursor-not-allowed'
+            : 'cursor-not-allowed bg-gray-400'
         }`}
       >
         {!needsRest
-          ? 'Você esta curado'
+          ? 'Você está curado'
           : !canAffordRest
-          ? 'Not enough gold'
-          : 'Descançado e recuperado'}
+            ? 'Ouro insuficiente'
+            : 'Descansar e recuperar'}
       </button>
     </div>
   );

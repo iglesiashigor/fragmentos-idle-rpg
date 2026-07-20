@@ -42,9 +42,9 @@ export function BossLair({
           <Crown className="h-5 w-5" />
         </div>
         <div>
-          <h3 className="text-xl font-black text-stone-950">Covil do ChefÃ£o</h3>
+          <h3 className="text-xl font-black text-stone-950">Covil do Chefão</h3>
           <p className="text-sm font-semibold text-stone-600">
-            Enfrente um chefao do seu nivel. Custo: {entryCost} ouro.
+            Enfrente um chefão do seu nível. Custo: {entryCost} ouro.
           </p>
         </div>
       </div>
@@ -52,18 +52,18 @@ export function BossLair({
       <div className="mb-4 rounded-md border border-purple-200 bg-white p-3 text-sm font-semibold text-stone-700">
         <div className="font-black text-stone-950">Preparo recomendado</div>
         <div className="mt-1">
-          Arma +{recommendedUpgrade}, armadura +{recommendedUpgrade}, vida cheia e algumas pocoes.
+          Arma +{recommendedUpgrade}, armadura +{recommendedUpgrade}, vida cheia e algumas poções.
         </div>
         {!hasRecommendedGear && (
           <div className="mt-2 rounded border border-amber-200 bg-amber-50 p-2 font-bold text-amber-800">
-            Seu equipamento ainda esta abaixo do recomendado para uma luta confortavel.
+            Seu equipamento ainda está abaixo do recomendado para uma luta confortável.
           </div>
         )}
       </div>
 
       {isCoolingDown && (
         <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-800">
-          O covil estÃ¡ se reorganizando. Volte em {remainingMinutes} min.
+          O covil está se reorganizando. Volte em {remainingMinutes} min.
         </div>
       )}
 
@@ -78,7 +78,7 @@ export function BossLair({
         disabled={!canEnter || !hasGold}
         className="rpg-button-primary w-full disabled:bg-stone-300 disabled:text-stone-500"
       >
-        Enfrentar ChefÃ£o
+        Enfrentar Chefão
       </button>
     </div>
   );

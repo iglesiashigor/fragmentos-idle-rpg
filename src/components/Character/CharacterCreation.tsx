@@ -182,7 +182,7 @@ export function CharacterCreation({
             </div>
 
             <div className="rpg-panel rounded-lg p-5">
-              <SectionTitle title="RaÃ§a" subtitle="Escolha a origem do personagem" />
+              <SectionTitle title="Raça" subtitle="Escolha a origem do personagem" />
               <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 {RACES.map((race) => (
                   <button
@@ -209,7 +209,7 @@ export function CharacterCreation({
           </div>
 
           <div className="rpg-panel rounded-lg p-5">
-            <SectionTitle title="Classe" subtitle="Define estilo de combate e evoluÃ§Ã£o" />
+            <SectionTitle title="Classe" subtitle="Define estilo de combate e evolução" />
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
               {CLASSES.map((characterClass) => (
                 <button
@@ -242,17 +242,15 @@ export function CharacterCreation({
           </div>
 
           <div className="rpg-panel rounded-lg p-5">
-          <div className="rpg-panel rounded-lg p-5">
-            <SectionTitle title="Profissoes" subtitle="Todas evoluem conforme os pontos de coleta usados" />
+            <SectionTitle title="Profissões" subtitle="Todas evoluem conforme os pontos de coleta usados" />
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">
-              Lenhador, Coletor, Minerador e Explorador ficam disponiveis desde o inicio. Cada uma ganha XP no ponto de coleta correspondente.
+              Lenhador, Coletor, Minerador e Explorador ficam disponíveis desde o início. Cada uma ganha XP no ponto de coleta correspondente.
             </div>
-          </div>
           </div>
 
           <div className="rpg-panel rounded-lg p-5">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <SectionTitle title="Atributos" subtitle="Distribua todos os pontos disponÃ­veis" />
+              <SectionTitle title="Atributos" subtitle="Distribua todos os pontos disponíveis" />
               <span
                 className={`rounded-md px-3 py-2 text-sm font-black ${
                   remainingPoints === 0
@@ -264,11 +262,11 @@ export function CharacterCreation({
               </span>
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-              {renderAttributeControl('strength', 'ForÃ§a', <Sword className="h-4 w-4" />)}
-              {renderAttributeControl('effort', 'EsforÃ§o', <Dumbbell className="h-4 w-4" />)}
-              {renderAttributeControl('resistance', 'ResistÃªncia', <Shield className="h-4 w-4" />)}
-              {renderAttributeControl('intelligence', 'InteligÃªncia', <Brain className="h-4 w-4" />)}
-              {renderAttributeControl('accuracy', 'AcurÃ¡cia', <Target className="h-4 w-4" />)}
+              {renderAttributeControl('strength', 'Força', <Sword className="h-4 w-4" />)}
+              {renderAttributeControl('effort', 'Esforço', <Dumbbell className="h-4 w-4" />)}
+              {renderAttributeControl('resistance', 'Resistência', <Shield className="h-4 w-4" />)}
+              {renderAttributeControl('intelligence', 'Inteligência', <Brain className="h-4 w-4" />)}
+              {renderAttributeControl('accuracy', 'Acurácia', <Target className="h-4 w-4" />)}
             </div>
           </div>
 

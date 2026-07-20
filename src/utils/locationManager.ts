@@ -41,7 +41,7 @@ export function generateRandomLocation(): MapLocation {
       forest: 'Bosque Antigo',
       quarry: 'Pedreira',
       grove: 'Clareira de Ervas',
-      ruins: 'Ruinas Abandonadas',
+      ruins: 'Ruínas Abandonadas',
     };
     return {
       id: generateEventId(),
@@ -116,7 +116,7 @@ export const INITIAL_LOCATIONS: MapLocation[] = [
     resourcePool: 'ruins',
     x: 19,
     y: 73,
-    name: 'Ruinas Abandonadas',
+    name: 'Ruínas Abandonadas',
     level: 1,
   },
   {
