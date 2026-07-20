@@ -1,4 +1,4 @@
-import { Item } from '../types/game';
+﻿import { Item } from '../types/game';
 
 export const WEAPONS: Item[] = [
   {
@@ -7,7 +7,7 @@ export const WEAPONS: Item[] = [
     type: 'weapon',
     price: 70,
     power: 8,
-    description: 'Uma espada básica e confiável',
+    description: 'Uma espada bÃ¡sica e confiÃ¡vel',
   },
   {
     id: 'axe',
@@ -23,7 +23,15 @@ export const WEAPONS: Item[] = [
     type: 'weapon',
     price: 85,
     power: 9,
-    description: 'Cajado mágico',
+    description: 'Cajado mÃ¡gico',
+  },
+  {
+    id: 'bow',
+    name: 'Arco de Caça',
+    type: 'weapon',
+    price: 90,
+    power: 10,
+    description: 'Arco leve para ataques precisos à distância',
   },
 ];
 
@@ -34,7 +42,7 @@ export const ARMORS: Item[] = [
     type: 'armor',
     price: 65,
     power: 5,
-    description: 'Proteção básica para o peitoral',
+    description: 'ProteÃ§Ã£o bÃ¡sica para o peitoral',
   },
   {
     id: 'chainmail',
@@ -46,11 +54,11 @@ export const ARMORS: Item[] = [
   },
   {
     id: 'robe',
-    name: 'Manto Mágico',
+    name: 'Manto MÃ¡gico',
     type: 'armor',
     price: 80,
     power: 6,
-    description: 'Manto imbuído em magia',
+    description: 'Manto imbuÃ­do em magia',
   },
 ];
 
@@ -61,15 +69,15 @@ export const HELMETS: Item[] = [
     type: 'helmet',
     price: 60,
     power: 4,
-    description: 'Protege a cabeça contra golpes diretos',
+    description: 'Protege a cabeÃ§a contra golpes diretos',
   },
   {
     id: 'mage_hat',
-    name: 'Chapéu de Mago',
+    name: 'ChapÃ©u de Mago',
     type: 'helmet',
     price: 70,
     power: 3,
-    description: 'Chapéu leve usado por conjuradores',
+    description: 'ChapÃ©u leve usado por conjuradores',
   },
 ];
 
@@ -80,7 +88,7 @@ export const GLOVES: Item[] = [
     type: 'gloves',
     price: 45,
     power: 3,
-    description: 'Luvas simples para proteger as mãos',
+    description: 'Luvas simples para proteger as mÃ£os',
   },
   {
     id: 'iron_gauntlets',
@@ -88,18 +96,18 @@ export const GLOVES: Item[] = [
     type: 'gloves',
     price: 75,
     power: 5,
-    description: 'Manoplas pesadas para combate próximo',
+    description: 'Manoplas pesadas para combate prÃ³ximo',
   },
 ];
 
 export const PANTS: Item[] = [
   {
     id: 'traveler_pants',
-    name: 'Calças de Viajante',
+    name: 'CalÃ§as de Viajante',
     type: 'pants',
     price: 50,
     power: 3,
-    description: 'Calças reforçadas para longas jornadas',
+    description: 'CalÃ§as reforÃ§adas para longas jornadas',
   },
   {
     id: 'iron_leggings',
@@ -107,7 +115,7 @@ export const PANTS: Item[] = [
     type: 'pants',
     price: 85,
     power: 6,
-    description: 'Proteção pesada para as pernas',
+    description: 'ProteÃ§Ã£o pesada para as pernas',
   },
 ];
 
@@ -126,7 +134,7 @@ export const BOOTS: Item[] = [
     type: 'boots',
     price: 80,
     power: 5,
-    description: 'Botas pesadas para proteção extra',
+    description: 'Botas pesadas para proteÃ§Ã£o extra',
   },
 ];
 
@@ -142,7 +150,7 @@ export const EQUIPMENT_ITEMS: Item[] = [
 export const POTIONS: Item[] = [
   {
     id: 'health_potion',
-    name: 'Poção de Cura',
+    name: 'PoÃ§Ã£o de Cura',
     type: 'potion',
     price: 25,
     power: 45,
@@ -151,7 +159,7 @@ export const POTIONS: Item[] = [
   },
   {
     id: 'mana_potion',
-    name: 'Poção de Mana',
+    name: 'PoÃ§Ã£o de Mana',
     type: 'potion',
     price: 25,
     power: 45,
@@ -160,7 +168,7 @@ export const POTIONS: Item[] = [
   },
   {
     id: 'stamina_potion',
-    name: 'Poção de Estamina',
+    name: 'PoÃ§Ã£o de Estamina',
     type: 'potion',
     price: 25,
     power: 45,
@@ -196,7 +204,7 @@ export const LOOT: Item[] = [
 export const RARE_ITEMS: Item[] = [
   {
     id: 'legendary_sword',
-    name: 'Espada Lendária',
+    name: 'Espada LendÃ¡ria',
     type: 'weapon',
     price: 1000,
     power: 50,
@@ -205,11 +213,11 @@ export const RARE_ITEMS: Item[] = [
   },
   {
     id: 'dragon_armor',
-    name: 'Armadura do Dragão',
+    name: 'Armadura do DragÃ£o',
     type: 'armor',
     price: 1000,
     power: 50,
-    description: 'Armadura forjada com escamas de dragão',
+    description: 'Armadura forjada com escamas de dragÃ£o',
     rarity: 'legendary',
   },
   {
@@ -218,7 +226,7 @@ export const RARE_ITEMS: Item[] = [
     type: 'weapon',
     price: 1000,
     power: 50,
-    description: 'Cajado imbuído com energia pura',
+    description: 'Cajado imbuÃ­do com energia pura',
     rarity: 'legendary',
   },
   {
@@ -227,12 +235,12 @@ export const RARE_ITEMS: Item[] = [
     type: 'armor',
     price: 1000,
     power: 50,
-    description: 'Manto tecido com essência das sombras',
+    description: 'Manto tecido com essÃªncia das sombras',
     rarity: 'legendary',
   },
   {
     id: 'titan_hammer',
-    name: 'Martelo Titânico',
+    name: 'Martelo TitÃ¢nico',
     type: 'weapon',
     price: 1000,
     power: 50,
@@ -245,12 +253,12 @@ export const RARE_ITEMS: Item[] = [
     type: 'armor',
     price: 1000,
     power: 50,
-    description: 'Armadura feita de cristais mágicos inquebráveis',
+    description: 'Armadura feita de cristais mÃ¡gicos inquebrÃ¡veis',
     rarity: 'legendary',
   },
   {
     id: 'dragon_helm',
-    name: 'Elmo do Dragão',
+    name: 'Elmo do DragÃ£o',
     type: 'helmet',
     price: 900,
     power: 28,
@@ -272,7 +280,7 @@ export const RARE_ITEMS: Item[] = [
     type: 'pants',
     price: 900,
     power: 30,
-    description: 'Grevas cristalinas quase indestrutíveis',
+    description: 'Grevas cristalinas quase indestrutÃ­veis',
     rarity: 'legendary',
   },
   {
@@ -281,7 +289,7 @@ export const RARE_ITEMS: Item[] = [
     type: 'boots',
     price: 850,
     power: 24,
-    description: 'Botas encontradas em ruínas esquecidas',
+    description: 'Botas encontradas em ruÃ­nas esquecidas',
     rarity: 'legendary',
   },
 ];
