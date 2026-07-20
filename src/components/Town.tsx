@@ -1,4 +1,5 @@
 ﻿import { useState } from 'react';
+import { FlaskRound, Package, Shield, ShoppingCart, Sword } from 'lucide-react';
 import { ARMORS, BOOTS, GLOVES, HELMETS, PANTS, POTIONS, WEAPONS } from '../data/items';
 import {
   CRAFTING_RECIPES,
@@ -428,26 +429,122 @@ function ShopSection({
   onBuyItem: (item: Item) => void;
 }) {
   return (
-    <div>
-      <h3 className="mb-2 text-lg font-bold text-stone-950">{title}</h3>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <section>
+      <div className="mb-3 flex items-center justify-between border-b border-stone-200 pb-2">
+        <h3 className="text-lg font-black text-stone-950">{title}</h3>
+        <span className="text-xs font-bold uppercase tracking-wide text-stone-500">
+          {items.length} itens
+        </span>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {items.map((item) => (
-          <button
+          <ShopItemCard
             key={item.id}
-            onClick={() => onBuyItem(item)}
-            disabled={gold < item.price || !canAddItemToInventory(item, inventory)}
-            className="rpg-item rounded-lg text-left disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <div className="font-bold text-stone-950">{item.name}</div>
-            <div className="text-sm text-stone-600">{item.description}</div>
-            <div className="mt-2 font-semibold text-amber-700">
-              {item.price} ouro
-            </div>
-          </button>
+            item={item}
+            canBuy={gold >= item.price && canAddItemToInventory(item, inventory)}
+            onBuyItem={onBuyItem}
+          />
         ))}
       </div>
-    </div>
+    </section>
   );
+}
+
+function ShopItemCard({
+  item,
+  canBuy,
+  onBuyItem,
+}: {
+  item: Item;
+  canBuy: boolean;
+  onBuyItem: (item: Item) => void;
+}) {
+  const statLabel =
+    item.type === 'weapon'
+      ? 'Poder'
+      : isEquipmentItem(item)
+        ? 'Defesa'
+        : item.healing
+          ? 'Cura'
+          : item.manaRestore
+            ? 'Mana'
+            : item.staminaRestore
+              ? 'Estamina'
+              : 'Valor';
+  const statValue =
+    item.power || item.healing || item.manaRestore || item.staminaRestore || item.price;
+
+  return (
+    <button
+      onClick={() => onBuyItem(item)}
+      disabled={!canBuy}
+      className="group rounded-lg border border-stone-200 bg-white p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:border-stone-200 disabled:hover:shadow-sm"
+    >
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-stone-100 text-stone-700 group-hover:bg-amber-100 group-hover:text-amber-700">
+            <ShopItemIcon item={item} />
+          </div>
+          <div className="min-w-0">
+            <h4 className="font-black leading-tight text-stone-950">{item.name}</h4>
+            <div className="mt-1 text-xs font-bold uppercase tracking-wide text-stone-500">
+              {getItemTypeLabel(item)}
+            </div>
+          </div>
+        </div>
+        <div className="rounded-md bg-amber-50 px-2 py-1 text-sm font-black text-amber-800">
+          {item.price}
+        </div>
+      </div>
+
+      <p className="min-h-10 text-sm font-medium text-stone-600">
+        {item.description}
+      </p>
+
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <div className="rounded-md bg-stone-100 px-2 py-1 text-xs font-black text-stone-700">
+          {statLabel}: {statValue}
+        </div>
+        <div
+          className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-black ${
+            canBuy
+              ? 'bg-stone-950 text-white'
+              : 'bg-stone-200 text-stone-500'
+          }`}
+        >
+          <ShoppingCart className="h-3.5 w-3.5" />
+          {canBuy ? 'Comprar' : 'Indispon?vel'}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function ShopItemIcon({ item }: { item: Item }) {
+  if (item.type === 'weapon') {
+    return <Sword className="h-5 w-5" />;
+  }
+  if (isEquipmentItem(item)) {
+    return <Shield className="h-5 w-5" />;
+  }
+  if (item.type === 'potion') {
+    return <FlaskRound className="h-5 w-5" />;
+  }
+  return <Package className="h-5 w-5" />;
+}
+
+function getItemTypeLabel(item: Item) {
+  const labels: Record<Item['type'], string> = {
+    weapon: 'Arma',
+    armor: 'Peitoral',
+    helmet: 'Cabe?a',
+    gloves: 'Luvas',
+    pants: 'Cal?as',
+    boots: 'Botas',
+    potion: 'Po??o',
+    loot: 'Item',
+  };
+  return labels[item.type];
 }
 
 function QuestObjectives({ quest }: { quest: Quest }) {
@@ -523,3 +620,4 @@ function EmptyState({ text }: { text: string }) {
     </div>
   );
 }
+
