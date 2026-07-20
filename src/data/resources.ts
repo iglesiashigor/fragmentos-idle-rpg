@@ -58,7 +58,7 @@ export const RESOURCE_BY_ID = Object.fromEntries(
 export const RESOURCE_POOLS: Record<string, { name: string; items: string[] }> = {
   forest: {
     name: 'Bosque Antigo',
-    items: ['wood', 'herb', 'fiber'],
+    items: ['wood', 'fiber', 'hide'],
   },
   quarry: {
     name: 'Pedreira',
@@ -70,6 +70,6 @@ export const RESOURCE_POOLS: Record<string, { name: string; items: string[] }> =
   },
   ruins: {
     name: 'Ruinas Abandonadas',
-    items: ['stone', 'iron_ore', 'wood'],
+    items: ['stone', 'iron_ore', 'wood', 'herb', 'hide'],
   },
 };

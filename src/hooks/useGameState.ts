@@ -64,6 +64,8 @@ import { getUnlockedTitleIds } from '../data/achievements';
 
 const GATHERING_NODE_MAX_CHARGES = 5;
 const GATHERING_NODE_RESET_MS = 5 * 60 * 1000;
+const BOSS_LAIR_ENTRY_COST = 50;
+const BOSS_LAIR_RESET_MS = 10 * 60 * 1000;
 
 export function useGameState(
   initialCharacter: SavedCharacter,
@@ -145,6 +147,12 @@ export function useGameState(
   const [lastGatheringRewards, setLastGatheringRewards] = useState<
     { name: string; quantity: number }[] | null
   >(null);
+  const [lastCombatRewards, setLastCombatRewards] = useState<{
+    enemyName: string;
+    gold: number;
+    experience: number;
+    loot: { name: string; quantity: number }[];
+  } | null>(null);
   const [showDeathModal, setShowDeathModal] = useState(false);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [attributePoints, setAttributePoints] = useState(0);
@@ -325,12 +333,13 @@ export function useGameState(
   const handleLocationSelect = (location: MapLocation) => {
     setCurrentLocation(location);
     setLastGatheringRewards(null);
+    setLastCombatRewards(null);
     const encounterLevel = getEncounterLevel(character.level);
 
     if (location.type === 'enemy') {
       setEnemy(generateEnemy(encounterLevel));
     } else if (location.type === 'boss_lair') {
-      setEnemy(generateBoss(Math.max(character.level + 1, encounterLevel)));
+      setEnemy(null);
       setShowRandomEvent(false);
       setRandomEventReward(null);
     } else if (location.type === 'event') {
@@ -478,7 +487,7 @@ export function useGameState(
       ).length;
       
       const newEventCount = remainingLocations.filter(
-        (loc) => loc.type === 'event' || loc.type === 'gathering'
+        (loc) => loc.type === 'event'
       ).length;
 
       const newLocations = [...remainingLocations];
@@ -491,8 +500,7 @@ export function useGameState(
       if (newEventCount < MAX_EVENTS && Math.random() < 0.25) {
         const newLocation = generateRandomLocation();
         if (
-          newLocation.type === 'event' ||
-          newLocation.type === 'gathering'
+          newLocation.type === 'event'
         ) {
           newLocations.push(newLocation);
         }
@@ -550,6 +558,10 @@ export function useGameState(
       updates.inventory = updatedInventory;
     }
 
+    if (currentLocation.type === 'boss_lair') {
+      updates.bossLairResetAt = Date.now() + BOSS_LAIR_RESET_MS;
+    }
+
     const activeQuests = rewardBaseCharacter.quests || [];
     updates.quests = updateQuestsForCollect(
       updateQuestsForKill(activeQuests, enemy.name),
@@ -567,8 +579,36 @@ export function useGameState(
       ...levelUpUpdates,
     });
 
+    setLastCombatRewards({
+      enemyName: enemy.name,
+      gold: goldReward,
+      experience: expReward,
+      loot: collectedItems.map((item) => ({
+        name:
+          enemy.loot.find((lootItem) => lootItem.id === item.itemId)?.name ||
+          item.itemId,
+        quantity: item.quantity,
+      })),
+    });
+
     setEnemy(null);
     setCurrentLocation(null);
+  };
+
+  const canEnterBossLair = () => {
+    return !character.bossLairResetAt || character.bossLairResetAt <= Date.now();
+  };
+
+  const handleEnterBossLair = () => {
+    if (!currentLocation || currentLocation.type !== 'boss_lair') return;
+    if (!canEnterBossLair()) return;
+    if (character.gold < BOSS_LAIR_ENTRY_COST) return;
+
+    updateCharacter({
+      gold: character.gold - BOSS_LAIR_ENTRY_COST,
+    });
+    setEnemy(generateBoss(Math.max(character.level + 1, getEncounterLevel(character.level))));
+    setLastCombatRewards(null);
   };
 
   const handleRespawn = () => {
@@ -1082,17 +1122,22 @@ export function useGameState(
     showLevelUpModal,
     attributePoints,
     lastGatheringRewards,
+    lastCombatRewards,
     gatheringNodeState:
       currentLocation?.type === 'gathering'
         ? getGatheringNodeState(currentLocation.id)
         : null,
     gatheringResetMs: GATHERING_NODE_RESET_MS,
+    bossLairEntryCost: BOSS_LAIR_ENTRY_COST,
+    bossLairResetMs: BOSS_LAIR_RESET_MS,
+    canEnterBossLair: canEnterBossLair(),
     updateCharacter,
     handleLocationSelect,
     handleRest,
     handleAttack,
     handleCastSpell,
     handleUseAbility,
+    handleEnterBossLair,
     handleRespawn,
     handleBuyItem,
     handleSellItem,

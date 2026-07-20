@@ -1,6 +1,21 @@
 import { QUESTS } from '../data/quests';
+import { PROFESSIONS } from '../data/professions';
+import { RESOURCE_POOLS } from '../data/resources';
 import { InventoryItem, Quest, SavedCharacter } from '../types/game';
 import { getItemQuantity } from './inventory';
+
+function canProfessionCollectTarget(character: SavedCharacter, target: string) {
+  if (!character.profession) return true;
+
+  const profession = PROFESSIONS.find(
+    (option) => option.id === character.profession?.id
+  );
+  if (!profession) return true;
+
+  return profession.resourcePools.some((poolId) =>
+    RESOURCE_POOLS[poolId]?.items.includes(target)
+  );
+}
 
 export function getAvailableQuests(character: SavedCharacter) {
   const activeIds = new Set((character.quests || []).map((quest) => quest.id));
@@ -9,6 +24,14 @@ export function getAvailableQuests(character: SavedCharacter) {
   return QUESTS.filter((quest) => {
     if (activeIds.has(quest.id) || completedIds.has(quest.id)) return false;
     if (quest.requirements.level && character.level < quest.requirements.level) {
+      return false;
+    }
+    if (
+      quest.type === 'collect' &&
+      !quest.objectives.every((objective) =>
+        canProfessionCollectTarget(character, objective.target)
+      )
+    ) {
       return false;
     }
     return (quest.requirements.previousQuests || []).every((questId) =>

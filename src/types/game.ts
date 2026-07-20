@@ -164,6 +164,7 @@ export interface Character {
   stats?: CharacterStats;
   unlockedTitleIds?: string[];
   activeTitleId?: string;
+  bossLairResetAt?: number;
 }
 
 export interface CharacterStats {

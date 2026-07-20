@@ -3,6 +3,8 @@ import { GameMap } from './GameMap';
 import { Town } from './Town';
 import { Combat } from './Combat';
 import { Gathering } from './Gathering';
+import { BossLair } from './BossLair';
+import { RewardSummary } from './RewardSummary';
 import { RandomEventModal } from './RandomEventModal';
 import { UserProfile } from './Profile/UserProfile';
 import { DeathModal } from './Character/DeathModal';
@@ -192,6 +194,13 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                     nodeState={gameState.gatheringNodeState}
                     onGather={gameState.handleGather}
                   />
+                ) : gameState.currentLocation.type === 'boss_lair' && !gameState.enemy ? (
+                  <BossLair
+                    character={gameState.character}
+                    entryCost={gameState.bossLairEntryCost}
+                    canEnter={gameState.canEnterBossLair}
+                    onEnter={gameState.handleEnterBossLair}
+                  />
                 ) : (
                   gameState.enemy && (
                     <Combat
@@ -204,6 +213,10 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                   )
                 )}
               </div>
+            )}
+
+            {gameState.lastCombatRewards && (
+              <RewardSummary reward={gameState.lastCombatRewards} />
             )}
           </div>
         </div>

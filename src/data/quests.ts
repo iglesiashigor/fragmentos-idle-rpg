@@ -39,7 +39,7 @@ export const QUESTS: Quest[] = [
     name: 'Pedido do Ferreiro',
     description: 'Traga pedra e minerio para o ferreiro preparar novos reforcos.',
     type: 'collect',
-    requirements: { level: 2, previousQuests: ['forest_supplies'] },
+    requirements: { level: 1 },
     objectives: [
       { target: 'stone', label: 'Pedras coletadas', amount: 4, current: 0 },
       { target: 'iron_ore', label: 'Minerio coletado', amount: 2, current: 0 },
@@ -47,5 +47,30 @@ export const QUESTS: Quest[] = [
     rewards: { gold: 110, experience: 85 },
     status: 'available',
   },
+  {
+    id: 'herbalist_order',
+    name: 'Pedido da Herbalista',
+    description: 'Colete ervas e fibras para preparar suprimentos da taverna.',
+    type: 'collect',
+    requirements: { level: 1 },
+    objectives: [
+      { target: 'herb', label: 'Ervas coletadas', amount: 5, current: 0 },
+      { target: 'fiber', label: 'Fibras coletadas', amount: 4, current: 0 },
+    ],
+    rewards: { gold: 80, experience: 60 },
+    status: 'available',
+  },
+  {
+    id: 'ruins_relics',
+    name: 'Sinais nas Ruinas',
+    description: 'Explore as ruinas e traga materiais antigos para estudo.',
+    type: 'collect',
+    requirements: { level: 1 },
+    objectives: [
+      { target: 'stone', label: 'Pedras antigas', amount: 3, current: 0 },
+      { target: 'herb', label: 'Ervas raras', amount: 2, current: 0 },
+    ],
+    rewards: { gold: 90, experience: 70 },
+    status: 'available',
+  },
 ];
-
