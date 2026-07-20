@@ -3,6 +3,7 @@ import { Character as CharacterType } from '../types/game';
 import { TITLE_BY_ID } from '../data/achievements';
 import { calculateRequiredExperience } from '../utils/experience';
 import { calculateCharacterStats } from '../utils/combatStats';
+import { getInventorySlotCount } from '../utils/inventory';
 
 interface CharacterProps {
   character: CharacterType;
@@ -85,7 +86,7 @@ export function Character({ character }: CharacterProps) {
           </div>
           <div className="flex items-center gap-2">
             <Backpack className="h-5 w-5 text-stone-600" />
-            <span>{character.inventory.length} itens</span>
+            <span>{getInventorySlotCount(character.inventory)} itens</span>
           </div>
         </div>
 

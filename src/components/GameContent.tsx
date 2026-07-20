@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Character } from './Character';
 import { GameMap } from './GameMap';
 import { Town } from './Town';
@@ -12,7 +13,12 @@ import { CharacterTabs } from './Character/CharacterTabs';
 import { LevelUpModal } from './LevelUp/LevelUpModal';
 import { useGameState } from '../hooks/useGameState';
 import { SavedCharacter, InventoryItem } from '../types/game';
-import { EquipmentSlotId, getEquipmentSlot } from '../utils/inventory';
+import {
+  EquipmentSlotId,
+  getEquipmentSlot,
+  getInventorySlotCount,
+  MAX_INVENTORY_SLOTS,
+} from '../utils/inventory';
 
 interface GameContentProps {
   character: SavedCharacter;
@@ -23,6 +29,7 @@ interface GameContentProps {
 
 export function GameContent({ character: initialCharacter, onCharacterUpdate, onLogout, onCreateNew }: GameContentProps) {
   const gameState = useGameState(initialCharacter, onCharacterUpdate);
+  const [inventoryNotice, setInventoryNotice] = useState<string | null>(null);
 
   const isSameInventoryItem = (
     first: InventoryItem,
@@ -35,6 +42,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
   const handleEquipItem = (item: InventoryItem) => {
     const slot = getEquipmentSlot(item);
     if (!slot) return;
+    setInventoryNotice(null);
     const currentEquipped = gameState.character.equipment[slot];
 
     const updatedInventory = gameState.character.inventory.map(invItem => {
@@ -61,6 +69,13 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
   const handleUnequipItem = (slot: EquipmentSlotId) => {
     const currentEquipped = gameState.character.equipment[slot];
     if (!currentEquipped) return;
+
+    if (getInventorySlotCount(gameState.character.inventory) >= MAX_INVENTORY_SLOTS) {
+      setInventoryNotice('Sua mochila está cheia. Libere espaço antes de desequipar este item.');
+      return;
+    }
+
+    setInventoryNotice(null);
 
     const updatedInventory = gameState.character.inventory.map(item => 
       isSameInventoryItem(item, currentEquipped)
@@ -151,6 +166,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
               onUnequipItem={handleUnequipItem}
               onUsePotion={handleUsePotion}
               onSetActiveTitle={gameState.handleSetActiveTitle}
+              inventoryNotice={inventoryNotice}
             />
           </div>
 
