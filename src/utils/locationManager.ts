@@ -55,8 +55,7 @@ export function generateRandomLocation(): MapLocation {
     };
   }
 
-  // Only generate rare events if we're below MAX_EVENTS
-  if (eventRoll < 0.2) {
+  if (eventRoll < 0.35) {
     return {
       id: generateEventId(),
       type: 'event',
@@ -72,7 +71,7 @@ export function generateRandomLocation(): MapLocation {
 }
 
 export const MAX_ENEMIES = 5;
-export const MAX_EVENTS = 1; // Only allow 1 event at a time
+export const MAX_EVENTS = 2;
 
 export const INITIAL_LOCATIONS: MapLocation[] = [
   { id: 'town_1', type: 'town', x: 49.3, y: 49.3, name: 'Cidade' },
