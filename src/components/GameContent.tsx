@@ -214,6 +214,16 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
     setActionNotice(`${item.name} melhorado.`);
   };
 
+  const handleFoundGuild = (name: string) => {
+    gameState.handleFoundGuild(name);
+    setActionNotice(`Guilda fundada: ${name || 'Guilda dos Fragmentos'}.`);
+  };
+
+  const handleUpgradeGuild = () => {
+    gameState.handleUpgradeGuild();
+    setActionNotice('Guilda evoluída.');
+  };
+
   return (
     <div className="app-bg">
       <div className="page-wrap space-y-6">
@@ -272,6 +282,8 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                     onClaimQuestReward={handleClaimQuestReward}
                     onCraftRecipe={handleCraftRecipe}
                     onUpgradeItem={handleUpgradeItem}
+                    onFoundGuild={handleFoundGuild}
+                    onUpgradeGuild={handleUpgradeGuild}
                   />
                 ) : gameState.currentLocation.type === 'gathering' ? (
                   <Gathering

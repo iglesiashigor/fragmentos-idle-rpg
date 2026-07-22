@@ -52,6 +52,7 @@ import {
   CraftingRecipe,
   getEquipmentUpgradeCost,
   getEquipmentUpgradePowerGain,
+  MaterialCost,
   MAX_EQUIPMENT_UPGRADE,
 } from '../data/recipes';
 import {
@@ -63,6 +64,15 @@ import {
   PROFESSION_BY_ID,
 } from '../data/professions';
 import { getUnlockedTitleIds } from '../data/achievements';
+import {
+  createGuild,
+  getGuildExperienceBonus,
+  getGuildGatheringBonus,
+  getGuildGoldBonus,
+  getGuildUpgradeCost,
+  GUILD_FOUNDATION_COST,
+  MAX_GUILD_LEVEL,
+} from '../data/guild';
 
 const GATHERING_NODE_MAX_CHARGES = 5;
 const GATHERING_NODE_RESET_MS = 5 * 60 * 1000;
@@ -526,8 +536,10 @@ export function useGameState(
     });
 
     // Calculate rewards
-    const goldReward = enemy.isBoss ? (50 + enemy.level * 20) : (10 + enemy.level * 5);
-    const expReward = enemy.experience;
+    const baseGoldReward = enemy.isBoss ? (50 + enemy.level * 20) : (10 + enemy.level * 5);
+    const baseExpReward = enemy.experience;
+    const goldReward = Math.floor(baseGoldReward * getGuildGoldBonus(character.guild));
+    const expReward = Math.floor(baseExpReward * getGuildExperienceBonus(character.guild));
     const rewardBaseCharacter = {
       ...character,
       ...preRewardUpdates,
@@ -738,7 +750,10 @@ export function useGameState(
       );
 
       randomEventReward.rewards.forEach(({ item, quantity }) => {
-        const finalQuantity = quantity + professionUpdate.quantityBonus;
+        const finalQuantity =
+          quantity +
+          professionUpdate.quantityBonus +
+          getGuildGatheringBonus(character.guild);
         if (canAddItemToInventory(item, updatedInventory)) {
           updatedInventory = addItemToInventory(item, updatedInventory, finalQuantity);
           collectedItems.push({ itemId: item.id, quantity: finalQuantity });
@@ -909,7 +924,10 @@ export function useGameState(
     );
 
     gatheringReward.rewards.forEach(({ item, quantity }) => {
-      const finalQuantity = quantity + professionUpdate.quantityBonus;
+      const finalQuantity =
+        quantity +
+        professionUpdate.quantityBonus +
+        getGuildGatheringBonus(character.guild);
 
       if (canAddItemToInventory(item, updatedInventory)) {
         updatedInventory = addItemToInventory(item, updatedInventory, finalQuantity);
@@ -1105,6 +1123,39 @@ export function useGameState(
     });
   };
 
+  const canPayCost = (cost: { goldCost: number; materials: MaterialCost[] }) => {
+    return character.gold >= cost.goldCost && hasMaterials(character.inventory, cost.materials);
+  };
+
+  const handleFoundGuild = (name: string) => {
+    if (character.guild || !canPayCost(GUILD_FOUNDATION_COST)) return;
+
+    updateCharacter({
+      gold: character.gold - GUILD_FOUNDATION_COST.goldCost,
+      inventory: removeMaterialsFromInventory(
+        character.inventory,
+        GUILD_FOUNDATION_COST.materials
+      ),
+      guild: createGuild(name),
+    });
+  };
+
+  const handleUpgradeGuild = () => {
+    if (!character.guild || character.guild.level >= MAX_GUILD_LEVEL) return;
+
+    const cost = getGuildUpgradeCost(character.guild.level);
+    if (!canPayCost(cost)) return;
+
+    updateCharacter({
+      gold: character.gold - cost.goldCost,
+      inventory: removeMaterialsFromInventory(character.inventory, cost.materials),
+      guild: {
+        ...character.guild,
+        level: character.guild.level + 1,
+      },
+    });
+  };
+
   const getGatheringProfessionUpdate = (
     profession: ProfessionProgress | undefined,
     resourcePool?: string
@@ -1200,6 +1251,8 @@ export function useGameState(
     handleClaimQuestReward,
     handleCraftRecipe,
     handleUpgradeItem,
+    handleFoundGuild,
+    handleUpgradeGuild,
     handleSetActiveTitle,
     handleAttributeIncrease,
     handleSpellSelect,

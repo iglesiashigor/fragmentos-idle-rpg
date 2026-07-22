@@ -27,6 +27,12 @@ import {
 } from '../utils/questManager';
 import { Inn } from './Inn';
 import { getRarityLabel, getRarityStyles } from '../utils/rarity';
+import {
+  getGuildBonusSummary,
+  getGuildUpgradeCost,
+  GUILD_FOUNDATION_COST,
+  MAX_GUILD_LEVEL,
+} from '../data/guild';
 
 interface TownProps {
   character: SavedCharacter;
@@ -41,9 +47,11 @@ interface TownProps {
   onClaimQuestReward: (quest: Quest) => void;
   onCraftRecipe: (recipe: CraftingRecipe) => void;
   onUpgradeItem: (item: InventoryItem) => void;
+  onFoundGuild: (name: string) => void;
+  onUpgradeGuild: () => void;
 }
 
-type TownTabId = 'shop' | 'inn' | 'sell' | 'quests' | 'craft';
+type TownTabId = 'shop' | 'inn' | 'sell' | 'quests' | 'craft' | 'guild';
 type ShopCategoryId = 'weapons' | 'armor' | 'accessories' | 'potions';
 type CraftTabId = 'crafting' | 'upgrades';
 
@@ -77,6 +85,8 @@ export function Town({
   onClaimQuestReward,
   onCraftRecipe,
   onUpgradeItem,
+  onFoundGuild,
+  onUpgradeGuild,
 }: TownProps) {
   const [activeTab, setActiveTab] = useState<TownTabId>('shop');
   const [activeShopCategory, setActiveShopCategory] = useState<ShopCategoryId>('weapons');
@@ -96,6 +106,7 @@ export function Town({
         <TownTab label="Taverna" active={activeTab === 'inn'} onClick={() => setActiveTab('inn')} />
         <TownTab label="Missões" active={activeTab === 'quests'} onClick={() => setActiveTab('quests')} />
         <TownTab label="Oficina" active={activeTab === 'craft'} onClick={() => setActiveTab('craft')} />
+        <TownTab label="Guilda" active={activeTab === 'guild'} onClick={() => setActiveTab('guild')} />
         <TownTab label="Vender" active={activeTab === 'sell'} onClick={() => setActiveTab('sell')} />
       </div>
 
@@ -122,6 +133,14 @@ export function Town({
             onCraftRecipe={onCraftRecipe}
             onUpgradeItem={onUpgradeItem}
           />
+        ) : activeTab === 'guild' ? (
+          <GuildPanel
+            character={character}
+            gold={gold}
+            inventory={inventory}
+            onFoundGuild={onFoundGuild}
+            onUpgradeGuild={onUpgradeGuild}
+          />
         ) : (
           <div>
             <div className="sticky top-0 z-10 mb-4 flex gap-2 overflow-x-auto border-b border-stone-200 bg-white pb-3">
@@ -145,6 +164,141 @@ export function Town({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function GuildPanel({
+  character,
+  gold,
+  inventory,
+  onFoundGuild,
+  onUpgradeGuild,
+}: {
+  character: SavedCharacter;
+  gold: number;
+  inventory: InventoryItem[];
+  onFoundGuild: (name: string) => void;
+  onUpgradeGuild: () => void;
+}) {
+  const [guildName, setGuildName] = useState('Guilda dos Fragmentos');
+  const guild = character.guild;
+  const cost = guild ? getGuildUpgradeCost(guild.level) : GUILD_FOUNDATION_COST;
+  const isMaxLevel = Boolean(guild && guild.level >= MAX_GUILD_LEVEL);
+  const canPay =
+    gold >= cost.goldCost &&
+    hasMaterials(inventory, cost.materials) &&
+    !isMaxLevel;
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <div className="text-xs font-black uppercase tracking-wide text-amber-700">
+          Guilda
+        </div>
+        <h3 className="mt-1 text-2xl font-black text-stone-950">
+          {guild?.name || 'Fundar uma Guilda'}
+        </h3>
+        <p className="mt-1 text-sm font-semibold text-stone-600">
+          Invista ouro e materiais para liberar bônus permanentes para o personagem.
+        </p>
+      </div>
+
+      {guild ? (
+        <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+          <div className="rpg-item rounded-lg">
+            <div className="flex items-center justify-between">
+              <h4 className="font-black text-stone-950">Nível da Guilda</h4>
+              <span className="rounded-md bg-stone-950 px-3 py-1 text-sm font-black text-white">
+                Nv. {guild.level}/{MAX_GUILD_LEVEL}
+              </span>
+            </div>
+            <div className="mt-4 space-y-2">
+              {getGuildBonusSummary(guild).map((bonus) => (
+                <div key={bonus} className="rounded-md bg-white px-3 py-2 text-sm font-bold text-emerald-700">
+                  {bonus}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <GuildCostCard
+            title={isMaxLevel ? 'Nível máximo alcançado' : `Evoluir para Nv. ${guild.level + 1}`}
+            gold={gold}
+            inventory={inventory}
+            cost={cost}
+            buttonLabel={isMaxLevel ? 'Máximo' : 'Evoluir Guilda'}
+            disabled={!canPay}
+            onClick={onUpgradeGuild}
+          />
+        </div>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+          <div className="rpg-item rounded-lg">
+            <label className="text-sm font-black text-stone-700">
+              Nome da Guilda
+            </label>
+            <input
+              value={guildName}
+              onChange={(event) => setGuildName(event.target.value)}
+              className="mt-2 w-full rounded-md border border-stone-300 px-3 py-2 font-semibold"
+              maxLength={32}
+            />
+            <div className="mt-4 space-y-2">
+              {getGuildBonusSummary().map((bonus) => (
+                <div key={bonus} className="rounded-md bg-stone-100 px-3 py-2 text-sm font-bold text-stone-600">
+                  {bonus}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <GuildCostCard
+            title="Custo de fundação"
+            gold={gold}
+            inventory={inventory}
+            cost={GUILD_FOUNDATION_COST}
+            buttonLabel="Fundar Guilda"
+            disabled={!canPay}
+            onClick={() => onFoundGuild(guildName)}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GuildCostCard({
+  title,
+  gold,
+  inventory,
+  cost,
+  buttonLabel,
+  disabled,
+  onClick,
+}: {
+  title: string;
+  gold: number;
+  inventory: InventoryItem[];
+  cost: { goldCost: number; materials: MaterialCost[] };
+  buttonLabel: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <div className="rpg-item rounded-lg">
+      <h4 className="font-black text-stone-950">{title}</h4>
+      <div className={`mt-3 text-sm font-black ${gold >= cost.goldCost ? 'text-emerald-700' : 'text-red-600'}`}>
+        Ouro: {gold}/{cost.goldCost}
+      </div>
+      <MaterialList materials={cost.materials} inventory={inventory} />
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className="rpg-button-primary mt-4 w-full disabled:bg-stone-300 disabled:text-stone-500"
+      >
+        {buttonLabel}
+      </button>
     </div>
   );
 }

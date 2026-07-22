@@ -51,6 +51,12 @@ export interface GatheringNodeState {
   resetAt: number;
 }
 
+export interface GuildProgress {
+  name: string;
+  level: number;
+  foundedAt: number;
+}
+
 export interface AttributeModifiers {
   strength: number;
   effort: number;
@@ -169,6 +175,7 @@ export interface Character {
   unlockedTitleIds?: string[];
   activeTitleId?: string;
   bossLairResetAt?: number;
+  guild?: GuildProgress;
 }
 
 export interface CharacterStats {
