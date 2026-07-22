@@ -6,7 +6,6 @@ import { Combat } from './Combat';
 import { Gathering } from './Gathering';
 import { BossLair } from './BossLair';
 import { RewardSummary } from './RewardSummary';
-import { ObjectivePanel } from './ObjectivePanel';
 import { RandomEventModal } from './RandomEventModal';
 import { UserProfile } from './Profile/UserProfile';
 import { DeathModal } from './Character/DeathModal';
@@ -219,12 +218,6 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
     <div className="app-bg">
       <div className="page-wrap space-y-6">
         <UserProfile username={initialCharacter.name} onLogout={onLogout} />
-
-        <ObjectivePanel
-          character={gameState.character}
-          bossAvailable={gameState.canEnterBossLair}
-          bossEntryCost={gameState.bossLairEntryCost}
-        />
 
         {actionNotice && (
           <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-black text-amber-900 shadow-sm">

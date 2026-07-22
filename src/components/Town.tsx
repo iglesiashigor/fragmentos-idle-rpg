@@ -43,6 +43,25 @@ interface TownProps {
 }
 
 type TownTabId = 'shop' | 'inn' | 'sell' | 'quests' | 'craft';
+type ShopCategoryId = 'weapons' | 'armor' | 'accessories' | 'potions';
+type CraftTabId = 'crafting' | 'upgrades';
+
+const SHOP_CATEGORIES: {
+  id: ShopCategoryId;
+  label: string;
+  title: string;
+  items: Item[];
+}[] = [
+  { id: 'weapons', label: 'Armas', title: 'Armas', items: WEAPONS },
+  { id: 'armor', label: 'Armaduras', title: 'Armaduras', items: ARMORS },
+  {
+    id: 'accessories',
+    label: 'Peças',
+    title: 'Peças de Equipamento',
+    items: [...HELMETS, ...GLOVES, ...PANTS, ...BOOTS],
+  },
+  { id: 'potions', label: 'Poções', title: 'Poções', items: POTIONS },
+];
 
 export function Town({
   character,
@@ -59,17 +78,19 @@ export function Town({
   onUpgradeItem,
 }: TownProps) {
   const [activeTab, setActiveTab] = useState<TownTabId>('shop');
+  const [activeShopCategory, setActiveShopCategory] = useState<ShopCategoryId>('weapons');
+  const activeShop = SHOP_CATEGORIES.find((category) => category.id === activeShopCategory) || SHOP_CATEGORIES[0];
 
   return (
-    <div className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-black text-stone-950">Cidade</h2>
         <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-lg font-bold text-amber-800">
           Ouro: {gold}
         </p>
       </div>
 
-      <div className="mb-6 flex flex-wrap gap-3">
+      <div className="mb-4 flex flex-wrap gap-2">
         <TownTab label="Loja" active={activeTab === 'shop'} onClick={() => setActiveTab('shop')} />
         <TownTab label="Taverna" active={activeTab === 'inn'} onClick={() => setActiveTab('inn')} />
         <TownTab label="Missões" active={activeTab === 'quests'} onClick={() => setActiveTab('quests')} />
@@ -77,88 +98,52 @@ export function Town({
         <TownTab label="Vender" active={activeTab === 'sell'} onClick={() => setActiveTab('sell')} />
       </div>
 
-      {activeTab === 'inn' ? (
-        <Inn
-          gold={gold}
-          currentHealth={currentHealth}
-          maxHealth={maxHealth}
-          onRest={onRest}
-        />
-      ) : activeTab === 'sell' ? (
-        <SellPanel inventory={getBagItems(inventory)} onSellItem={onSellItem} />
-      ) : activeTab === 'quests' ? (
-        <QuestPanel
-          character={character}
-          onAcceptQuest={onAcceptQuest}
-          onClaimQuestReward={onClaimQuestReward}
-        />
-      ) : activeTab === 'craft' ? (
-        <CraftPanel
-          gold={gold}
-          inventory={inventory}
-          onCraftRecipe={onCraftRecipe}
-          onUpgradeItem={onUpgradeItem}
-        />
-      ) : (
-        <div className="space-y-6">
-          <ShopSection
-            title="Armas"
-            items={WEAPONS}
+      <div className="max-h-[58vh] overflow-y-auto pr-1">
+        {activeTab === 'inn' ? (
+          <Inn
+            gold={gold}
+            currentHealth={currentHealth}
+            maxHealth={maxHealth}
+            onRest={onRest}
+          />
+        ) : activeTab === 'sell' ? (
+          <SellPanel inventory={getBagItems(inventory)} onSellItem={onSellItem} />
+        ) : activeTab === 'quests' ? (
+          <QuestPanel
+            character={character}
+            onAcceptQuest={onAcceptQuest}
+            onClaimQuestReward={onClaimQuestReward}
+          />
+        ) : activeTab === 'craft' ? (
+          <CraftPanel
             gold={gold}
             inventory={inventory}
-            character={character}
-            onBuyItem={onBuyItem}
+            onCraftRecipe={onCraftRecipe}
+            onUpgradeItem={onUpgradeItem}
           />
-          <ShopSection
-            title="Armaduras"
-            items={ARMORS}
-            gold={gold}
-            inventory={inventory}
-            character={character}
-            onBuyItem={onBuyItem}
-          />
-          <ShopSection
-            title="Cabeça"
-            items={HELMETS}
-            gold={gold}
-            inventory={inventory}
-            character={character}
-            onBuyItem={onBuyItem}
-          />
-          <ShopSection
-            title="Luvas"
-            items={GLOVES}
-            gold={gold}
-            inventory={inventory}
-            character={character}
-            onBuyItem={onBuyItem}
-          />
-          <ShopSection
-            title="Calças"
-            items={PANTS}
-            gold={gold}
-            inventory={inventory}
-            character={character}
-            onBuyItem={onBuyItem}
-          />
-          <ShopSection
-            title="Botas"
-            items={BOOTS}
-            gold={gold}
-            inventory={inventory}
-            character={character}
-            onBuyItem={onBuyItem}
-          />
-          <ShopSection
-            title="Poções"
-            items={POTIONS}
-            gold={gold}
-            inventory={inventory}
-            character={character}
-            onBuyItem={onBuyItem}
-          />
-        </div>
-      )}
+        ) : (
+          <div>
+            <div className="sticky top-0 z-10 mb-4 flex gap-2 overflow-x-auto border-b border-stone-200 bg-white pb-3">
+              {SHOP_CATEGORIES.map((category) => (
+                <TownTab
+                  key={category.id}
+                  label={category.label}
+                  active={activeShopCategory === category.id}
+                  onClick={() => setActiveShopCategory(category.id)}
+                />
+              ))}
+            </div>
+            <ShopSection
+              title={activeShop.title}
+              items={activeShop.items}
+              gold={gold}
+              inventory={inventory}
+              character={character}
+              onBuyItem={onBuyItem}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -287,19 +272,19 @@ function QuestPanel({
   const availableQuests = getAvailableQuests(character);
 
   return (
-    <div className="space-y-6">
+    <div className="grid gap-4 xl:grid-cols-2">
       <section>
         <h3 className="mb-3 text-lg font-bold text-stone-950">Missões ativas</h3>
         {activeQuests.length === 0 ? (
           <EmptyState text="Nenhuma missão ativa." />
         ) : (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="space-y-3">
             {activeQuests.map((quest) => {
               const ready = isQuestReadyToClaim(quest);
               return (
-                <div key={quest.id} className="rpg-item rounded-lg">
+                <div key={quest.id} className="rpg-item rounded-lg p-3">
                   <h4 className="font-black text-stone-950">{quest.name}</h4>
-                  <p className="mt-1 text-sm text-stone-600">{quest.description}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-stone-600">{quest.description}</p>
                   <QuestObjectives quest={quest} />
                   <RewardText quest={quest} />
                   <button
@@ -321,11 +306,11 @@ function QuestPanel({
         {availableQuests.length === 0 ? (
           <EmptyState text="Nenhuma missão nova disponível agora." />
         ) : (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="space-y-3">
             {availableQuests.map((quest) => (
-              <div key={quest.id} className="rpg-item rounded-lg">
+              <div key={quest.id} className="rpg-item rounded-lg p-3">
                 <h4 className="font-black text-stone-950">{quest.name}</h4>
-                <p className="mt-1 text-sm text-stone-600">{quest.description}</p>
+                <p className="mt-1 line-clamp-2 text-sm text-stone-600">{quest.description}</p>
                 <QuestObjectives quest={quest} />
                 <RewardText quest={quest} />
                 <button
@@ -355,12 +340,27 @@ function CraftPanel({
   onCraftRecipe: (recipe: CraftingRecipe) => void;
   onUpgradeItem: (item: InventoryItem) => void;
 }) {
+  const [activeCraftTab, setActiveCraftTab] = useState<CraftTabId>('crafting');
   const equipmentItems = inventory.filter(
     (item) => isEquipmentItem(item)
   );
 
   return (
-    <div className="space-y-6">
+    <div>
+      <div className="sticky top-0 z-10 mb-4 flex gap-2 border-b border-stone-200 bg-white pb-3">
+        <TownTab
+          label="Produzir"
+          active={activeCraftTab === 'crafting'}
+          onClick={() => setActiveCraftTab('crafting')}
+        />
+        <TownTab
+          label="Melhorar"
+          active={activeCraftTab === 'upgrades'}
+          onClick={() => setActiveCraftTab('upgrades')}
+        />
+      </div>
+
+      {activeCraftTab === 'crafting' ? (
       <section>
         <h3 className="mb-3 text-lg font-bold text-stone-950">Produzir</h3>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -389,7 +389,7 @@ function CraftPanel({
           })}
         </div>
       </section>
-
+      ) : (
       <section>
         <h3 className="mb-3 text-lg font-bold text-stone-950">Melhorar equipamento</h3>
         {equipmentItems.length === 0 ? (
@@ -435,6 +435,7 @@ function CraftPanel({
           </div>
         )}
       </section>
+      )}
     </div>
   );
 }
@@ -462,7 +463,7 @@ function ShopSection({
           {items.length} itens
         </span>
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
         {items.map((item) => (
           <ShopItemCard
             key={item.id}
@@ -536,7 +537,7 @@ function ShopItemCard({
         </div>
       </div>
 
-      <p className="min-h-10 text-sm font-medium text-stone-600">
+      <p className="line-clamp-2 min-h-10 text-sm font-medium text-stone-600">
         {item.description}
       </p>
 

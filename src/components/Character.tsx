@@ -1,9 +1,7 @@
-import { Backpack, Shield, Sword } from 'lucide-react';
 import { Character as CharacterType } from '../types/game';
 import { TITLE_BY_ID } from '../data/achievements';
 import { calculateRequiredExperience } from '../utils/experience';
 import { calculateCharacterStats } from '../utils/combatStats';
-import { getInventorySlotCount } from '../utils/inventory';
 
 interface CharacterProps {
   character: CharacterType;
@@ -74,21 +72,6 @@ export function Character({ character }: CharacterProps) {
           color="bg-emerald-600"
           percentage={expPercentage}
         />
-
-        <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold text-stone-700">
-          <div className="flex items-center gap-2">
-            <Sword className="h-5 w-5 text-stone-600" />
-            <span>{character.equipment.weapon?.name || 'Sem arma'}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-stone-600" />
-            <span>{character.equipment.armor?.name || 'Sem armadura'}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Backpack className="h-5 w-5 text-stone-600" />
-            <span>{getInventorySlotCount(character.inventory)} itens</span>
-          </div>
-        </div>
 
         <div className="grid grid-cols-2 gap-2 pt-4 text-sm md:grid-cols-4">
           <StatTile label="Ataque" value={Math.round(combatStats.attack)} />
