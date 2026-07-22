@@ -10,12 +10,15 @@ interface GameMapProps {
 export function GameMap({ locations, currentLocationId, onLocationSelect }: GameMapProps) {
   return (
     <div className="relative aspect-[16/9] min-h-[360px] w-full overflow-hidden rounded-lg border border-emerald-900/30 bg-emerald-950 shadow-inner">
-      <img
-        src="/world-map.png"
-        alt="Mapa do mundo"
-        className="absolute inset-0 h-full w-full object-cover"
-        draggable={false}
-      />
+      <picture>
+        <source srcSet="/world-map.webp" type="image/webp" />
+        <img
+          src="/world-map.png"
+          alt="Mapa do mundo"
+          className="absolute inset-0 h-full w-full object-cover"
+          draggable={false}
+        />
+      </picture>
       <div className="absolute inset-0 bg-stone-950/10" />
       {locations.map((location) => {
         const isSelected = currentLocationId === location.id;
