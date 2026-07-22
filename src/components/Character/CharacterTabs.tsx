@@ -20,6 +20,7 @@ interface CharacterTabsProps {
   onUnequipItem: (slot: EquipmentSlotId) => void;
   onUsePotion: (item: InventoryItem) => void;
   onSetActiveTitle: (titleId?: string) => void;
+  inventoryNotice?: string | null;
 }
 
 export function CharacterTabs({
@@ -30,6 +31,7 @@ export function CharacterTabs({
   onUnequipItem,
   onUsePotion,
   onSetActiveTitle,
+  inventoryNotice,
 }: CharacterTabsProps) {
   const [activeTab, setActiveTab] = useState<CharacterTabId>('inventory');
 
@@ -71,6 +73,7 @@ export function CharacterTabs({
           onUsePotion={onUsePotion}
           currentHealth={character.health}
           maxHealth={character.maxHealth}
+          notice={inventoryNotice}
           framed={false}
         />
       ) : activeTab === 'attributes' ? (

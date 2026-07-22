@@ -23,8 +23,12 @@ export function isStackableItem(item: Pick<Item, 'type'>) {
   return item.type === 'potion' || item.type === 'loot';
 }
 
+export function getBagItems(inventory: InventoryItem[]) {
+  return inventory.filter((item) => !item.equipped);
+}
+
 export function getInventorySlotCount(inventory: InventoryItem[]) {
-  return inventory.length;
+  return getBagItems(inventory).length;
 }
 
 export function canAddItemToInventory(item: Item, inventory: InventoryItem[]) {

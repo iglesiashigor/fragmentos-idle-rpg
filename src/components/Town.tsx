@@ -13,9 +13,13 @@ import { RESOURCE_BY_ID } from '../data/resources';
 import { InventoryItem, Item, Quest, SavedCharacter } from '../types/game';
 import {
   canAddItemToInventory,
+  getBagItems,
+  getEquipmentSlot,
   getItemQuantity,
+  getInventorySlotCount,
   hasMaterials,
   isEquipmentItem,
+  MAX_INVENTORY_SLOTS,
 } from '../utils/inventory';
 import {
   getAvailableQuests,
@@ -81,7 +85,7 @@ export function Town({
           onRest={onRest}
         />
       ) : activeTab === 'sell' ? (
-        <SellPanel inventory={inventory} onSellItem={onSellItem} />
+        <SellPanel inventory={getBagItems(inventory)} onSellItem={onSellItem} />
       ) : activeTab === 'quests' ? (
         <QuestPanel
           character={character}
@@ -102,6 +106,7 @@ export function Town({
             items={WEAPONS}
             gold={gold}
             inventory={inventory}
+            character={character}
             onBuyItem={onBuyItem}
           />
           <ShopSection
@@ -109,6 +114,7 @@ export function Town({
             items={ARMORS}
             gold={gold}
             inventory={inventory}
+            character={character}
             onBuyItem={onBuyItem}
           />
           <ShopSection
@@ -116,6 +122,7 @@ export function Town({
             items={HELMETS}
             gold={gold}
             inventory={inventory}
+            character={character}
             onBuyItem={onBuyItem}
           />
           <ShopSection
@@ -123,6 +130,7 @@ export function Town({
             items={GLOVES}
             gold={gold}
             inventory={inventory}
+            character={character}
             onBuyItem={onBuyItem}
           />
           <ShopSection
@@ -130,6 +138,7 @@ export function Town({
             items={PANTS}
             gold={gold}
             inventory={inventory}
+            character={character}
             onBuyItem={onBuyItem}
           />
           <ShopSection
@@ -137,6 +146,7 @@ export function Town({
             items={BOOTS}
             gold={gold}
             inventory={inventory}
+            character={character}
             onBuyItem={onBuyItem}
           />
           <ShopSection
@@ -144,6 +154,7 @@ export function Town({
             items={POTIONS}
             gold={gold}
             inventory={inventory}
+            character={character}
             onBuyItem={onBuyItem}
           />
         </div>
@@ -184,7 +195,20 @@ function SellPanel({
 }) {
   return (
     <div>
-      <h3 className="mb-4 text-lg font-bold text-stone-950">Seu inventário</h3>
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h3 className="text-lg font-bold text-stone-950">Itens na bolsa</h3>
+          <p className="text-sm font-semibold text-stone-500">
+            Equipamentos vestidos não aparecem aqui e não podem ser vendidos.
+          </p>
+        </div>
+        <span className="rounded-md bg-stone-900 px-3 py-1 text-sm font-black text-amber-300">
+          {getInventorySlotCount(inventory)}/{MAX_INVENTORY_SLOTS}
+        </span>
+      </div>
+      {inventory.length === 0 && (
+        <EmptyState text="Sua bolsa está vazia." />
+      )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {inventory.map((item) => (
           <SellItemCard
@@ -369,7 +393,7 @@ function CraftPanel({
       <section>
         <h3 className="mb-3 text-lg font-bold text-stone-950">Melhorar equipamento</h3>
         {equipmentItems.length === 0 ? (
-          <EmptyState text="Nenhum equipamento na bolsa para melhorar." />
+          <EmptyState text="Nenhum equipamento disponível para melhorar." />
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {equipmentItems.map((item) => {
@@ -420,12 +444,14 @@ function ShopSection({
   items,
   gold,
   inventory,
+  character,
   onBuyItem,
 }: {
   title: string;
   items: Item[];
   gold: number;
   inventory: InventoryItem[];
+  character: SavedCharacter;
   onBuyItem: (item: Item) => void;
 }) {
   return (
@@ -441,7 +467,9 @@ function ShopSection({
           <ShopItemCard
             key={item.id}
             item={item}
-            canBuy={gold >= item.price && canAddItemToInventory(item, inventory)}
+            gold={gold}
+            inventory={inventory}
+            equippedPower={getEquippedPowerForItem(item, character)}
             onBuyItem={onBuyItem}
           />
         ))}
@@ -452,13 +480,24 @@ function ShopSection({
 
 function ShopItemCard({
   item,
-  canBuy,
+  gold,
+  inventory,
+  equippedPower,
   onBuyItem,
 }: {
   item: Item;
-  canBuy: boolean;
+  gold: number;
+  inventory: InventoryItem[];
+  equippedPower?: number;
   onBuyItem: (item: Item) => void;
 }) {
+  const canBuy = gold >= item.price && canAddItemToInventory(item, inventory);
+  const disabledReason =
+    gold < item.price
+      ? 'Ouro insuficiente'
+      : !canAddItemToInventory(item, inventory)
+        ? 'Mochila cheia'
+        : null;
   const statLabel =
     item.type === 'weapon'
       ? 'Poder'
@@ -501,6 +540,16 @@ function ShopItemCard({
         {item.description}
       </p>
 
+      {equippedPower !== undefined && item.power !== undefined && (
+        <div className="mt-3 rounded-md bg-stone-100 px-2 py-1 text-xs font-black text-stone-700">
+          Equipado: {equippedPower} | Este item: {item.power}
+          <span className={item.power >= equippedPower ? 'text-emerald-700' : 'text-red-600'}>
+            {' '}
+            ({item.power - equippedPower >= 0 ? '+' : ''}{item.power - equippedPower})
+          </span>
+        </div>
+      )}
+
       <div className="mt-3 flex items-center justify-between gap-3">
         <div className="rounded-md bg-stone-100 px-2 py-1 text-xs font-black text-stone-700">
           {statLabel}: {statValue}
@@ -513,11 +562,17 @@ function ShopItemCard({
           }`}
         >
           <ShoppingCart className="h-3.5 w-3.5" />
-          {canBuy ? 'Comprar' : 'Indisponível'}
+          {canBuy ? 'Comprar' : disabledReason}
         </div>
       </div>
     </button>
   );
+}
+
+function getEquippedPowerForItem(item: Item, character: SavedCharacter) {
+  const slot = getEquipmentSlot(item);
+  if (!slot) return undefined;
+  return character.equipment[slot]?.power || 0;
 }
 
 function ShopItemIcon({ item }: { item: Item }) {

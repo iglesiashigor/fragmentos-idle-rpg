@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Character } from './Character';
 import { GameMap } from './GameMap';
 import { Town } from './Town';
@@ -6,15 +6,18 @@ import { Combat } from './Combat';
 import { Gathering } from './Gathering';
 import { BossLair } from './BossLair';
 import { RewardSummary } from './RewardSummary';
+import { ObjectivePanel } from './ObjectivePanel';
 import { RandomEventModal } from './RandomEventModal';
 import { UserProfile } from './Profile/UserProfile';
 import { DeathModal } from './Character/DeathModal';
 import { CharacterTabs } from './Character/CharacterTabs';
 import { LevelUpModal } from './LevelUp/LevelUpModal';
 import { useGameState } from '../hooks/useGameState';
-import { SavedCharacter, InventoryItem } from '../types/game';
+import { SavedCharacter, InventoryItem, Item, Quest } from '../types/game';
+import { CraftingRecipe } from '../data/recipes';
 import {
   EquipmentSlotId,
+  canAddItemToInventory,
   getEquipmentSlot,
   getInventorySlotCount,
   MAX_INVENTORY_SLOTS,
@@ -30,6 +33,13 @@ interface GameContentProps {
 export function GameContent({ character: initialCharacter, onCharacterUpdate, onLogout, onCreateNew }: GameContentProps) {
   const gameState = useGameState(initialCharacter, onCharacterUpdate);
   const [inventoryNotice, setInventoryNotice] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!actionNotice) return;
+    const timeout = window.setTimeout(() => setActionNotice(null), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [actionNotice]);
 
   const isSameInventoryItem = (
     first: InventoryItem,
@@ -64,6 +74,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
       inventory: updatedInventory,
       equipment: updatedEquipment
     });
+    setActionNotice(`${item.name} equipado.`);
   };
 
   const handleUnequipItem = (slot: EquipmentSlotId) => {
@@ -92,6 +103,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
       inventory: updatedInventory,
       equipment: updatedEquipment
     });
+    setActionNotice(`${currentEquipped.name} voltou para a bolsa.`);
   };
 
   const handleUsePotion = (item: InventoryItem) => {
@@ -147,13 +159,78 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
 
       updates.inventory = updatedInventory;
       gameState.updateCharacter(updates);
+      setActionNotice(`${item.name} usada.`);
     }
+  };
+
+  const handleBuyItem = (item: Item) => {
+    if (gameState.character.gold < item.price) {
+      setActionNotice('Ouro insuficiente para comprar este item.');
+      return;
+    }
+    if (!canAddItemToInventory(item, gameState.character.inventory)) {
+      setActionNotice('Sua mochila está cheia.');
+      return;
+    }
+    gameState.handleBuyItem(item);
+    setActionNotice(`${item.name} comprado.`);
+  };
+
+  const handleSellItem = (item: InventoryItem, quantity: number) => {
+    gameState.handleSellItem(item, quantity);
+    setActionNotice(`${item.name} vendido.`);
+  };
+
+  const handleRest = () => {
+    if (gameState.character.gold < 20) {
+      setActionNotice('Você precisa de 20 ouro para descansar.');
+      return;
+    }
+    gameState.handleRest();
+    setActionNotice('Descanso concluído. Recursos restaurados.');
+  };
+
+  const handleGather = () => {
+    gameState.handleGather();
+    setActionNotice('Coleta realizada.');
+  };
+
+  const handleAcceptQuest = (quest: Quest) => {
+    gameState.handleAcceptQuest(quest);
+    setActionNotice(`Missão aceita: ${quest.name}.`);
+  };
+
+  const handleClaimQuestReward = (quest: Quest) => {
+    gameState.handleClaimQuestReward(quest);
+    setActionNotice(`Recompensa recebida: ${quest.name}.`);
+  };
+
+  const handleCraftRecipe = (recipe: CraftingRecipe) => {
+    gameState.handleCraftRecipe(recipe);
+    setActionNotice(`${recipe.name} produzido.`);
+  };
+
+  const handleUpgradeItem = (item: InventoryItem) => {
+    gameState.handleUpgradeItem(item);
+    setActionNotice(`${item.name} melhorado.`);
   };
 
   return (
     <div className="app-bg">
       <div className="page-wrap space-y-6">
         <UserProfile username={initialCharacter.name} onLogout={onLogout} />
+
+        <ObjectivePanel
+          character={gameState.character}
+          bossAvailable={gameState.canEnterBossLair}
+          bossEntryCost={gameState.bossLairEntryCost}
+        />
+
+        {actionNotice && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-black text-amber-900 shadow-sm">
+            {actionNotice}
+          </div>
+        )}
 
         <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[440px_minmax(0,1fr)]">
           <div className="space-y-6">
@@ -179,6 +256,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
             </div>
             <GameMap
               locations={gameState.mapLocations}
+              currentLocationId={gameState.currentLocation?.id}
               onLocationSelect={gameState.handleLocationSelect}
             />
 
@@ -194,13 +272,13 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                     inventory={gameState.character.inventory}
                     currentHealth={gameState.character.health}
                     maxHealth={gameState.character.maxHealth}
-                    onBuyItem={gameState.handleBuyItem}
-                    onSellItem={gameState.handleSellItem}
-                    onRest={gameState.handleRest}
-                    onAcceptQuest={gameState.handleAcceptQuest}
-                    onClaimQuestReward={gameState.handleClaimQuestReward}
-                    onCraftRecipe={gameState.handleCraftRecipe}
-                    onUpgradeItem={gameState.handleUpgradeItem}
+                    onBuyItem={handleBuyItem}
+                    onSellItem={handleSellItem}
+                    onRest={handleRest}
+                    onAcceptQuest={handleAcceptQuest}
+                    onClaimQuestReward={handleClaimQuestReward}
+                    onCraftRecipe={handleCraftRecipe}
+                    onUpgradeItem={handleUpgradeItem}
                   />
                 ) : gameState.currentLocation.type === 'gathering' ? (
                   <Gathering
@@ -208,7 +286,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                     location={gameState.currentLocation}
                     lastRewards={gameState.lastGatheringRewards}
                     nodeState={gameState.gatheringNodeState}
-                    onGather={gameState.handleGather}
+                    onGather={handleGather}
                   />
                 ) : gameState.currentLocation.type === 'boss_lair' && !gameState.enemy ? (
                   <BossLair
