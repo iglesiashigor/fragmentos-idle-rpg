@@ -359,7 +359,7 @@ export function useGameState(
       setShowRandomEvent(false);
       setRandomEventReward(null);
     } else if (location.type === 'event') {
-      const bossChance = 0.3;
+      const bossChance = 0.25;
 
       if (Math.random() < bossChance) {
         setCurrentLocation({
@@ -513,7 +513,7 @@ export function useGameState(
         newLocations.push(generateRandomEnemyLocation());
       }
 
-      if (newEventCount < MAX_EVENTS && Math.random() < 0.25) {
+      if (newEventCount < MAX_EVENTS && Math.random() < 0.35) {
         const newLocation = generateRandomLocation();
         if (
           newLocation.type === 'event'
@@ -762,6 +762,49 @@ export function useGameState(
       if (canAddItemToInventory(rewardItem, character.inventory)) {
         updateCharacter({
           inventory: addItemToInventory(rewardItem, character.inventory),
+        });
+      }
+    } else if (randomEventReward.type === 'gold') {
+      updateCharacter({
+        gold: character.gold + randomEventReward.gold,
+      });
+    } else if (randomEventReward.type === 'blessing') {
+      const updates: Partial<SavedCharacter> = {
+        health: Math.min(
+          character.maxHealth,
+          character.health + randomEventReward.healthRestore
+        ),
+      };
+
+      if (character.mana !== undefined && character.maxMana !== undefined) {
+        updates.mana = Math.min(
+          character.maxMana,
+          character.mana + randomEventReward.resourceRestore
+        );
+      }
+
+      if (character.stamina !== undefined && character.maxStamina !== undefined) {
+        updates.stamina = Math.min(
+          character.maxStamina,
+          character.stamina + randomEventReward.resourceRestore
+        );
+      }
+
+      updateCharacter(updates);
+    } else if (randomEventReward.type === 'quest') {
+      const alreadyActive = (character.quests || []).some(
+        (quest) => quest.id === randomEventReward.quest.id
+      );
+      const alreadyCompleted = (character.completedQuestIds || []).includes(
+        randomEventReward.quest.id
+      );
+
+      if (!alreadyActive && !alreadyCompleted) {
+        updateCharacter({
+          quests: [
+            ...(character.quests || []),
+            createActiveQuest(randomEventReward.quest, character.inventory),
+          ],
         });
       }
     } else if (character.class.resourceType === 'mana') {
