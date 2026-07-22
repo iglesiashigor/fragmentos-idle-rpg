@@ -9,6 +9,7 @@ import {
   isEquipmentItem,
   MAX_INVENTORY_SLOTS,
 } from '../../utils/inventory';
+import { getRarityLabel, getRarityStyles } from '../../utils/rarity';
 
 interface InventoryPanelProps {
   inventory: InventoryItem[];
@@ -115,15 +116,20 @@ function EquipmentSlot({
   item: InventoryItem | null;
   onUnequip: () => void;
 }) {
+  const rarity = item ? getRarityStyles(item) : null;
+
   return (
-    <div className="rounded-md border border-stone-200 bg-white p-3">
+    <div className={`rounded-md border p-3 ${rarity ? `${rarity.border} ${rarity.surface}` : 'border-stone-200 bg-white'}`}>
       <div className="mb-2 flex items-center gap-2 text-sm font-bold text-stone-600">
         {icon}
         {title}
       </div>
       {item ? (
         <div>
-          <div className="font-bold text-stone-950">{item.name}</div>
+          <div className={`font-bold ${rarity?.text || 'text-stone-950'}`}>{item.name}</div>
+          <div className={`mt-1 inline-flex rounded px-1.5 py-0.5 text-[10px] font-black uppercase ${rarity?.badge}`}>
+            {getRarityLabel(item)}
+          </div>
           <div className="text-xs text-stone-500">
             {item.type === 'weapon' ? 'Poder' : 'Defesa'}: {item.power || 0}
           </div>
@@ -156,13 +162,14 @@ function BagSlot({
 }) {
   const canEquip = isEquipmentItem(item);
   const canUse = item.type === 'potion';
+  const rarity = getRarityStyles(item);
 
   return (
     <div
-      className={`group relative aspect-square rounded-md border bg-white p-2 shadow-sm transition-colors ${
+      className={`group relative aspect-square rounded-md border p-2 shadow-sm transition-colors ${rarity.surface} ${
         equipped
           ? 'border-amber-500 ring-2 ring-amber-300'
-          : 'border-stone-200 hover:border-amber-300'
+          : `${rarity.border} hover:border-amber-300`
       }`}
       title={item.description}
     >
@@ -176,8 +183,11 @@ function BagSlot({
           )}
         </div>
         <div>
-          <div className="line-clamp-2 text-xs font-bold leading-tight text-stone-950">
+          <div className={`line-clamp-2 text-xs font-bold leading-tight ${rarity.text}`}>
             {item.name}
+          </div>
+          <div className={`mt-0.5 inline-flex rounded px-1 py-0.5 text-[9px] font-black uppercase ${rarity.badge}`}>
+            {getRarityLabel(item)}
           </div>
           <div className="text-[11px] font-semibold text-stone-500">
             {item.type === 'weapon' && `Poder ${item.power || 0}`}

@@ -147,6 +147,72 @@ export const EQUIPMENT_ITEMS: Item[] = [
   ...BOOTS,
 ];
 
+export const CRAFTED_ITEMS: Item[] = [
+  {
+    id: 'steel_sword',
+    name: 'Espada de Aço',
+    type: 'weapon',
+    price: 180,
+    power: 18,
+    description: 'Espada reforçada, forjada para aventureiros experientes.',
+    rarity: 'rare',
+  },
+  {
+    id: 'hunters_bow',
+    name: 'Arco do Caçador',
+    type: 'weapon',
+    price: 175,
+    power: 17,
+    description: 'Arco preciso feito com madeira tratada e fibras resistentes.',
+    rarity: 'rare',
+  },
+  {
+    id: 'runed_staff',
+    name: 'Cajado Rúnico',
+    type: 'weapon',
+    price: 260,
+    power: 24,
+    description: 'Cajado gravado com fragmentos antigos das ruínas.',
+    rarity: 'epic',
+  },
+  {
+    id: 'reinforced_leather',
+    name: 'Armadura Reforçada',
+    type: 'armor',
+    price: 170,
+    power: 15,
+    description: 'Armadura de couro reforçada com placas e fibras firmes.',
+    rarity: 'rare',
+  },
+  {
+    id: 'explorer_hood',
+    name: 'Capuz do Explorador',
+    type: 'helmet',
+    price: 130,
+    power: 10,
+    description: 'Capuz leve com proteção extra para viagens longas.',
+    rarity: 'rare',
+  },
+  {
+    id: 'stoneguard_boots',
+    name: 'Botas Guarda-Pedra',
+    type: 'boots',
+    price: 150,
+    power: 12,
+    description: 'Botas resistentes criadas para atravessar pedreiras e ruínas.',
+    rarity: 'rare',
+  },
+  {
+    id: 'ancient_gauntlets',
+    name: 'Manoplas Antigas',
+    type: 'gloves',
+    price: 260,
+    power: 22,
+    description: 'Manoplas restauradas com fragmentos antigos e minério refinado.',
+    rarity: 'epic',
+  },
+];
+
 export const POTIONS: Item[] = [
   {
     id: 'health_potion',

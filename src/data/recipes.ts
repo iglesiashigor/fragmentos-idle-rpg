@@ -1,4 +1,4 @@
-import { ARMORS, POTIONS, WEAPONS } from './items';
+import { ARMORS, CRAFTED_ITEMS, POTIONS, WEAPONS } from './items';
 import { InventoryItem, Item } from '../types/game';
 
 export interface MaterialCost {
@@ -60,6 +60,97 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
     materials: [
       { itemId: 'couro', quantity: 3 },
       { itemId: 'fiber', quantity: 2 },
+    ],
+  },
+  {
+    id: 'craft_steel_sword',
+    name: 'Espada de Aço',
+    description: 'Forja uma lâmina rara com minério, madeira e pedra de apoio.',
+    result: CRAFTED_ITEMS[0],
+    quantity: 1,
+    goldCost: 80,
+    materials: [
+      { itemId: 'iron_ore', quantity: 8 },
+      { itemId: 'wood', quantity: 4 },
+      { itemId: 'stone', quantity: 3 },
+    ],
+  },
+  {
+    id: 'craft_hunters_bow',
+    name: 'Arco do Caçador',
+    description: 'Produz um arco raro usando madeira flexível, couro e fibras.',
+    result: CRAFTED_ITEMS[1],
+    quantity: 1,
+    goldCost: 75,
+    materials: [
+      { itemId: 'wood', quantity: 8 },
+      { itemId: 'fiber', quantity: 6 },
+      { itemId: 'couro', quantity: 3 },
+    ],
+  },
+  {
+    id: 'craft_runed_staff',
+    name: 'Cajado Rúnico',
+    description: 'Cria um cajado épico canalizando fragmentos antigos.',
+    result: CRAFTED_ITEMS[2],
+    quantity: 1,
+    goldCost: 140,
+    materials: [
+      { itemId: 'wood', quantity: 6 },
+      { itemId: 'ancient_fragment', quantity: 5 },
+      { itemId: 'iron_ore', quantity: 4 },
+    ],
+  },
+  {
+    id: 'craft_reinforced_leather',
+    name: 'Armadura Reforçada',
+    description: 'Reforça couro com fibras e minério para criar uma armadura rara.',
+    result: CRAFTED_ITEMS[3],
+    quantity: 1,
+    goldCost: 85,
+    materials: [
+      { itemId: 'couro', quantity: 7 },
+      { itemId: 'fiber', quantity: 5 },
+      { itemId: 'iron_ore', quantity: 3 },
+    ],
+  },
+  {
+    id: 'craft_explorer_hood',
+    name: 'Capuz do Explorador',
+    description: 'Costura um capuz raro usando fibras e fragmentos de ruínas.',
+    result: CRAFTED_ITEMS[4],
+    quantity: 1,
+    goldCost: 60,
+    materials: [
+      { itemId: 'fiber', quantity: 5 },
+      { itemId: 'couro', quantity: 3 },
+      { itemId: 'ancient_fragment', quantity: 2 },
+    ],
+  },
+  {
+    id: 'craft_stoneguard_boots',
+    name: 'Botas Guarda-Pedra',
+    description: 'Monta botas raras com couro firme e pedra polida.',
+    result: CRAFTED_ITEMS[5],
+    quantity: 1,
+    goldCost: 70,
+    materials: [
+      { itemId: 'couro', quantity: 4 },
+      { itemId: 'stone', quantity: 5 },
+      { itemId: 'fiber', quantity: 3 },
+    ],
+  },
+  {
+    id: 'craft_ancient_gauntlets',
+    name: 'Manoplas Antigas',
+    description: 'Restaura manoplas épicas com minério e fragmentos antigos.',
+    result: CRAFTED_ITEMS[6],
+    quantity: 1,
+    goldCost: 150,
+    materials: [
+      { itemId: 'iron_ore', quantity: 8 },
+      { itemId: 'ancient_fragment', quantity: 6 },
+      { itemId: 'couro', quantity: 4 },
     ],
   },
 ];

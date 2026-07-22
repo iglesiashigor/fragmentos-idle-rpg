@@ -3,6 +3,7 @@ import { Coins, Gem, HeartPulse, ScrollText, Sparkles } from 'lucide-react';
 import { Item, Spell } from '../types/game';
 import { RandomEventReward } from '../utils/randomEvents';
 import { getEquipmentSlot } from '../utils/inventory';
+import { getRarityLabel, getRarityStyles } from '../utils/rarity';
 
 interface RandomEventModalProps {
   reward: RandomEventReward;
@@ -77,12 +78,17 @@ export function RandomEventModal({ reward, onClaim }: RandomEventModalProps) {
                 detail={`Recompensa: ${reward.quest.rewards.gold} ouro, ${reward.quest.rewards.experience} XP`}
               />
             ) : (
-              <div className="flex items-start gap-3">
+              <div className={`flex items-start gap-3 rounded-md p-3 ${itemReward ? `${getRarityStyles(itemReward).surface} ${getRarityStyles(itemReward).border} border` : ''}`}>
                 <Gem className="mt-1 h-5 w-5 text-amber-600" />
                 <div>
-                  <h3 className="mb-2 text-lg font-black text-stone-950">
+                  <h3 className={`mb-1 text-lg font-black ${itemReward ? getRarityStyles(itemReward).text : 'text-stone-950'}`}>
                     {reward.reward.name}
                   </h3>
+                  {itemReward && (
+                    <div className={`mb-2 inline-flex rounded px-1.5 py-0.5 text-[10px] font-black uppercase ${getRarityStyles(itemReward).badge}`}>
+                      {getRarityLabel(itemReward)}
+                    </div>
+                  )}
                   <p className="text-sm text-stone-600">{reward.reward.description}</p>
                   <p className="mt-2 text-sm font-bold text-blue-700">
                     {isSpell ? `Dano: ${spellReward?.damage || 0}` : itemStat}

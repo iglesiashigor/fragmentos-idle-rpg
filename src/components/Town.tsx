@@ -26,6 +26,7 @@ import {
   isQuestReadyToClaim,
 } from '../utils/questManager';
 import { Inn } from './Inn';
+import { getRarityLabel, getRarityStyles } from '../utils/rarity';
 
 interface TownProps {
   character: SavedCharacter;
@@ -371,7 +372,7 @@ function CraftPanel({
               canAddItemToInventory(recipe.result, inventory);
             return (
               <div key={recipe.id} className="rpg-item rounded-lg">
-                <h4 className="font-black text-stone-950">{recipe.name}</h4>
+                <ItemTitle item={recipe.result} name={recipe.name} />
                 <p className="mt-1 text-sm text-stone-600">{recipe.description}</p>
                 <MaterialList materials={recipe.materials} inventory={inventory} />
                 <div className="mt-3 text-sm font-bold text-amber-700">
@@ -513,12 +514,13 @@ function ShopItemCard({
               : 'Valor';
   const statValue =
     item.power || item.healing || item.manaRestore || item.staminaRestore || item.price;
+  const rarity = getRarityStyles(item);
 
   return (
     <button
       onClick={() => onBuyItem(item)}
       disabled={!canBuy}
-      className="group rounded-lg border border-stone-200 bg-white p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:border-stone-200 disabled:hover:shadow-sm"
+      className={`group rounded-lg border p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:border-stone-200 disabled:hover:shadow-sm ${rarity.border} ${rarity.surface}`}
     >
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
@@ -526,9 +528,12 @@ function ShopItemCard({
             <ShopItemIcon item={item} />
           </div>
           <div className="min-w-0">
-            <h4 className="font-black leading-tight text-stone-950">{item.name}</h4>
+            <h4 className={`font-black leading-tight ${rarity.text}`}>{item.name}</h4>
             <div className="mt-1 text-xs font-bold uppercase tracking-wide text-stone-500">
               {getItemTypeLabel(item)}
+            </div>
+            <div className={`mt-1 inline-flex rounded px-1.5 py-0.5 text-[10px] font-black uppercase ${rarity.badge}`}>
+              {getRarityLabel(item)}
             </div>
           </div>
         </div>
@@ -574,6 +579,18 @@ function getEquippedPowerForItem(item: Item, character: SavedCharacter) {
   const slot = getEquipmentSlot(item);
   if (!slot) return undefined;
   return character.equipment[slot]?.power || 0;
+}
+
+function ItemTitle({ item, name }: { item: Item; name: string }) {
+  const rarity = getRarityStyles(item);
+  return (
+    <div>
+      <h4 className={`font-black ${rarity.text}`}>{name}</h4>
+      <div className={`mt-1 inline-flex rounded px-1.5 py-0.5 text-[10px] font-black uppercase ${rarity.badge}`}>
+        {getRarityLabel(item)}
+      </div>
+    </div>
+  );
 }
 
 function ShopItemIcon({ item }: { item: Item }) {
