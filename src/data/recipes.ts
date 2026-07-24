@@ -44,10 +44,10 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
     description: 'Forja uma espada confiável com madeira e minério.',
     result: WEAPONS[0],
     quantity: 1,
-    goldCost: 25,
+    goldCost: 20,
     materials: [
       { itemId: 'wood', quantity: 2 },
-      { itemId: 'iron_ore', quantity: 3 },
+      { itemId: 'iron_ore', quantity: 2 },
     ],
   },
   {
@@ -56,9 +56,9 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
     description: 'Costura uma armadura leve com couro e fibra.',
     result: ARMORS[0],
     quantity: 1,
-    goldCost: 20,
+    goldCost: 15,
     materials: [
-      { itemId: 'couro', quantity: 3 },
+      { itemId: 'couro', quantity: 2 },
       { itemId: 'fiber', quantity: 2 },
     ],
   },
@@ -68,9 +68,9 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
     description: 'Forja uma lâmina rara com minério, madeira e pedra de apoio.',
     result: CRAFTED_ITEMS[0],
     quantity: 1,
-    goldCost: 80,
+    goldCost: 70,
     materials: [
-      { itemId: 'iron_ore', quantity: 8 },
+      { itemId: 'iron_ore', quantity: 6 },
       { itemId: 'wood', quantity: 4 },
       { itemId: 'stone', quantity: 3 },
     ],
@@ -81,10 +81,10 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
     description: 'Produz um arco raro usando madeira flexível, couro e fibras.',
     result: CRAFTED_ITEMS[1],
     quantity: 1,
-    goldCost: 75,
+    goldCost: 65,
     materials: [
-      { itemId: 'wood', quantity: 8 },
-      { itemId: 'fiber', quantity: 6 },
+      { itemId: 'wood', quantity: 6 },
+      { itemId: 'fiber', quantity: 5 },
       { itemId: 'couro', quantity: 3 },
     ],
   },
@@ -173,12 +173,12 @@ export function getEquipmentUpgradeCost(item: InventoryItem): {
   materials: MaterialCost[];
 } {
   const nextLevel = (item.upgradeLevel || 0) + 1;
-  const oreCost = Math.ceil(nextLevel / 2);
+  const oreCost = Math.max(1, Math.floor((nextLevel + 1) / 2));
   const rareMaterialCost = nextLevel >= 6 ? 1 : 0;
 
   if (item.type === 'weapon') {
     return {
-      goldCost: 30 * nextLevel,
+      goldCost: 20 + 22 * nextLevel,
       materials: [
         { itemId: 'iron_ore', quantity: oreCost },
         { itemId: 'wood', quantity: nextLevel },
@@ -188,7 +188,7 @@ export function getEquipmentUpgradeCost(item: InventoryItem): {
   }
 
   return {
-    goldCost: 30 * nextLevel,
+      goldCost: 20 + 22 * nextLevel,
       materials: [
         { itemId: 'iron_ore', quantity: oreCost },
         { itemId: 'couro', quantity: nextLevel },

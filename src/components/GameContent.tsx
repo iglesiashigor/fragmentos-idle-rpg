@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
+import { CheckCircle2, Hammer, ScrollText, Sparkles, Trophy } from 'lucide-react';
 import { Character } from './Character';
 import { GameMap } from './GameMap';
 import { Town } from './Town';
@@ -11,9 +12,17 @@ import { UserProfile } from './Profile/UserProfile';
 import { DeathModal } from './Character/DeathModal';
 import { CharacterTabs } from './Character/CharacterTabs';
 import { LevelUpModal } from './LevelUp/LevelUpModal';
+import { TutorialModal } from './TutorialModal';
 import { useGameState } from '../hooks/useGameState';
-import { SavedCharacter, InventoryItem, Item, Quest } from '../types/game';
+import {
+  DailyTaskProgress,
+  SavedCharacter,
+  InventoryItem,
+  Item,
+  Quest,
+} from '../types/game';
 import { CraftingRecipe } from '../data/recipes';
+import { getDifficultyTone } from '../data/balance';
 import {
   EquipmentSlotId,
   canAddItemToInventory,
@@ -29,16 +38,84 @@ interface GameContentProps {
   onCreateNew: () => void;
 }
 
+type ActionNotice = {
+  title: string;
+  detail?: string;
+  tone?: 'neutral' | 'success' | 'milestone';
+  icon?: ReactNode;
+};
+
+type MarkerState = {
+  status?: 'ready' | 'cooldown' | 'easy' | 'normal' | 'hard';
+  label?: string;
+};
+
 export function GameContent({ character: initialCharacter, onCharacterUpdate, onLogout, onCreateNew }: GameContentProps) {
   const gameState = useGameState(initialCharacter, onCharacterUpdate);
   const [inventoryNotice, setInventoryNotice] = useState<string | null>(null);
-  const [actionNotice, setActionNotice] = useState<string | null>(null);
+  const [actionNotice, setActionNotice] = useState<ActionNotice | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const previousCharacterRef = useRef(gameState.character);
 
   useEffect(() => {
     if (!actionNotice) return;
-    const timeout = window.setTimeout(() => setActionNotice(null), 4000);
+    const timeout = window.setTimeout(() => setActionNotice(null), 4200);
     return () => window.clearTimeout(timeout);
   }, [actionNotice]);
+
+  useEffect(() => {
+    const previousCharacter = previousCharacterRef.current;
+    const currentCharacter = gameState.character;
+    previousCharacterRef.current = currentCharacter;
+
+    if (previousCharacter.id !== currentCharacter.id) return;
+
+    if (currentCharacter.level > previousCharacter.level) {
+      setActionNotice({
+        title: `${currentCharacter.name} chegou ao nível ${currentCharacter.level}.`,
+        detail: 'Atributos e recursos foram atualizados.',
+        tone: 'milestone',
+        icon: <Sparkles className="h-5 w-5" />,
+      });
+      return;
+    }
+
+    if (
+      currentCharacter.guild &&
+      previousCharacter.guild &&
+      currentCharacter.guild.level > previousCharacter.guild.level
+    ) {
+      setActionNotice({
+        title: `Guilda evoluiu para Nv. ${currentCharacter.guild.level}.`,
+        detail: 'Os bônus permanentes ficaram melhores.',
+        tone: 'milestone',
+        icon: <Trophy className="h-5 w-5" />,
+      });
+      return;
+    }
+
+    const professionNames = {
+      woodcutter: 'Lenhador',
+      gatherer: 'Coletor',
+      miner: 'Minerador',
+      explorer: 'Explorador',
+    };
+    const upgradedProfession = Object.values(currentCharacter.professions || {}).find(
+      (profession) =>
+        profession &&
+        profession.level >
+          (previousCharacter.professions?.[profession.id]?.level || 1)
+    );
+
+    if (upgradedProfession) {
+      setActionNotice({
+        title: `${professionNames[upgradedProfession.id]} subiu para Nv. ${upgradedProfession.level}.`,
+        detail: 'Suas coletas podem render mais recursos.',
+        tone: 'milestone',
+        icon: <Hammer className="h-5 w-5" />,
+      });
+    }
+  }, [gameState.character]);
 
   const isSameInventoryItem = (
     first: InventoryItem,
@@ -73,7 +150,11 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
       inventory: updatedInventory,
       equipment: updatedEquipment
     });
-    setActionNotice(`${item.name} equipado.`);
+    setActionNotice({
+      title: `${item.name} equipado.`,
+      tone: 'success',
+      icon: <CheckCircle2 className="h-5 w-5" />,
+    });
   };
 
   const handleUnequipItem = (slot: EquipmentSlotId) => {
@@ -102,7 +183,11 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
       inventory: updatedInventory,
       equipment: updatedEquipment
     });
-    setActionNotice(`${currentEquipped.name} voltou para a bolsa.`);
+    setActionNotice({
+      title: `${currentEquipped.name} voltou para a bolsa.`,
+      tone: 'success',
+      icon: <CheckCircle2 className="h-5 w-5" />,
+    });
   };
 
   const handleUsePotion = (item: InventoryItem) => {
@@ -158,71 +243,203 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
 
       updates.inventory = updatedInventory;
       gameState.updateCharacter(updates);
-      setActionNotice(`${item.name} usada.`);
+      setActionNotice({
+        title: `${item.name} usada.`,
+        tone: 'success',
+        icon: <CheckCircle2 className="h-5 w-5" />,
+      });
     }
   };
 
   const handleBuyItem = (item: Item) => {
     if (gameState.character.gold < item.price) {
-      setActionNotice('Ouro insuficiente para comprar este item.');
+      setActionNotice({ title: 'Ouro insuficiente para comprar este item.' });
       return;
     }
     if (!canAddItemToInventory(item, gameState.character.inventory)) {
-      setActionNotice('Sua mochila está cheia.');
+      setActionNotice({ title: 'Sua mochila está cheia.' });
       return;
     }
     gameState.handleBuyItem(item);
-    setActionNotice(`${item.name} comprado.`);
+    setActionNotice({
+      title: `${item.name} comprado.`,
+      detail: `${item.price} ouro gasto.`,
+      tone: 'success',
+      icon: <CheckCircle2 className="h-5 w-5" />,
+    });
   };
 
   const handleSellItem = (item: InventoryItem, quantity: number) => {
     gameState.handleSellItem(item, quantity);
-    setActionNotice(`${item.name} vendido.`);
+    setActionNotice({
+      title: `${item.name} vendido.`,
+      detail: `${quantity} unidade${quantity > 1 ? 's' : ''} vendida${quantity > 1 ? 's' : ''}.`,
+      tone: 'success',
+      icon: <CheckCircle2 className="h-5 w-5" />,
+    });
   };
 
   const handleRest = () => {
     if (gameState.character.gold < 20) {
-      setActionNotice('Você precisa de 20 ouro para descansar.');
+      setActionNotice({ title: 'Você precisa de 20 ouro para descansar.' });
       return;
     }
     gameState.handleRest();
-    setActionNotice('Descanso concluído. Recursos restaurados.');
+    setActionNotice({
+      title: 'Descanso concluído.',
+      detail: 'Vida e recursos restaurados.',
+      tone: 'success',
+      icon: <CheckCircle2 className="h-5 w-5" />,
+    });
   };
 
   const handleGather = () => {
     gameState.handleGather();
-    setActionNotice('Coleta realizada.');
+    setActionNotice({
+      title: 'Coleta realizada.',
+      detail: 'Os recursos foram enviados para a mochila.',
+      tone: 'success',
+      icon: <Hammer className="h-5 w-5" />,
+    });
   };
 
   const handleAcceptQuest = (quest: Quest) => {
     gameState.handleAcceptQuest(quest);
-    setActionNotice(`Missão aceita: ${quest.name}.`);
+    setActionNotice({
+      title: `Missão aceita: ${quest.name}.`,
+      detail: 'Acompanhe o progresso na cidade.',
+      tone: 'success',
+      icon: <ScrollText className="h-5 w-5" />,
+    });
   };
 
   const handleClaimQuestReward = (quest: Quest) => {
     gameState.handleClaimQuestReward(quest);
-    setActionNotice(`Recompensa recebida: ${quest.name}.`);
+    setActionNotice({
+      title: `Recompensa recebida: ${quest.name}.`,
+      detail: `+${quest.rewards.gold} ouro e +${quest.rewards.experience} XP.`,
+      tone: 'milestone',
+      icon: <Trophy className="h-5 w-5" />,
+    });
   };
 
   const handleCraftRecipe = (recipe: CraftingRecipe) => {
     gameState.handleCraftRecipe(recipe);
-    setActionNotice(`${recipe.name} produzido.`);
+    setActionNotice({
+      title: `${recipe.name} produzido.`,
+      detail: 'Item adicionado à mochila.',
+      tone: 'success',
+      icon: <Hammer className="h-5 w-5" />,
+    });
   };
 
   const handleUpgradeItem = (item: InventoryItem) => {
     gameState.handleUpgradeItem(item);
-    setActionNotice(`${item.name} melhorado.`);
+    setActionNotice({
+      title: `${item.name} melhorado.`,
+      detail: 'O poder do equipamento aumentou.',
+      tone: 'milestone',
+      icon: <Sparkles className="h-5 w-5" />,
+    });
   };
 
   const handleFoundGuild = (name: string) => {
     gameState.handleFoundGuild(name);
-    setActionNotice(`Guilda fundada: ${name || 'Guilda dos Fragmentos'}.`);
+    setActionNotice({
+      title: `Guilda fundada: ${name || 'Guilda dos Fragmentos'}.`,
+      detail: 'Bônus permanentes foram liberados.',
+      tone: 'milestone',
+      icon: <Trophy className="h-5 w-5" />,
+    });
   };
 
   const handleUpgradeGuild = () => {
     gameState.handleUpgradeGuild();
-    setActionNotice('Guilda evoluída.');
+    setActionNotice({
+      title: 'Guilda evoluída.',
+      detail: 'Os bônus permanentes ficaram melhores.',
+      tone: 'milestone',
+      icon: <Trophy className="h-5 w-5" />,
+    });
   };
+
+  const handleClaimDailyTask = (task: DailyTaskProgress) => {
+    gameState.handleClaimDailyTask(task);
+    setActionNotice({
+      title: `Diária concluída: ${task.name}.`,
+      detail: `+${task.rewards.gold} ouro e +${task.rewards.experience} XP.`,
+      tone: 'milestone',
+      icon: <Trophy className="h-5 w-5" />,
+    });
+  };
+
+  const handleCloseTutorial = () => {
+    setShowTutorial(false);
+    gameState.updateCharacter({ tutorialSeen: true });
+  };
+
+  const handleDismissTutorial = () => {
+    setShowTutorial(false);
+    gameState.updateCharacter({
+      tutorialSeen: true,
+      tutorialDismissed: true,
+    });
+  };
+
+  const shouldShowTutorial =
+    showTutorial ||
+    (!gameState.character.tutorialSeen && !gameState.character.tutorialDismissed);
+  const now = Date.now();
+  const markerStates: Record<string, MarkerState> = Object.fromEntries(
+    gameState.mapLocations.map((location) => {
+      if (location.type === 'gathering') {
+        const node = gameState.character.gatheringNodes?.[location.id];
+        const isDepleted = Boolean(node && node.remaining <= 0 && node.resetAt > now);
+        return [
+          location.id,
+          {
+            status: isDepleted ? 'cooldown' : 'ready',
+            label: isDepleted ? 'Recarregando' : 'Pronto',
+          },
+        ];
+      }
+
+      if (location.type === 'boss_lair') {
+        const isCoolingDown = Boolean(
+          gameState.character.bossLairResetAt &&
+            gameState.character.bossLairResetAt > now
+        );
+        return [
+          location.id,
+          {
+            status: isCoolingDown ? 'cooldown' : 'ready',
+            label: isCoolingDown ? 'Em recarga' : 'Disponível',
+          },
+        ];
+      }
+
+      if (location.type === 'enemy') {
+        const difficulty = getDifficultyTone(
+          location.level,
+          gameState.character.level
+        );
+        return [
+          location.id,
+          {
+            status: difficulty,
+            label:
+              difficulty === 'hard'
+                ? 'Perigoso'
+                : difficulty === 'easy'
+                  ? 'Fácil'
+                  : 'Equilibrado',
+          },
+        ];
+      }
+
+      return [location.id, { status: 'normal' }];
+    })
+  );
 
   return (
     <div className="app-bg">
@@ -230,9 +447,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
         <UserProfile username={initialCharacter.name} onLogout={onLogout} />
 
         {actionNotice && (
-          <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-black text-amber-900 shadow-sm">
-            {actionNotice}
-          </div>
+          <ActionToast notice={actionNotice} />
         )}
 
         <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[440px_minmax(0,1fr)]">
@@ -251,15 +466,24 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
           </div>
 
           <div className="rpg-panel min-w-0 rounded-lg p-4 sm:p-6">
-            <div className="mb-4">
-              <h2 className="text-2xl font-black text-stone-950">Mapa</h2>
-              <p className="text-sm font-semibold text-stone-500">
-                Escolha um destino para continuar a aventura
-              </p>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-black text-stone-950">Mapa</h2>
+                <p className="text-sm font-semibold text-stone-500">
+                  Escolha um destino para continuar a aventura
+                </p>
+              </div>
+              <button
+                onClick={() => setShowTutorial(true)}
+                className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-black text-amber-800 transition-colors hover:bg-amber-100"
+              >
+                Tutorial
+              </button>
             </div>
             <GameMap
               locations={gameState.mapLocations}
               currentLocationId={gameState.currentLocation?.id}
+              markerStates={markerStates}
               onLocationSelect={gameState.handleLocationSelect}
             />
 
@@ -284,6 +508,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                     onUpgradeItem={handleUpgradeItem}
                     onFoundGuild={handleFoundGuild}
                     onUpgradeGuild={handleUpgradeGuild}
+                    onClaimDailyTask={handleClaimDailyTask}
                   />
                 ) : gameState.currentLocation.type === 'gathering' ? (
                   <Gathering
@@ -308,6 +533,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                       onAttack={gameState.handleAttack}
                       onCastSpell={gameState.handleCastSpell}
                       onUseAbility={gameState.handleUseAbility}
+                      feedback={gameState.combatFeedback}
                     />
                   )
                 )}
@@ -347,6 +573,42 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
             reward={gameState.randomEventReward}
             onClaim={gameState.handleClaimRandomEvent}
           />
+        )}
+
+        {shouldShowTutorial && (
+          <TutorialModal
+            character={gameState.character}
+            onClose={handleCloseTutorial}
+            onDismiss={handleDismissTutorial}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ActionToast({ notice }: { notice: ActionNotice }) {
+  const toneClasses = {
+    neutral: 'border-amber-300 bg-amber-50 text-amber-900',
+    success: 'border-emerald-300 bg-emerald-50 text-emerald-900',
+    milestone: 'border-amber-400 bg-gradient-to-r from-amber-50 to-white text-amber-950',
+  };
+
+  return (
+    <div
+      className={`flex items-start gap-3 rounded-lg border px-4 py-3 text-sm shadow-sm ${
+        toneClasses[notice.tone || 'neutral']
+      }`}
+    >
+      {notice.icon && (
+        <div className="mt-0.5 shrink-0">
+          {notice.icon}
+        </div>
+      )}
+      <div className="min-w-0">
+        <div className="font-black">{notice.title}</div>
+        {notice.detail && (
+          <div className="mt-0.5 font-semibold opacity-80">{notice.detail}</div>
         )}
       </div>
     </div>

@@ -5,14 +5,22 @@ import {
   Spell,
   MapLocation,
   Enemy,
+  CombatTurnFeedback,
   InventoryItem,
   Attributes,
   Ability,
   Quest,
   ProfessionId,
   ProfessionProgress,
+  DailyTaskProgress,
+  DailyTaskType,
 } from '../types/game';
 import { generateBoss, generateEnemy } from '../data/enemies';
+import {
+  getBossBalance,
+  getEnemyBalance,
+  getEncounterLevelRange,
+} from '../data/balance';
 import {
   INITIAL_LOCATIONS,
   generateRandomEnemyLocation,
@@ -28,11 +36,14 @@ import {
 import { calculateRequiredExperience, checkLevelUp } from '../utils/experience';
 import {
   calculateAbilityDamage,
+  calculateAbilityBase,
   calculateBasicAttackDamage,
+  calculateBasicAttackBase,
   calculateEnemyDamage,
   calculateMaxHealth,
   calculateMaxResource,
   calculateSpellDamage,
+  calculateSpellBase,
 } from '../utils/combatStats';
 import {
   addItemToInventory,
@@ -73,10 +84,14 @@ import {
   GUILD_FOUNDATION_COST,
   MAX_GUILD_LEVEL,
 } from '../data/guild';
+import {
+  advanceDailyTasks,
+  normalizeDailyTasks,
+} from '../data/dailyTasks';
 
 const GATHERING_NODE_MAX_CHARGES = 5;
 const GATHERING_NODE_RESET_MS = 5 * 60 * 1000;
-const BOSS_LAIR_ENTRY_COST = 50;
+const BOSS_LAIR_ENTRY_COST = 40;
 const BOSS_LAIR_RESET_MS = 10 * 60 * 1000;
 
 export function useGameState(
@@ -90,6 +105,11 @@ export function useGameState(
       savedCharacter.maxHealth > 0
         ? savedCharacter.health / savedCharacter.maxHealth
         : 1;
+    const dailyProgress = normalizeDailyTasks(
+      savedCharacter.dailyTasks,
+      savedCharacter.dailyTasksResetAt,
+      savedCharacter.level
+    );
     const normalizedCharacter: SavedCharacter = {
       ...savedCharacter,
       equipment: {
@@ -125,6 +145,8 @@ export function useGameState(
         equipmentUpgrades: 0,
       },
       unlockedTitleIds: savedCharacter.unlockedTitleIds || [],
+      dailyTasks: dailyProgress.tasks,
+      dailyTasksResetAt: dailyProgress.resetAt,
       maxHealth,
       health:
         savedCharacter.health <= 0
@@ -178,7 +200,10 @@ export function useGameState(
     gold: number;
     experience: number;
     loot: { name: string; quantity: number }[];
+    finishingBlow?: string;
+    finishingDamage?: number;
   } | null>(null);
+  const [combatFeedback, setCombatFeedback] = useState<CombatTurnFeedback | null>(null);
   const [showDeathModal, setShowDeathModal] = useState(false);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [attributePoints, setAttributePoints] = useState(0);
@@ -206,6 +231,19 @@ export function useGameState(
     setCharacter(updatedCharacter);
     onCharacterUpdate(updatedCharacter);
   };
+
+  const getAdvancedDailyTasks = (
+    type: DailyTaskType,
+    amount = 1,
+    baseCharacter: SavedCharacter = character
+  ) =>
+    advanceDailyTasks(
+      baseCharacter.dailyTasks,
+      baseCharacter.dailyTasksResetAt,
+      baseCharacter.level,
+      type,
+      amount
+    );
 
   const handleAttributeIncrease = (attribute: keyof Attributes) => {
     if (attributePoints > 0) {
@@ -360,7 +398,8 @@ export function useGameState(
     setCurrentLocation(location);
     setLastGatheringRewards(null);
     setLastCombatRewards(null);
-    const encounterLevel = getEncounterLevel(character.level);
+    setCombatFeedback(null);
+    const encounterLevel = location.level || getEncounterLevel(character.level);
 
     if (location.type === 'enemy') {
       setEnemy(generateEnemy(encounterLevel));
@@ -403,9 +442,8 @@ export function useGameState(
   };
 
   const getEncounterLevel = (playerLevel: number) => {
-    const minLevel = Math.max(1, playerLevel - 2);
-    const maxLevel = Math.max(minLevel, playerLevel + 2);
-    return Math.floor(Math.random() * (maxLevel - minLevel + 1)) + minLevel;
+    const range = getEncounterLevelRange(playerLevel);
+    return Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
   };
 
   const handleAttack = () => {
@@ -413,10 +451,18 @@ export function useGameState(
 
     // Player attacks enemy
     const playerDamage = calculateBasicAttackDamage(character);
+    const isCritical = playerDamage > calculateBasicAttackBase(character);
     const newEnemyHealth = enemy.health - playerDamage;
 
     if (newEnemyHealth <= 0) {
-      handleEnemyDefeat();
+      setCombatFeedback({
+        action: 'Ataque básico',
+        playerDamage,
+        enemyDamage: 0,
+        isCritical,
+        defeatedEnemy: true,
+      });
+      handleEnemyDefeat({}, 'Ataque básico', playerDamage);
       return;
     }
 
@@ -425,6 +471,13 @@ export function useGameState(
     const newPlayerHealth = character.health - enemyDamage;
 
     if (newPlayerHealth <= 0) {
+      setCombatFeedback({
+        action: 'Ataque básico',
+        playerDamage,
+        enemyDamage,
+        isCritical,
+        defeatedPlayer: true,
+      });
       setShowDeathModal(true);
       updateCharacter({ health: 0 });
       return;
@@ -432,6 +485,12 @@ export function useGameState(
 
     setEnemy({ ...enemy, health: newEnemyHealth });
     updateCharacter({ health: newPlayerHealth });
+    setCombatFeedback({
+      action: 'Ataque básico',
+      playerDamage,
+      enemyDamage,
+      isCritical,
+    });
   };
 
   const handleCastSpell = (spell: Spell) => {
@@ -440,11 +499,20 @@ export function useGameState(
     // Check if player has enough mana
     if (character.mana < spell.manaCost) return;
 
-    const newEnemyHealth = enemy.health - calculateSpellDamage(character, spell.damage);
+    const playerDamage = calculateSpellDamage(character, spell.damage);
+    const isCritical = playerDamage > calculateSpellBase(character, spell.damage);
+    const newEnemyHealth = enemy.health - playerDamage;
     const newMana = character.mana - spell.manaCost;
 
     if (newEnemyHealth <= 0) {
-      handleEnemyDefeat({ mana: newMana });
+      setCombatFeedback({
+        action: spell.name,
+        playerDamage,
+        enemyDamage: 0,
+        isCritical,
+        defeatedEnemy: true,
+      });
+      handleEnemyDefeat({ mana: newMana }, spell.name, playerDamage);
       return;
     }
 
@@ -453,6 +521,13 @@ export function useGameState(
     const newPlayerHealth = character.health - enemyDamage;
 
     if (newPlayerHealth <= 0) {
+      setCombatFeedback({
+        action: spell.name,
+        playerDamage,
+        enemyDamage,
+        isCritical,
+        defeatedPlayer: true,
+      });
       setShowDeathModal(true);
       updateCharacter({ health: 0 });
       return;
@@ -463,6 +538,12 @@ export function useGameState(
       health: newPlayerHealth,
       mana: newMana
     });
+    setCombatFeedback({
+      action: spell.name,
+      playerDamage,
+      enemyDamage,
+      isCritical,
+    });
   };
 
   const handleUseAbility = (ability: Ability) => {
@@ -471,11 +552,20 @@ export function useGameState(
     // Check if player has enough stamina
     if (character.stamina < ability.staminaCost) return;
 
-    const newEnemyHealth = enemy.health - calculateAbilityDamage(character, ability.damage);
+    const playerDamage = calculateAbilityDamage(character, ability.damage);
+    const isCritical = playerDamage > calculateAbilityBase(character, ability.damage);
+    const newEnemyHealth = enemy.health - playerDamage;
     const newStamina = character.stamina - ability.staminaCost;
 
     if (newEnemyHealth <= 0) {
-      handleEnemyDefeat({ stamina: newStamina });
+      setCombatFeedback({
+        action: ability.name,
+        playerDamage,
+        enemyDamage: 0,
+        isCritical,
+        defeatedEnemy: true,
+      });
+      handleEnemyDefeat({ stamina: newStamina }, ability.name, playerDamage);
       return;
     }
 
@@ -484,6 +574,13 @@ export function useGameState(
     const newPlayerHealth = character.health - enemyDamage;
 
     if (newPlayerHealth <= 0) {
+      setCombatFeedback({
+        action: ability.name,
+        playerDamage,
+        enemyDamage,
+        isCritical,
+        defeatedPlayer: true,
+      });
       setShowDeathModal(true);
       updateCharacter({ health: 0 });
       return;
@@ -494,9 +591,19 @@ export function useGameState(
       health: newPlayerHealth,
       stamina: newStamina
     });
+    setCombatFeedback({
+      action: ability.name,
+      playerDamage,
+      enemyDamage,
+      isCritical,
+    });
   };
 
-  const handleEnemyDefeat = (preRewardUpdates: Partial<SavedCharacter> = {}) => {
+  const handleEnemyDefeat = (
+    preRewardUpdates: Partial<SavedCharacter> = {},
+    finishingBlow?: string,
+    finishingDamage?: number
+  ) => {
     if (!enemy || !currentLocation) return;
 
     // Update map locations
@@ -520,11 +627,11 @@ export function useGameState(
 
       // Enemy replacement must always add an enemy. Events are optional extras.
       if (newEnemyCount < MAX_ENEMIES) {
-        newLocations.push(generateRandomEnemyLocation());
+        newLocations.push(generateRandomEnemyLocation(character.level));
       }
 
       if (newEventCount < MAX_EVENTS && Math.random() < 0.35) {
-        const newLocation = generateRandomLocation();
+        const newLocation = generateRandomLocation(character.level);
         if (
           newLocation.type === 'event'
         ) {
@@ -536,7 +643,9 @@ export function useGameState(
     });
 
     // Calculate rewards
-    const baseGoldReward = enemy.isBoss ? (50 + enemy.level * 20) : (10 + enemy.level * 5);
+    const baseGoldReward = enemy.isBoss
+      ? getBossBalance(enemy.level).goldReward
+      : getEnemyBalance(enemy.level).goldReward;
     const baseExpReward = enemy.experience;
     const goldReward = Math.floor(baseGoldReward * getGuildGoldBonus(character.guild));
     const expReward = Math.floor(baseExpReward * getGuildExperienceBonus(character.guild));
@@ -565,6 +674,9 @@ export function useGameState(
           (enemy.isBoss ? 1 : 0),
       },
     };
+    const dailyProgress = getAdvancedDailyTasks('kill', 1, rewardBaseCharacter);
+    updates.dailyTasks = dailyProgress.tasks;
+    updates.dailyTasksResetAt = dailyProgress.resetAt;
 
     // Add loot items to inventory
     let collectedItems: { itemId: string; quantity: number }[] = [];
@@ -611,6 +723,8 @@ export function useGameState(
       enemyName: enemy.name,
       gold: goldReward,
       experience: expReward,
+      finishingBlow,
+      finishingDamage,
       loot: collectedItems.map((item) => ({
         name:
           enemy.loot.find((lootItem) => lootItem.id === item.itemId)?.name ||
@@ -637,6 +751,7 @@ export function useGameState(
     });
     setEnemy(generateBoss(Math.max(1, character.level)));
     setLastCombatRewards(null);
+    setCombatFeedback(null);
   };
 
   const handleRespawn = () => {
@@ -724,10 +839,13 @@ export function useGameState(
         return i;
       })
       .filter((i) => i.quantity > 0);
+    const dailyProgress = getAdvancedDailyTasks('sell', sellQuantity);
 
     updateCharacter({
       gold: character.gold + sellPrice,
       inventory: updatedInventory,
+      dailyTasks: dailyProgress.tasks,
+      dailyTasksResetAt: dailyProgress.resetAt,
     });
   };
 
@@ -759,6 +877,7 @@ export function useGameState(
           collectedItems.push({ itemId: item.id, quantity: finalQuantity });
         }
       });
+      const dailyProgress = getAdvancedDailyTasks('gather', 1);
 
       updateCharacter({
         inventory: updatedInventory,
@@ -771,6 +890,8 @@ export function useGameState(
             }
           : character.professions,
         activeProfessionId: undefined,
+        dailyTasks: dailyProgress.tasks,
+        dailyTasksResetAt: dailyProgress.resetAt,
       });
     } else if (randomEventReward.type === 'item') {
       const rewardItem = randomEventReward.reward as Item;
@@ -905,7 +1026,7 @@ export function useGameState(
     }
 
     const gatheringReward = generateGatheringEvent(
-      currentLocation.level || 1,
+      Math.max(currentLocation.level || 1, Math.ceil(character.level / 4)),
       currentLocation.resourcePool
     );
     let updatedInventory = [...character.inventory];
@@ -935,6 +1056,11 @@ export function useGameState(
         displayedRewards.push({ name: item.name, quantity: finalQuantity });
       }
     });
+    const totalCollected = collectedItems.reduce(
+      (total, item) => total + item.quantity,
+      0
+    );
+    const dailyProgress = getAdvancedDailyTasks('gather', 1);
 
     updateCharacter({
       inventory: updatedInventory,
@@ -966,9 +1092,10 @@ export function useGameState(
           equipmentUpgrades: 0,
         }),
         resourcesGathered:
-          (character.stats?.resourcesGathered || 0) +
-          collectedItems.reduce((total, item) => total + item.quantity, 0),
+          (character.stats?.resourcesGathered || 0) + totalCollected,
       },
+      dailyTasks: dailyProgress.tasks,
+      dailyTasksResetAt: dailyProgress.resetAt,
     });
     setLastGatheringRewards(displayedRewards);
   };
@@ -1049,6 +1176,7 @@ export function useGameState(
       inventoryWithoutMaterials,
       recipe.quantity
     );
+    const dailyProgress = getAdvancedDailyTasks('craft');
 
     updateCharacter({
       gold: character.gold - recipe.goldCost,
@@ -1063,6 +1191,8 @@ export function useGameState(
         }),
         itemsCrafted: (character.stats?.itemsCrafted || 0) + recipe.quantity,
       },
+      dailyTasks: dailyProgress.tasks,
+      dailyTasksResetAt: dailyProgress.resetAt,
     });
   };
 
@@ -1105,6 +1235,7 @@ export function useGameState(
         updatedEquipment[slot] = upgradedItem;
       }
     });
+    const dailyProgress = getAdvancedDailyTasks('craft');
 
     updateCharacter({
       gold: character.gold - cost.goldCost,
@@ -1120,6 +1251,8 @@ export function useGameState(
         }),
         equipmentUpgrades: (character.stats?.equipmentUpgrades || 0) + 1,
       },
+      dailyTasks: dailyProgress.tasks,
+      dailyTasksResetAt: dailyProgress.resetAt,
     });
   };
 
@@ -1153,6 +1286,45 @@ export function useGameState(
         ...character.guild,
         level: character.guild.level + 1,
       },
+    });
+  };
+
+  const handleClaimDailyTask = (task: DailyTaskProgress) => {
+    const dailyProgress = normalizeDailyTasks(
+      character.dailyTasks,
+      character.dailyTasksResetAt,
+      character.level
+    );
+    const currentTask = dailyProgress.tasks.find(
+      (dailyTask) => dailyTask.id === task.id
+    );
+
+    if (!currentTask || currentTask.claimed || currentTask.current < currentTask.target) {
+      return;
+    }
+
+    const rewardedCharacter = {
+      ...character,
+      gold: character.gold + currentTask.rewards.gold,
+      experience: character.experience + currentTask.rewards.experience,
+      dailyTasks: dailyProgress.tasks.map((dailyTask) =>
+        dailyTask.id === currentTask.id
+          ? { ...dailyTask, claimed: true }
+          : dailyTask
+      ),
+      dailyTasksResetAt: dailyProgress.resetAt,
+    };
+    const levelUpUpdates = getLevelUpUpdates(
+      rewardedCharacter,
+      rewardedCharacter.experience
+    );
+
+    updateCharacter({
+      gold: rewardedCharacter.gold,
+      experience: rewardedCharacter.experience,
+      dailyTasks: rewardedCharacter.dailyTasks,
+      dailyTasksResetAt: rewardedCharacter.dailyTasksResetAt,
+      ...levelUpUpdates,
     });
   };
 
@@ -1227,6 +1399,7 @@ export function useGameState(
     attributePoints,
     lastGatheringRewards,
     lastCombatRewards,
+    combatFeedback,
     gatheringNodeState:
       currentLocation?.type === 'gathering'
         ? getGatheringNodeState(currentLocation.id)
@@ -1253,6 +1426,7 @@ export function useGameState(
     handleUpgradeItem,
     handleFoundGuild,
     handleUpgradeGuild,
+    handleClaimDailyTask,
     handleSetActiveTitle,
     handleAttributeIncrease,
     handleSpellSelect,

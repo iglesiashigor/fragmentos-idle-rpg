@@ -1,16 +1,16 @@
 import { ReactNode, useState } from 'react';
-import { Award, Backpack, BarChart3, Hammer, Info } from 'lucide-react';
+import { Award, Backpack, BarChart3, BookOpen, Hammer, Info } from 'lucide-react';
 import { TITLE_ACHIEVEMENTS } from '../../data/achievements';
 import {
   getProfessionRequiredExperience,
   MAX_PROFESSION_LEVEL,
   PROFESSIONS,
 } from '../../data/professions';
-import { Attributes, Equipment, InventoryItem, SavedCharacter } from '../../types/game';
+import { Ability, Attributes, Equipment, InventoryItem, SavedCharacter, Spell } from '../../types/game';
 import { EquipmentSlotId } from '../../utils/inventory';
 import { InventoryPanel } from '../Inventory/InventoryPanel';
 
-type CharacterTabId = 'inventory' | 'attributes' | 'professions' | 'achievements';
+type CharacterTabId = 'inventory' | 'attributes' | 'skills' | 'professions' | 'achievements';
 
 interface CharacterTabsProps {
   character: SavedCharacter;
@@ -37,7 +37,7 @@ export function CharacterTabs({
 
   return (
     <div className="rpg-panel rounded-lg p-4">
-      <div className="mb-4 grid grid-cols-4 gap-2">
+      <div className="mb-4 grid grid-cols-5 gap-2">
         <SidebarTab
           label="Inventário"
           active={activeTab === 'inventory'}
@@ -49,6 +49,12 @@ export function CharacterTabs({
           active={activeTab === 'attributes'}
           icon={<BarChart3 className="h-4 w-4" />}
           onClick={() => setActiveTab('attributes')}
+        />
+        <SidebarTab
+          label="Técnicas"
+          active={activeTab === 'skills'}
+          icon={<BookOpen className="h-4 w-4" />}
+          onClick={() => setActiveTab('skills')}
         />
         <SidebarTab
           label="Profissões"
@@ -78,6 +84,8 @@ export function CharacterTabs({
         />
       ) : activeTab === 'attributes' ? (
         <AttributesPanel attributes={character.attributes} />
+      ) : activeTab === 'skills' ? (
+        <SkillsPanel character={character} />
       ) : activeTab === 'professions' ? (
         <ProfessionProgressPanel character={character} />
       ) : (
@@ -87,6 +95,89 @@ export function CharacterTabs({
         />
       )}
     </div>
+  );
+}
+
+function SkillsPanel({ character }: { character: SavedCharacter }) {
+  const usesMana = character.class.resourceType === 'mana';
+  const primaryList = usesMana ? character.spells : character.abilities;
+  const secondaryList = usesMana ? character.abilities : character.spells;
+
+  return (
+    <div>
+      <div className="mb-4">
+        <h2 className="text-xl font-black text-stone-950">Técnicas</h2>
+        <p className="text-sm font-medium text-stone-500">
+          Magias e habilidades aprendidas pelo personagem.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <SkillGroup
+          title={usesMana ? 'Magias ativas' : 'Habilidades ativas'}
+          emptyText={usesMana ? 'Nenhuma magia aprendida.' : 'Nenhuma habilidade aprendida.'}
+          items={primaryList}
+          type={usesMana ? 'spell' : 'ability'}
+        />
+        {secondaryList.length > 0 && (
+          <SkillGroup
+            title={usesMana ? 'Habilidades extras' : 'Magias extras'}
+            emptyText=""
+            items={secondaryList}
+            type={usesMana ? 'ability' : 'spell'}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SkillGroup({
+  title,
+  emptyText,
+  items,
+  type,
+}: {
+  title: string;
+  emptyText: string;
+  items: Array<Spell | Ability>;
+  type: 'spell' | 'ability';
+}) {
+  return (
+    <section>
+      <h3 className="mb-2 text-sm font-black text-stone-950">{title}</h3>
+      {items.length === 0 ? (
+        <div className="rounded-md border border-dashed border-stone-300 bg-stone-50 p-3 text-sm font-semibold text-stone-500">
+          {emptyText}
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {items.map((item) => (
+            <div key={`${item.id}_${item.level}`} className="rounded-md border border-stone-200 bg-white p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h4 className="font-black text-stone-950">{item.name}</h4>
+                  <p className="mt-1 text-xs font-semibold text-stone-500">{item.description}</p>
+                </div>
+                <span className="rounded-md bg-stone-950 px-2 py-1 text-xs font-black text-white">
+                  Nv. {item.level}
+                </span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs font-black">
+                <div className="rounded-md bg-stone-100 px-2 py-1 text-stone-700">
+                  Dano: {item.damage}
+                </div>
+                <div className="rounded-md bg-stone-100 px-2 py-1 text-stone-700">
+                  {type === 'spell'
+                    ? `Mana: ${(item as Spell).manaCost}`
+                    : `Estamina: ${(item as Ability).staminaCost}`}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

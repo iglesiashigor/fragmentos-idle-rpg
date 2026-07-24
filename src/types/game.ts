@@ -57,6 +57,22 @@ export interface GuildProgress {
   foundedAt: number;
 }
 
+export type DailyTaskType = 'kill' | 'gather' | 'sell' | 'craft' | 'upgrade';
+
+export interface DailyTaskProgress {
+  id: string;
+  type: DailyTaskType;
+  name: string;
+  description: string;
+  target: number;
+  current: number;
+  rewards: {
+    gold: number;
+    experience: number;
+  };
+  claimed: boolean;
+}
+
 export interface AttributeModifiers {
   strength: number;
   effort: number;
@@ -176,6 +192,10 @@ export interface Character {
   activeTitleId?: string;
   bossLairResetAt?: number;
   guild?: GuildProgress;
+  dailyTasks?: DailyTaskProgress[];
+  dailyTasksResetAt?: number;
+  tutorialSeen?: boolean;
+  tutorialDismissed?: boolean;
 }
 
 export interface CharacterStats {
@@ -184,6 +204,15 @@ export interface CharacterStats {
   resourcesGathered: number;
   itemsCrafted: number;
   equipmentUpgrades: number;
+}
+
+export interface CombatTurnFeedback {
+  action: string;
+  playerDamage: number;
+  enemyDamage: number;
+  isCritical: boolean;
+  defeatedEnemy?: boolean;
+  defeatedPlayer?: boolean;
 }
 
 export interface SavedCharacter extends Character {

@@ -145,6 +145,6 @@ export function calculateAbilityBase(
 export function calculateEnemyDamage(enemy: Enemy, character: Character) {
   const stats = calculateCharacterStats(character);
   const baseDamage = enemy.damage ?? 6 + enemy.level * 3;
-  const defenseReduction = enemy.isBoss ? 0.85 : 0.7;
+  const defenseReduction = enemy.isBoss ? 1 : 0.75;
   return Math.max(1, Math.round(baseDamage - stats.defense * defenseReduction));
 }

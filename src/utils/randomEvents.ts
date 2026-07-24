@@ -177,7 +177,7 @@ export function generateGatheringEvent(
     ? [
         {
           item,
-          quantity: Math.max(1, level),
+          quantity: Math.max(1, 1 + Math.floor(level / 2)),
         },
       ]
     : [];

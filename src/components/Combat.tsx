@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Ability, Character, Spell } from '../types/game';
+import { Ability, Character, CombatTurnFeedback, Enemy, Spell } from '../types/game';
 import {
   calculateAbilityBase,
   calculateBasicAttackBase,
@@ -8,15 +8,11 @@ import {
 
 interface CombatProps {
   player: Character;
-  enemy: {
-    name: string;
-    health: number;
-    maxHealth: number;
-    level: number;
-  };
+  enemy: Enemy;
   onAttack: () => void;
   onCastSpell: (spell: Spell) => void;
   onUseAbility: (ability: Ability) => void;
+  feedback?: CombatTurnFeedback | null;
 }
 
 export function Combat({
@@ -25,6 +21,7 @@ export function Combat({
   onAttack,
   onCastSpell,
   onUseAbility,
+  feedback,
 }: CombatProps) {
   const basicDamage = calculateBasicAttackBase(player);
 
@@ -60,8 +57,15 @@ export function Combat({
 
         <CombatantPanel name={`${enemy.name} Nv. ${enemy.level}`}>
           <Bar label="Vida" value={enemy.health} max={enemy.maxHealth} color="bg-red-700" />
+          {enemy.abilities?.[0] && (
+            <div className="rounded-md border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-black text-purple-800">
+              Especial: {enemy.abilities[0].name} ~{enemy.abilities[0].damage} dano
+            </div>
+          )}
         </CombatantPanel>
       </div>
+
+      {feedback && <CombatFeedback feedback={feedback} />}
 
       <div className="space-y-4">
         <button
@@ -142,6 +146,44 @@ function CombatantPanel({
     <div className="min-w-0 flex-1">
       <h3 className="text-lg font-black text-stone-950">{name}</h3>
       <div className="mt-2 space-y-2">{children}</div>
+    </div>
+  );
+}
+
+function CombatFeedback({ feedback }: { feedback: CombatTurnFeedback }) {
+  return (
+    <div
+      className={`mb-5 rounded-lg border p-3 ${
+        feedback.defeatedPlayer
+          ? 'border-red-300 bg-red-50'
+          : feedback.defeatedEnemy
+            ? 'border-emerald-300 bg-emerald-50'
+            : 'border-amber-200 bg-amber-50'
+      }`}
+    >
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <span className="rounded-md bg-stone-950 px-2 py-1 text-xs font-black text-white">
+          Último turno
+        </span>
+        {feedback.isCritical && (
+          <span className="rounded-md bg-amber-500 px-2 py-1 text-xs font-black text-stone-950">
+            Crítico
+          </span>
+        )}
+        {feedback.defeatedEnemy && (
+          <span className="rounded-md bg-emerald-600 px-2 py-1 text-xs font-black text-white">
+            Vitória
+          </span>
+        )}
+      </div>
+      <div className="grid gap-2 text-sm font-bold text-stone-700 sm:grid-cols-2">
+        <div className="rounded-md bg-white px-3 py-2">
+          {feedback.action}: <span className="text-red-700">{feedback.playerDamage}</span> dano causado
+        </div>
+        <div className="rounded-md bg-white px-3 py-2">
+          Contra-ataque: <span className="text-red-700">{feedback.enemyDamage}</span> dano recebido
+        </div>
+      </div>
     </div>
   );
 }

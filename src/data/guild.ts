@@ -7,11 +7,11 @@ export const GUILD_FOUNDATION_COST: {
   goldCost: number;
   materials: MaterialCost[];
 } = {
-  goldCost: 500,
+  goldCost: 300,
   materials: [
-    { itemId: 'wood', quantity: 20 },
-    { itemId: 'stone', quantity: 10 },
-    { itemId: 'iron_ore', quantity: 5 },
+    { itemId: 'wood', quantity: 12 },
+    { itemId: 'stone', quantity: 8 },
+    { itemId: 'iron_ore', quantity: 3 },
   ],
 };
 
@@ -29,11 +29,11 @@ export function getGuildUpgradeCost(level: number): {
 } {
   const nextLevel = level + 1;
   return {
-    goldCost: 250 + nextLevel * 150,
+    goldCost: 180 + nextLevel * 110,
     materials: [
-      { itemId: 'wood', quantity: 8 + nextLevel * 3 },
-      { itemId: 'stone', quantity: 5 + nextLevel * 2 },
-      { itemId: 'iron_ore', quantity: 2 + Math.ceil(nextLevel / 2) },
+      { itemId: 'wood', quantity: 6 + nextLevel * 2 },
+      { itemId: 'stone', quantity: 4 + nextLevel * 2 },
+      { itemId: 'iron_ore', quantity: 1 + Math.ceil(nextLevel / 2) },
       ...(nextLevel >= 5
         ? [{ itemId: 'ancient_fragment', quantity: nextLevel - 3 }]
         : []),

@@ -8,7 +8,7 @@ export const QUESTS: Quest[] = [
     type: 'kill',
     requirements: { level: 1 },
     objectives: [{ target: 'any_enemy', label: 'Inimigos derrotados', amount: 3, current: 0 }],
-    rewards: { gold: 60, experience: 45 },
+    rewards: { gold: 85, experience: 70 },
     status: 'available',
   },
   {
@@ -18,7 +18,7 @@ export const QUESTS: Quest[] = [
     type: 'kill',
     requirements: { level: 2, previousQuests: ['hunter_start'] },
     objectives: [{ target: 'Lobo', label: 'Lobos derrotados', amount: 2, current: 0 }],
-    rewards: { gold: 90, experience: 70 },
+    rewards: { gold: 110, experience: 90 },
     status: 'available',
   },
   {
@@ -31,7 +31,7 @@ export const QUESTS: Quest[] = [
       { target: 'wood', label: 'Madeira coletada', amount: 5, current: 0 },
       { target: 'herb', label: 'Ervas coletadas', amount: 3, current: 0 },
     ],
-    rewards: { gold: 70, experience: 55 },
+    rewards: { gold: 90, experience: 75 },
     status: 'available',
   },
   {
@@ -44,7 +44,7 @@ export const QUESTS: Quest[] = [
       { target: 'stone', label: 'Pedras coletadas', amount: 4, current: 0 },
       { target: 'iron_ore', label: 'Minério coletado', amount: 2, current: 0 },
     ],
-    rewards: { gold: 110, experience: 85 },
+    rewards: { gold: 125, experience: 95 },
     status: 'available',
   },
   {
@@ -57,7 +57,7 @@ export const QUESTS: Quest[] = [
       { target: 'herb', label: 'Ervas coletadas', amount: 5, current: 0 },
       { target: 'fiber', label: 'Fibras coletadas', amount: 4, current: 0 },
     ],
-    rewards: { gold: 80, experience: 60 },
+    rewards: { gold: 95, experience: 80 },
     status: 'available',
   },
   {
@@ -69,7 +69,7 @@ export const QUESTS: Quest[] = [
     objectives: [
       { target: 'ancient_fragment', label: 'Fragmentos antigos', amount: 4, current: 0 },
     ],
-    rewards: { gold: 90, experience: 70 },
+    rewards: { gold: 105, experience: 85 },
     status: 'available',
   },
 ];

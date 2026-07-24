@@ -1,4 +1,5 @@
 import { MapLocation } from '../types/game';
+import { getEncounterLevelRange } from '../data/balance';
 
 let lastEnemyId = 0;
 let lastEventId = 0;
@@ -20,17 +21,22 @@ function randomMapPosition() {
   };
 }
 
-export function generateRandomEnemyLocation(): MapLocation {
+function getRandomLevelAround(characterLevel = 1) {
+  const range = getEncounterLevelRange(characterLevel);
+  return Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
+}
+
+export function generateRandomEnemyLocation(characterLevel = 1): MapLocation {
   return {
     id: generateEnemyId(),
     type: 'enemy',
     ...randomMapPosition(),
     name: 'Inimigo Desconhecido',
-    level: Math.floor(Math.random() * 3) + 1,
+    level: getRandomLevelAround(characterLevel),
   };
 }
 
-export function generateRandomLocation(): MapLocation {
+export function generateRandomLocation(characterLevel = 1): MapLocation {
   const { x, y } = randomMapPosition();
   const eventRoll = Math.random();
   
@@ -51,7 +57,7 @@ export function generateRandomLocation(): MapLocation {
       x,
       y,
       name: names[resourcePool],
-      level: Math.floor(Math.random() * 3) + 1,
+      level: getRandomLevelAround(characterLevel),
     };
   }
 
@@ -63,11 +69,11 @@ export function generateRandomLocation(): MapLocation {
       x,
       y,
       name: 'Evento Misterioso',
-      level: Math.floor(Math.random() * 3) + 1,
+      level: getRandomLevelAround(characterLevel),
     };
   }
 
-  return generateRandomEnemyLocation();
+  return generateRandomEnemyLocation(characterLevel);
 }
 
 export const MAX_ENEMIES = 5;

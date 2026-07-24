@@ -1,5 +1,5 @@
-import { ReactNode } from 'react';
-import { FlaskRound as Flask, Package, Shield, Sword } from 'lucide-react';
+import { ReactNode, useState } from 'react';
+import { FlaskRound as Flask, Info, Package, Shield, Sword } from 'lucide-react';
 import { Equipment, InventoryItem } from '../../types/game';
 import {
   EQUIPMENT_SLOTS,
@@ -9,7 +9,8 @@ import {
   isEquipmentItem,
   MAX_INVENTORY_SLOTS,
 } from '../../utils/inventory';
-import { getRarityLabel, getRarityStyles } from '../../utils/rarity';
+import { getRarityStyles } from '../../utils/rarity';
+import { ItemDetailsModal } from './ItemDetailsModal';
 
 interface InventoryPanelProps {
   inventory: InventoryItem[];
@@ -43,6 +44,7 @@ export function InventoryPanel({
 }: InventoryPanelProps) {
   const bagItems = getBagItems(inventory);
   const emptySlots = Math.max(0, MAX_INVENTORY_SLOTS - bagItems.length);
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
   return (
     <div className={framed ? 'rpg-panel rounded-lg p-5' : ''}>
@@ -72,6 +74,7 @@ export function InventoryPanel({
             icon={slot === 'weapon' ? <Sword className="h-5 w-5" /> : <Shield className="h-5 w-5" />}
             item={equipment[slot] || null}
             onUnequip={() => onUnequipItem(slot)}
+            onShowDetails={setSelectedItem}
           />
         ))}
       </div>
@@ -91,6 +94,7 @@ export function InventoryPanel({
             equipped={false}
             onEquipItem={onEquipItem}
             onUsePotion={onUsePotion}
+            onShowDetails={setSelectedItem}
           />
         ))}
 
@@ -101,6 +105,13 @@ export function InventoryPanel({
           />
         ))}
       </div>
+
+      {selectedItem && (
+        <ItemDetailsModal
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+        />
+      )}
     </div>
   );
 }
@@ -110,11 +121,13 @@ function EquipmentSlot({
   icon,
   item,
   onUnequip,
+  onShowDetails,
 }: {
   title: string;
   icon: ReactNode;
   item: InventoryItem | null;
   onUnequip: () => void;
+  onShowDetails: (item: InventoryItem) => void;
 }) {
   const rarity = item ? getRarityStyles(item) : null;
 
@@ -126,12 +139,15 @@ function EquipmentSlot({
       </div>
       {item ? (
         <div>
-          <div className={`font-bold ${rarity?.text || 'text-stone-950'}`}>{item.name}</div>
-          <div className={`mt-1 inline-flex rounded px-1.5 py-0.5 text-[10px] font-black uppercase ${rarity?.badge}`}>
-            {getRarityLabel(item)}
-          </div>
-          <div className="text-xs text-stone-500">
-            {item.type === 'weapon' ? 'Poder' : 'Defesa'}: {item.power || 0}
+          <div className="flex items-start justify-between gap-2">
+            <div className={`font-bold ${rarity?.text || 'text-stone-950'}`}>{item.name}</div>
+            <button
+              onClick={() => onShowDetails(item)}
+              className="rounded-full bg-stone-100 p-1 text-stone-500 hover:bg-amber-100 hover:text-amber-700"
+              aria-label={`Ver detalhes de ${item.name}`}
+            >
+              <Info className="h-3.5 w-3.5" />
+            </button>
           </div>
           <button
             onClick={onUnequip}
@@ -154,11 +170,13 @@ function BagSlot({
   equipped,
   onEquipItem,
   onUsePotion,
+  onShowDetails,
 }: {
   item: InventoryItem;
   equipped: boolean;
   onEquipItem: (item: InventoryItem) => void;
   onUsePotion: (item: InventoryItem) => void;
+  onShowDetails: (item: InventoryItem) => void;
 }) {
   const canEquip = isEquipmentItem(item);
   const canUse = item.type === 'potion';
@@ -171,30 +189,28 @@ function BagSlot({
           ? 'border-amber-500 ring-2 ring-amber-300'
           : `${rarity.border} hover:border-amber-300`
       }`}
-      title={item.description}
     >
       <div className="flex h-full flex-col justify-between">
         <div className="flex items-start justify-between gap-1">
           <ItemIcon item={item} />
-          {item.quantity > 1 && (
-            <span className="rounded bg-stone-900 px-1.5 py-0.5 text-xs font-bold text-white">
-              {item.quantity}
-            </span>
-          )}
+          <div className="flex items-center gap-1">
+            {item.quantity > 1 && (
+              <span className="rounded bg-stone-900 px-1.5 py-0.5 text-xs font-bold text-white">
+                {item.quantity}
+              </span>
+            )}
+            <button
+              onClick={() => onShowDetails(item)}
+              className="rounded-full bg-white/90 p-1 text-stone-500 shadow-sm hover:bg-amber-100 hover:text-amber-700"
+              aria-label={`Ver detalhes de ${item.name}`}
+            >
+              <Info className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
         <div>
           <div className={`line-clamp-2 text-xs font-bold leading-tight ${rarity.text}`}>
             {item.name}
-          </div>
-          <div className={`mt-0.5 inline-flex rounded px-1 py-0.5 text-[9px] font-black uppercase ${rarity.badge}`}>
-            {getRarityLabel(item)}
-          </div>
-          <div className="text-[11px] font-semibold text-stone-500">
-            {item.type === 'weapon' && `Poder ${item.power || 0}`}
-            {getEquipmentSlot(item) && item.type !== 'weapon' && `Defesa ${item.power || 0}`}
-            {item.type === 'potion' && 'Poção'}
-            {item.type === 'loot' &&
-              (item.resourceCategory ? 'Recurso' : `${item.price} ouro`)}
           </div>
         </div>
       </div>

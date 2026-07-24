@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Crown } from 'lucide-react';
 import { SavedCharacter } from '../types/game';
+import { getBossPreview } from '../data/enemies';
 
 interface BossLairProps {
   character: SavedCharacter;
@@ -28,6 +29,7 @@ export function BossLair({
     Boolean(character.equipment.armor) &&
     weaponUpgrade >= recommendedUpgrade &&
     armorUpgrade >= recommendedUpgrade;
+  const bossPreview = getBossPreview(character.level);
 
   useEffect(() => {
     if (!isCoolingDown) return;
@@ -46,6 +48,24 @@ export function BossLair({
           <p className="text-sm font-semibold text-stone-600">
             Enfrente um chefão do seu nível. Custo: {entryCost} ouro.
           </p>
+        </div>
+      </div>
+
+      <div className="mb-4 rounded-md border border-purple-200 bg-white p-3 text-sm font-semibold text-stone-700">
+        <div className="text-xs font-black uppercase tracking-wide text-purple-700">
+          Possível ameaça
+        </div>
+        <h4 className="mt-1 text-lg font-black text-stone-950">
+          {bossPreview.name} - {bossPreview.title}
+        </h4>
+        <p className="mt-1 text-stone-600">{bossPreview.description}</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <InfoBox label="Vida estimada" value={bossPreview.estimatedHealth} />
+          <InfoBox label="Dano base" value={bossPreview.estimatedDamage} />
+          <InfoBox label="Especial" value={bossPreview.abilityName} />
+        </div>
+        <div className="mt-3 rounded-md bg-purple-50 px-3 py-2 font-bold text-purple-800">
+          Drops possíveis: {bossPreview.possibleLoot.join(', ')}
         </div>
       </div>
 
@@ -80,6 +100,15 @@ export function BossLair({
       >
         Enfrentar Chefão
       </button>
+    </div>
+  );
+}
+
+function InfoBox({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="rounded-md bg-stone-100 px-3 py-2">
+      <div className="text-xs font-black uppercase text-stone-500">{label}</div>
+      <div className="font-black text-stone-950">{value}</div>
     </div>
   );
 }
