@@ -547,10 +547,11 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
           </div>
         </div>
 
-        {gameState.showDeathModal && gameState.enemy && (
+        {gameState.showDeathModal && (
           <DeathModal
             characterName={gameState.character.name}
-            killedBy={gameState.enemy.name}
+            killedBy={gameState.enemy?.name || 'um inimigo'}
+            gold={gameState.character.gold}
             onRespawn={gameState.handleRespawn}
             onCreateNew={onCreateNew}
           />
