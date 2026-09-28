@@ -9,6 +9,7 @@ interface GameMapProps {
     {
       status?: 'ready' | 'cooldown' | 'easy' | 'normal' | 'hard';
       label?: string;
+      level?: number;
     }
   >;
   onLocationSelect: (location: MapLocation) => void;
@@ -35,13 +36,14 @@ export function GameMap({
       {locations.map((location) => {
         const isSelected = currentLocationId === location.id;
         const markerState = markerStates[location.id];
+        const level = markerState?.level ?? location.level;
         const isCoolingDown = markerState?.status === 'cooldown';
 
         return (
           <button
             key={location.id}
             type="button"
-            aria-label={`${location.name}${location.level ? `, nível ${location.level}` : ''}${markerState?.label ? `, ${markerState.label}` : ''}`}
+            aria-label={`${location.name}${level ? `, nível ${level}` : ''}${markerState?.label ? `, ${markerState.label}` : ''}`}
             aria-pressed={isSelected}
             className={`group absolute z-10 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 shadow-lg transition-transform hover:scale-110 focus:scale-110 focus:outline-none focus:ring-4 focus:ring-amber-200 ${
               isSelected ? 'border-white ring-4 ring-white/45' : 'border-white/80'
@@ -65,7 +67,7 @@ export function GameMap({
             )}
             <span className="pointer-events-none absolute left-1/2 top-full mt-2 hidden min-w-max -translate-x-1/2 rounded-md bg-stone-950/95 px-3 py-2 text-xs font-black text-white shadow-lg group-hover:block group-focus:block">
               {location.name}
-              {location.level ? ` Nv. ${location.level}` : ''}
+              {level ? ` Nv. ${level}` : ''}
               {markerState?.label ? ` - ${markerState.label}` : ''}
             </span>
           </button>

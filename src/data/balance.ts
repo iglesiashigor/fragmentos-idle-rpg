@@ -6,10 +6,14 @@ export function getEncounterLevelRange(characterLevel: number) {
   };
 }
 
+export function getEffectiveEncounterLevel(characterLevel: number, locationLevel?: number) {
+  return Math.max(1, characterLevel - 1, locationLevel || 0);
+}
+
 export function getEnemyBalance(level: number) {
   const safeLevel = Math.max(1, level);
   return {
-    healthBonus: safeLevel * 18,
+    healthBonus: 30 + safeLevel * 18,
     damageBonus: safeLevel * 3,
     defenseBonus: 1 + Math.floor(safeLevel / 2),
     experienceMultiplier: safeLevel,
@@ -19,7 +23,7 @@ export function getEnemyBalance(level: number) {
 export function getBossBalance(level: number) {
   const safeLevel = Math.max(1, level);
   return {
-    healthMultiplier: 1 + safeLevel * 0.16,
+    healthMultiplier: 1.35 + safeLevel * 0.2,
     damageMultiplier: 1 + safeLevel * 0.09,
     defenseBonus: 2 + safeLevel,
     experienceMultiplier: safeLevel,

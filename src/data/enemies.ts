@@ -1,6 +1,7 @@
-import { Enemy } from '../types/game';
+import { Character, Enemy } from '../types/game';
 import { getBossBalance, getEnemyBalance } from './balance';
-import { LOOT, RARE_ITEMS } from './items';
+import { CRAFTED_ITEMS, LOOT, RARE_ITEMS } from './items';
+import { calculateCharacterStats } from '../utils/combatStats';
 
 export const BOSS_TYPES = [
   {
@@ -17,6 +18,7 @@ export const BOSS_TYPES = [
       { item: RARE_ITEMS[6], chance: 0.25 },
       { item: LOOT[0], chance: 1.0 },
     ],
+    earlyLoot: [{ item: CRAFTED_ITEMS[0], chance: 0.55 }, { item: LOOT[0], chance: 1.0 }],
   },
   {
     name: 'Lich Supremo',
@@ -32,6 +34,7 @@ export const BOSS_TYPES = [
       { item: RARE_ITEMS[7], chance: 0.25 },
       { item: LOOT[1], chance: 1.0 },
     ],
+    earlyLoot: [{ item: CRAFTED_ITEMS[4], chance: 0.55 }, { item: LOOT[1], chance: 1.0 }],
   },
   {
     name: 'Golem Ancestral',
@@ -48,32 +51,43 @@ export const BOSS_TYPES = [
       { item: RARE_ITEMS[9], chance: 0.25 },
       { item: LOOT[2], chance: 1.0 },
     ],
+    earlyLoot: [{ item: CRAFTED_ITEMS[5], chance: 0.55 }, { item: LOOT[2], chance: 1.0 }],
   },
 ];
 
-export function getBossPreview(level: number) {
+export function getBossPreview(level: number, character?: Character) {
   const safeLevel = Math.max(1, level);
   const bossType = BOSS_TYPES[safeLevel % BOSS_TYPES.length];
   const balance = getBossBalance(safeLevel);
+  const playerStats = character && calculateCharacterStats(character);
 
   return {
     name: bossType.name,
     title: bossType.title,
     description: bossType.description,
     abilityName: bossType.ability.name,
-    estimatedHealth: Math.floor(bossType.baseHealth * balance.healthMultiplier),
-    estimatedDamage: Math.floor(bossType.baseDamage * balance.damageMultiplier),
-    possibleLoot: bossType.loot.slice(0, 3).map((lootItem) => lootItem.item.name),
+    estimatedHealth: Math.max(
+      Math.floor(bossType.baseHealth * balance.healthMultiplier),
+      playerStats ? Math.round(Math.max(playerStats.attack, playerStats.magicPower) * 6) : 0
+    ),
+    estimatedDamage: Math.max(
+      Math.floor(bossType.baseDamage * balance.damageMultiplier),
+      playerStats ? Math.round(playerStats.maxHealth * 0.16 + playerStats.defense * 0.35) : 0
+    ),
+    possibleLoot: (safeLevel >= 8 ? bossType.loot : bossType.earlyLoot)
+      .filter((lootItem) => lootItem.item.type !== 'loot')
+      .map((lootItem) => lootItem.item.name),
   };
 }
 
-export function generateBoss(level: number): Enemy {
+export function generateBoss(level: number, character?: Character): Enemy {
   const safeLevel = Math.max(1, level);
   const bossType = BOSS_TYPES[safeLevel % BOSS_TYPES.length];
   const balance = getBossBalance(safeLevel);
-  const damage = Math.floor(bossType.baseDamage * balance.damageMultiplier);
-  const maxHealth = Math.floor(bossType.baseHealth * balance.healthMultiplier);
-  const loot = bossType.loot
+  const preview = getBossPreview(safeLevel, character);
+  const damage = preview.estimatedDamage;
+  const maxHealth = preview.estimatedHealth;
+  const loot = (safeLevel >= 8 ? bossType.loot : bossType.earlyLoot)
     .filter((lootItem) => Math.random() <= lootItem.chance)
     .map((lootItem) => lootItem.item);
 

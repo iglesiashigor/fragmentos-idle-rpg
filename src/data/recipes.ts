@@ -178,7 +178,7 @@ export function getEquipmentUpgradeCost(item: InventoryItem): {
 
   if (item.type === 'weapon') {
     return {
-      goldCost: 20 + 22 * nextLevel,
+      goldCost: 30 + 28 * nextLevel,
       materials: [
         { itemId: 'iron_ore', quantity: oreCost },
         { itemId: 'wood', quantity: nextLevel },
@@ -188,7 +188,7 @@ export function getEquipmentUpgradeCost(item: InventoryItem): {
   }
 
   return {
-      goldCost: 20 + 22 * nextLevel,
+      goldCost: 30 + 28 * nextLevel,
       materials: [
         { itemId: 'iron_ore', quantity: oreCost },
         { itemId: 'couro', quantity: nextLevel },

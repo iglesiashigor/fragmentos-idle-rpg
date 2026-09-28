@@ -29,7 +29,7 @@ export function BossLair({
     Boolean(character.equipment.armor) &&
     weaponUpgrade >= recommendedUpgrade &&
     armorUpgrade >= recommendedUpgrade;
-  const bossPreview = getBossPreview(character.level);
+  const bossPreview = getBossPreview(character.level, character);
 
   useEffect(() => {
     if (!isCoolingDown) return;

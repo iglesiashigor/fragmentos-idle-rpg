@@ -23,7 +23,7 @@ import {
 } from '../types/game';
 import { CraftingRecipe } from '../data/recipes';
 import { getRestCost } from '../utils/economy';
-import { getDifficultyTone } from '../data/balance';
+import { getDifficultyTone, getEffectiveEncounterLevel } from '../data/balance';
 import {
   EquipmentSlotId,
   canAddItemToInventory,
@@ -50,6 +50,7 @@ type ActionNotice = {
 type MarkerState = {
   status?: 'ready' | 'cooldown' | 'easy' | 'normal' | 'hard';
   label?: string;
+  level?: number;
 };
 
 export function GameContent({ character: initialCharacter, onCharacterUpdate, onLogout, onBackToSelection, onCreateNew }: GameContentProps) {
@@ -422,14 +423,16 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
       }
 
       if (location.type === 'enemy') {
+        const level = getEffectiveEncounterLevel(gameState.character.level, location.level);
         const difficulty = getDifficultyTone(
-          location.level,
+          level,
           gameState.character.level
         );
         return [
           location.id,
           {
             status: difficulty,
+            level,
             label:
               difficulty === 'hard'
                 ? 'Perigoso'
@@ -437,6 +440,13 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                   ? 'Fácil'
                   : 'Equilibrado',
           },
+        ];
+      }
+
+      if (location.type === 'event') {
+        return [
+          location.id,
+          { status: 'normal', level: getEffectiveEncounterLevel(gameState.character.level, location.level) },
         ];
       }
 

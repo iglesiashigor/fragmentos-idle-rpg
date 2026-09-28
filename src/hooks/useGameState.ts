@@ -16,6 +16,7 @@ import {
 } from '../types/game';
 import { generateBoss, generateEnemy } from '../data/enemies';
 import {
+  getEffectiveEncounterLevel,
   getEncounterLevelRange,
 } from '../data/balance';
 import {
@@ -357,7 +358,10 @@ export function useGameState(
     setLastGatheringRewards(null);
     setLastCombatRewards(null);
     setCombatFeedback(null);
-    const encounterLevel = location.level || getEncounterLevel(character.level);
+    const encounterLevel = getEffectiveEncounterLevel(
+      character.level,
+      location.level || getEncounterLevel(character.level)
+    );
 
     if (location.type === 'enemy') {
       setEnemy(generateEnemy(encounterLevel));
@@ -373,7 +377,7 @@ export function useGameState(
           ...location,
           name: 'Chefão Encontrado',
         });
-        setEnemy(generateBoss(encounterLevel));
+        setEnemy(generateBoss(encounterLevel, character));
         setShowRandomEvent(false);
         setRandomEventReward(null);
       } else {
@@ -513,7 +517,7 @@ export function useGameState(
     updateCharacter({
       gold: character.gold - entryCost,
     });
-    setEnemy(generateBoss(Math.max(1, character.level)));
+    setEnemy(generateBoss(Math.max(1, character.level), character));
     setLastCombatRewards(null);
     setCombatFeedback(null);
   };
@@ -583,7 +587,7 @@ export function useGameState(
     if (!inventoryItem || inventoryItem.equipped) return;
 
     const sellQuantity = Math.max(1, Math.min(quantity, inventoryItem.quantity));
-    const sellPrice = getSellPrice(inventoryItem.price, sellQuantity);
+    const sellPrice = getSellPrice(inventoryItem.price, sellQuantity, inventoryItem.rarity);
     const isSameInventoryItem = (
       first: InventoryItem,
       second: InventoryItem

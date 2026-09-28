@@ -1,5 +1,5 @@
 import { Item, Quest, Spell } from '../types/game';
-import { RARE_ITEMS } from '../data/items';
+import { CRAFTED_ITEMS } from '../data/items';
 import { RESOURCE_BY_ID, RESOURCE_POOLS } from '../data/resources';
 
 export const RARE_SPELLS: Spell[] = [
@@ -71,7 +71,7 @@ export function generateRandomEvent(
       type: 'gold',
       title: 'Tesouro Perdido',
       description: 'Você encontrou uma bolsa antiga escondida entre marcas de viagem.',
-      gold: 35 + level * 18,
+      gold: 25 + level * 8,
     };
   }
 
@@ -96,12 +96,15 @@ export function generateRandomEvent(
     };
   }
 
-  const item = RARE_ITEMS[Math.floor(Math.random() * RARE_ITEMS.length)];
+  const itemPool = level >= 8
+    ? CRAFTED_ITEMS
+    : CRAFTED_ITEMS.filter((candidate) => candidate.rarity === 'rare');
+  const item = itemPool[Math.floor(Math.random() * itemPool.length)];
   return {
     type: 'item',
     reward: {
       ...item,
-      power: (item.power || 0) + level * 2,
+      power: (item.power || 0) + Math.floor(level / 3),
     },
   };
 }
@@ -130,7 +133,7 @@ function generateMysteryQuest(level: number): QuestReward {
           },
         ],
         rewards: {
-          gold: 80 + level * 25,
+          gold: 55 + level * 12,
           experience: 60 + level * 18,
         },
         status: 'available',
@@ -158,7 +161,7 @@ function generateMysteryQuest(level: number): QuestReward {
         },
       ],
       rewards: {
-        gold: 90 + level * 20,
+        gold: 60 + level * 12,
         experience: 65 + level * 16,
       },
       status: 'available',

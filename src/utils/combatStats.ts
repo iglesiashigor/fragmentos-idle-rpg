@@ -151,7 +151,8 @@ export function calculateAbilityBase(
 export function calculateIncomingDamage(baseDamage: number, enemy: Enemy, character: Character) {
   const stats = calculateCharacterStats(character);
   const defenseReduction = enemy.isBoss ? 1 : 0.75;
-  return Math.max(1, Math.round(baseDamage - stats.defense * defenseReduction));
+  const maxReduction = enemy.isBoss ? 0.5 : 0.7;
+  return Math.max(1, Math.round(baseDamage - Math.min(stats.defense * defenseReduction, baseDamage * maxReduction)));
 }
 
 export function calculateDamageAgainstEnemy(damage: number, enemy: Enemy, isMagic = false) {

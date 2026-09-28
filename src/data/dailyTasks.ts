@@ -15,7 +15,7 @@ const DAILY_TASK_TEMPLATES: {
     name: 'Patrulha do Dia',
     description: 'Derrote inimigos em qualquer ponto de combate.',
     target: 5,
-    gold: 110,
+    gold: 70,
     experience: 90,
   },
   {
@@ -23,7 +23,7 @@ const DAILY_TASK_TEMPLATES: {
     name: 'Suprimentos da Cidade',
     description: 'Colete recursos nos pontos verdes do mapa.',
     target: 3,
-    gold: 80,
+    gold: 55,
     experience: 70,
   },
   {
@@ -31,7 +31,7 @@ const DAILY_TASK_TEMPLATES: {
     name: 'Trabalho de Oficina',
     description: 'Produza ou melhore itens na oficina.',
     target: 1,
-    gold: 95,
+    gold: 65,
     experience: 85,
   },
   {
@@ -39,7 +39,7 @@ const DAILY_TASK_TEMPLATES: {
     name: 'Comércio Local',
     description: 'Venda itens na cidade para movimentar a economia.',
     target: 1,
-    gold: 70,
+    gold: 45,
     experience: 55,
   },
 ];

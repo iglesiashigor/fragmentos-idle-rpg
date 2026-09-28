@@ -533,7 +533,7 @@ function SellItemCard({
   const [quantity, setQuantity] = useState(1);
   const isEquipped = Boolean(item.equipped);
   const selectedQuantity = Math.min(item.quantity, quantity);
-  const sellPrice = getSellPrice(item.price, selectedQuantity);
+  const sellPrice = getSellPrice(item.price, selectedQuantity, item.rarity);
 
   return (
     <div className={`rpg-item rounded-lg p-3 ${isEquipped ? 'opacity-70' : ''}`}>
