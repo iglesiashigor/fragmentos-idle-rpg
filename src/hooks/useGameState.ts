@@ -1031,6 +1031,7 @@ export function useGameState(
     canEnterBossLair: canEnterBossLair(),
     updateCharacter,
     handleLocationSelect,
+    handleLeaveTown: () => setCurrentLocation(null),
     handleRest,
     handleAttack,
     handleCastSpell,

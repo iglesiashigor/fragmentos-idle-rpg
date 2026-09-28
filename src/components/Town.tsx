@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FlaskRound, Info, Package, Shield, ShoppingCart, Sword } from 'lucide-react';
+import { BedDouble, Coins, FlaskRound, Hammer, Info, Package, ScrollText, Shield, ShoppingCart, Store, Sword } from 'lucide-react';
 import { ARMORS, BOOTS, GLOVES, HELMETS, PANTS, POTIONS, WEAPONS } from '../data/items';
 import {
   CRAFTING_RECIPES,
@@ -60,9 +60,17 @@ interface TownProps {
   onClaimDailyTask: (task: DailyTaskProgress) => void;
 }
 
-type TownTabId = 'shop' | 'inn' | 'sell' | 'quests' | 'daily' | 'craft' | 'guild';
+type TownPlaceId = 'shop' | 'inn' | 'board' | 'craft' | 'guild';
 type ShopCategoryId = 'weapons' | 'armor' | 'accessories' | 'potions';
 type CraftTabId = 'crafting' | 'upgrades';
+
+const TOWN_PLACES = [
+  { id: 'shop', label: 'Loja', x: 26, y: 27, icon: Store, color: 'bg-amber-700' },
+  { id: 'inn', label: 'Taverna', x: 72, y: 22, icon: BedDouble, color: 'bg-sky-700' },
+  { id: 'board', label: 'Quadro', x: 50, y: 43, icon: ScrollText, color: 'bg-emerald-700' },
+  { id: 'craft', label: 'Oficina', x: 26, y: 63, icon: Hammer, color: 'bg-orange-700' },
+  { id: 'guild', label: 'Guilda', x: 75, y: 62, icon: Shield, color: 'bg-purple-700' },
+] as const;
 
 const SHOP_CATEGORIES: {
   id: ShopCategoryId;
@@ -98,32 +106,58 @@ export function Town({
   onUpgradeGuild,
   onClaimDailyTask,
 }: TownProps) {
-  const [activeTab, setActiveTab] = useState<TownTabId>('shop');
+  const [activePlace, setActivePlace] = useState<TownPlaceId | null>(null);
+  const [shopMode, setShopMode] = useState<'buy' | 'sell'>('buy');
+  const [boardMode, setBoardMode] = useState<'quests' | 'daily'>('quests');
   const [activeShopCategory, setActiveShopCategory] = useState<ShopCategoryId>('weapons');
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const activeShop = SHOP_CATEGORIES.find((category) => category.id === activeShopCategory) || SHOP_CATEGORIES[0];
 
   return (
-    <div className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-2xl font-black text-stone-950">Cidade</h2>
-        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-lg font-bold text-amber-800">
-          Ouro: {gold}
-        </p>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-xl font-black text-stone-950">Mapa da cidade</h3>
+          <p className="text-sm font-semibold text-stone-600">Escolha um lugar no mapa para entrar.</p>
+        </div>
+        <span className="inline-flex items-center gap-2 rounded-md border border-amber-300 bg-amber-100 px-3 py-2 font-black text-amber-900">
+          <Coins className="h-4 w-4" aria-hidden="true" /> {gold} ouro
+        </span>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <TownTab label="Loja" active={activeTab === 'shop'} onClick={() => setActiveTab('shop')} />
-        <TownTab label="Taverna" active={activeTab === 'inn'} onClick={() => setActiveTab('inn')} />
-        <TownTab label="Missões" active={activeTab === 'quests'} onClick={() => setActiveTab('quests')} />
-        <TownTab label="Diárias" active={activeTab === 'daily'} onClick={() => setActiveTab('daily')} />
-        <TownTab label="Oficina" active={activeTab === 'craft'} onClick={() => setActiveTab('craft')} />
-        <TownTab label="Guilda" active={activeTab === 'guild'} onClick={() => setActiveTab('guild')} />
-        <TownTab label="Vender" active={activeTab === 'sell'} onClick={() => setActiveTab('sell')} />
+      <div className="overflow-x-auto rounded-xl border-4 border-[#d5c7a7] bg-amber-950 shadow-inner" aria-label="Mapa da cidade">
+        <div className="relative aspect-[1672/941] min-w-[640px]">
+          <img src="/town-map.png" alt="" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+          <div className="absolute inset-0 bg-stone-950/10" />
+          {TOWN_PLACES.map((place) => {
+            const Icon = place.icon;
+            const selected = activePlace === place.id;
+            return (
+              <button
+                key={place.id}
+                type="button"
+                aria-label={`Entrar em ${place.label}`}
+                aria-pressed={selected}
+                onClick={() => setActivePlace(place.id)}
+                style={{ left: `${place.x}%`, top: `${place.y}%` }}
+                className="group absolute z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 focus:outline-none"
+              >
+                <span className={`flex h-11 w-11 items-center justify-center rounded-full border-2 border-white text-white shadow-lg transition-transform group-hover:scale-110 group-focus-visible:scale-110 group-focus-visible:ring-4 group-focus-visible:ring-amber-300 ${selected ? 'ring-4 ring-amber-300' : ''} ${place.color}`}>
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <span className="whitespace-nowrap rounded-md bg-stone-950/90 px-2 py-1 text-xs font-black text-white shadow-md">
+                  {place.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
+      <p className="text-xs font-semibold text-stone-500 sm:hidden">Deslize o mapa para ver todos os lugares.</p>
 
-      <div className="max-h-[70vh] overflow-y-auto pr-1">
-        {activeTab === 'inn' ? (
+      {activePlace && <section className="rounded-lg border border-amber-900/20 bg-white/85 p-4 shadow-sm sm:p-5" aria-label={TOWN_PLACES.find((place) => place.id === activePlace)?.label}>
+        <p className="mb-4 text-xs font-black uppercase tracking-wide text-amber-800">{TOWN_PLACES.find((place) => place.id === activePlace)?.label}</p>
+        {activePlace === 'inn' ? (
           <Inn
             gold={gold}
             level={character.level}
@@ -133,28 +167,26 @@ export function Town({
             maxResource={character.maxMana ?? character.maxStamina ?? 0}
             onRest={onRest}
           />
-        ) : activeTab === 'sell' ? (
-          <SellPanel inventory={getBagItems(inventory)} onSellItem={onSellItem} />
-        ) : activeTab === 'quests' ? (
-          <QuestPanel
-            character={character}
-            onAcceptQuest={onAcceptQuest}
-            onClaimQuestReward={onClaimQuestReward}
-          />
-        ) : activeTab === 'daily' ? (
-          <DailyPanel
-            tasks={character.dailyTasks || []}
-            resetAt={character.dailyTasksResetAt || 0}
-            onClaimDailyTask={onClaimDailyTask}
-          />
-        ) : activeTab === 'craft' ? (
+        ) : activePlace === 'board' ? (
+          <div>
+            <div className="mb-4 flex flex-wrap gap-2 border-b border-stone-200 pb-3">
+              <TownTab label="Missões" active={boardMode === 'quests'} onClick={() => setBoardMode('quests')} />
+              <TownTab label="Diárias" active={boardMode === 'daily'} onClick={() => setBoardMode('daily')} />
+            </div>
+            {boardMode === 'quests' ? (
+              <QuestPanel character={character} onAcceptQuest={onAcceptQuest} onClaimQuestReward={onClaimQuestReward} />
+            ) : (
+              <DailyPanel tasks={character.dailyTasks || []} resetAt={character.dailyTasksResetAt || 0} onClaimDailyTask={onClaimDailyTask} />
+            )}
+          </div>
+        ) : activePlace === 'craft' ? (
           <CraftPanel
             gold={gold}
             inventory={inventory}
             onCraftRecipe={onCraftRecipe}
             onUpgradeItem={onUpgradeItem}
           />
-        ) : activeTab === 'guild' ? (
+        ) : activePlace === 'guild' ? (
           <GuildPanel
             character={character}
             gold={gold}
@@ -164,27 +196,25 @@ export function Town({
           />
         ) : (
           <div>
-            <div className="sticky top-0 z-10 mb-4 flex gap-2 overflow-x-auto border-b border-stone-200 bg-white pb-3">
-              {SHOP_CATEGORIES.map((category) => (
-                <TownTab
-                  key={category.id}
-                  label={category.label}
-                  active={activeShopCategory === category.id}
-                  onClick={() => setActiveShopCategory(category.id)}
-                />
-              ))}
+            <div className="mb-4 flex gap-2 border-b border-stone-200 pb-3">
+              <TownTab label="Comprar" active={shopMode === 'buy'} onClick={() => setShopMode('buy')} />
+              <TownTab label="Vender" active={shopMode === 'sell'} onClick={() => setShopMode('sell')} />
             </div>
-            <ShopSection
-              title={activeShop.title}
-              items={activeShop.items}
-              gold={gold}
-              inventory={inventory}
-              onBuyItem={onBuyItem}
-              onShowDetails={setSelectedItem}
-            />
+            {shopMode === 'sell' ? (
+              <SellPanel inventory={getBagItems(inventory)} onSellItem={onSellItem} />
+            ) : (
+              <>
+                <div className="mb-4 flex gap-2 overflow-x-auto border-b border-stone-200 pb-3">
+                  {SHOP_CATEGORIES.map((category) => (
+                    <TownTab key={category.id} label={category.label} active={activeShopCategory === category.id} onClick={() => setActiveShopCategory(category.id)} />
+                  ))}
+                </div>
+                <ShopSection title={activeShop.title} items={activeShop.items} gold={gold} inventory={inventory} onBuyItem={onBuyItem} onShowDetails={setSelectedItem} />
+              </>
+            )}
           </div>
         )}
-      </div>
+      </section>}
 
       {selectedItem && (
         <ItemDetailsModal
@@ -443,7 +473,9 @@ function TownTab({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={`rounded-md px-4 py-2 font-semibold transition-colors ${
         active
           ? 'bg-amber-600 text-white'

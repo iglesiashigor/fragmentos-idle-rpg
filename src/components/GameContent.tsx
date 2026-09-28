@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Hammer, MapPinned, ScrollText, Sparkles, Trophy } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Hammer, MapPinned, ScrollText, Sparkles, Trophy } from 'lucide-react';
 import { Character } from './Character';
 import { GameMap } from './GameMap';
 import { Town } from './Town';
@@ -443,6 +443,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
       return [location.id, { status: 'normal' }];
     })
   );
+  const isInTown = gameState.currentLocation?.type === 'town';
 
   return (
     <div className="app-bg">
@@ -471,50 +472,58 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
           <div className="rpg-panel min-w-0 rounded-xl p-4 sm:p-6">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-800">Mundo de Fragmentos</p>
-                <h2 className="flex items-center gap-2 text-2xl font-black text-stone-950"><MapPinned className="h-6 w-6 text-amber-700" aria-hidden="true" />Mapa</h2>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-800">{isInTown ? 'Cidade de Fragmentos' : 'Mundo de Fragmentos'}</p>
+                <h2 className="flex items-center gap-2 text-2xl font-black text-stone-950"><MapPinned className="h-6 w-6 text-amber-700" aria-hidden="true" />{isInTown ? 'Cidade' : 'Mapa'}</h2>
                 <p className="text-sm font-semibold text-stone-500">
-                  Escolha um marcador no mapa para continuar a aventura.
+                  {isInTown ? 'Explore os lugares da cidade.' : 'Escolha um marcador no mapa para continuar a aventura.'}
                 </p>
               </div>
-              <button
-                onClick={() => setShowTutorial(true)}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-black text-amber-800 transition-colors hover:bg-amber-100"
-              >
-                <ScrollText className="h-4 w-4" aria-hidden="true" /> Tutorial
-              </button>
+              {isInTown ? (
+                <button onClick={gameState.handleLeaveTown} className="rpg-button-secondary">
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Voltar ao mundo
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowTutorial(true)}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-black text-amber-800 transition-colors hover:bg-amber-100"
+                >
+                  <ScrollText className="h-4 w-4" aria-hidden="true" /> Tutorial
+                </button>
+              )}
             </div>
-            <GameMap
-              locations={gameState.mapLocations}
-              currentLocationId={gameState.currentLocation?.id}
-              markerStates={markerStates}
-              onLocationSelect={gameState.handleLocationSelect}
-            />
+            {isInTown ? (
+              <Town
+                character={gameState.character}
+                gold={gameState.character.gold}
+                inventory={gameState.character.inventory}
+                currentHealth={gameState.character.health}
+                maxHealth={gameState.character.maxHealth}
+                onBuyItem={handleBuyItem}
+                onSellItem={handleSellItem}
+                onRest={handleRest}
+                onAcceptQuest={handleAcceptQuest}
+                onClaimQuestReward={handleClaimQuestReward}
+                onCraftRecipe={handleCraftRecipe}
+                onUpgradeItem={handleUpgradeItem}
+                onFoundGuild={handleFoundGuild}
+                onUpgradeGuild={handleUpgradeGuild}
+                onClaimDailyTask={handleClaimDailyTask}
+              />
+            ) : (
+              <GameMap
+                locations={gameState.mapLocations}
+                currentLocationId={gameState.currentLocation?.id}
+                markerStates={markerStates}
+                onLocationSelect={gameState.handleLocationSelect}
+              />
+            )}
 
-            {gameState.currentLocation && (
+            {gameState.currentLocation && !isInTown && (
               <div className="mt-6">
                 <h2 className="mb-4 text-2xl font-black text-stone-950">
                   {gameState.currentLocation.name}
                 </h2>
-                {gameState.currentLocation.type === 'town' ? (
-                  <Town
-                    character={gameState.character}
-                    gold={gameState.character.gold}
-                    inventory={gameState.character.inventory}
-                    currentHealth={gameState.character.health}
-                    maxHealth={gameState.character.maxHealth}
-                    onBuyItem={handleBuyItem}
-                    onSellItem={handleSellItem}
-                    onRest={handleRest}
-                    onAcceptQuest={handleAcceptQuest}
-                    onClaimQuestReward={handleClaimQuestReward}
-                    onCraftRecipe={handleCraftRecipe}
-                    onUpgradeItem={handleUpgradeItem}
-                    onFoundGuild={handleFoundGuild}
-                    onUpgradeGuild={handleUpgradeGuild}
-                    onClaimDailyTask={handleClaimDailyTask}
-                  />
-                ) : gameState.currentLocation.type === 'gathering' ? (
+                {gameState.currentLocation.type === 'gathering' ? (
                   <Gathering
                     character={gameState.character}
                     location={gameState.currentLocation}
