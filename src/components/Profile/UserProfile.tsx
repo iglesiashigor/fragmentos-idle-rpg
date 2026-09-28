@@ -3,14 +3,10 @@ import { LogOut, User } from 'lucide-react';
 interface UserProfileProps {
   username: string;
   onLogout: () => void;
+  onBackToSelection: () => void;
 }
 
-export function UserProfile({ username, onLogout }: UserProfileProps) {
-  const handleBackToSelection = () => {
-    // Force reload the page to go back to character selection
-    window.location.reload();
-  };
-
+export function UserProfile({ username, onLogout, onBackToSelection }: UserProfileProps) {
   return (
     <div className="rpg-panel-dark rounded-lg p-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -27,7 +23,7 @@ export function UserProfile({ username, onLogout }: UserProfileProps) {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button
-            onClick={handleBackToSelection}
+            onClick={onBackToSelection}
             className="rounded-md px-3 py-2 text-sm font-semibold text-stone-300 transition-colors hover:bg-stone-800 hover:text-stone-50"
           >
             Seleção de Personagem

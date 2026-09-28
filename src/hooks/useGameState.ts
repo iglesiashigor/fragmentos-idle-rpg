@@ -204,7 +204,7 @@ export function useGameState(
     finishingDamage?: number;
   } | null>(null);
   const [combatFeedback, setCombatFeedback] = useState<CombatTurnFeedback | null>(null);
-  const [showDeathModal, setShowDeathModal] = useState(false);
+  const [showDeathModal, setShowDeathModal] = useState(initialCharacter.health <= 0);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [attributePoints, setAttributePoints] = useState(0);
   const hasSavedNormalizedCharacter = useRef(false);
@@ -529,7 +529,7 @@ export function useGameState(
         defeatedPlayer: true,
       });
       setShowDeathModal(true);
-      updateCharacter({ health: 0 });
+      updateCharacter({ health: 0, mana: newMana });
       return;
     }
 
@@ -582,7 +582,7 @@ export function useGameState(
         defeatedPlayer: true,
       });
       setShowDeathModal(true);
-      updateCharacter({ health: 0 });
+      updateCharacter({ health: 0, stamina: newStamina });
       return;
     }
 
@@ -811,8 +811,15 @@ export function useGameState(
   };
 
   const handleSellItem = (item: InventoryItem, quantity = 1) => {
-    const sellQuantity = Math.max(1, Math.min(quantity, item.quantity));
-    const sellPrice = Math.floor(item.price * 0.7) * sellQuantity;
+    const inventoryItem = character.inventory.find((entry) =>
+      entry.instanceId && item.instanceId
+        ? entry.instanceId === item.instanceId
+        : entry.id === item.id
+    );
+    if (!inventoryItem || inventoryItem.equipped) return;
+
+    const sellQuantity = Math.max(1, Math.min(quantity, inventoryItem.quantity));
+    const sellPrice = Math.floor(inventoryItem.price * 0.7) * sellQuantity;
     const isSameInventoryItem = (
       first: InventoryItem,
       second: InventoryItem
