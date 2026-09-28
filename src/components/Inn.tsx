@@ -1,16 +1,20 @@
 import { Bed } from 'lucide-react';
-import { REST_COST } from '../utils/economy';
+import { getRestCost } from '../utils/economy';
 
 interface InnProps {
   gold: number;
+  level: number;
   currentHealth: number;
   maxHealth: number;
+  currentResource: number;
+  maxResource: number;
   onRest: () => void;
 }
 
-export function Inn({ gold, currentHealth, maxHealth, onRest }: InnProps) {
-  const canAffordRest = gold >= REST_COST;
-  const needsRest = currentHealth < maxHealth;
+export function Inn({ gold, level, currentHealth, maxHealth, currentResource, maxResource, onRest }: InnProps) {
+  const restCost = getRestCost(level);
+  const canAffordRest = gold >= restCost;
+  const needsRest = currentHealth < maxHealth || currentResource < maxResource;
 
   return (
     <div className="rounded-lg bg-white p-6 shadow-md">
@@ -20,8 +24,8 @@ export function Inn({ gold, currentHealth, maxHealth, onRest }: InnProps) {
       </div>
 
       <div className="mb-4">
-        <p className="text-gray-600">Descanse para recuperar sua vida.</p>
-        <p className="font-medium text-yellow-600">Custo: {REST_COST} ouros</p>
+        <p className="text-gray-600">Descanse para recuperar vida e mana ou estamina.</p>
+        <p className="font-medium text-yellow-600">Custo: {restCost} ouros</p>
       </div>
 
       <button
@@ -34,7 +38,7 @@ export function Inn({ gold, currentHealth, maxHealth, onRest }: InnProps) {
         }`}
       >
         {!needsRest
-          ? 'Você está curado'
+          ? 'Vida e recurso completos'
           : !canAffordRest
             ? 'Ouro insuficiente'
             : 'Descansar e recuperar'}

@@ -126,8 +126,11 @@ export function Town({
         {activeTab === 'inn' ? (
           <Inn
             gold={gold}
+            level={character.level}
             currentHealth={currentHealth}
             maxHealth={maxHealth}
+            currentResource={character.mana ?? character.stamina ?? 0}
+            maxResource={character.maxMana ?? character.maxStamina ?? 0}
             onRest={onRest}
           />
         ) : activeTab === 'sell' ? (

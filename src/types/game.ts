@@ -210,6 +210,7 @@ export interface CombatTurnFeedback {
   action: string;
   playerDamage: number;
   enemyDamage: number;
+  enemyAction?: string;
   isCritical: boolean;
   defeatedEnemy?: boolean;
   defeatedPlayer?: boolean;
@@ -242,6 +243,7 @@ export interface Enemy {
   level: number;
   damage?: number;
   defense?: number;
+  turnsTaken?: number;
   loot: Item[];
   experience: number;
   abilities?: EnemyAbility[];

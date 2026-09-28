@@ -8,6 +8,7 @@ import {
 } from '../../data/professions';
 import { Ability, Attributes, Equipment, InventoryItem, SavedCharacter, Spell } from '../../types/game';
 import { EquipmentSlotId } from '../../utils/inventory';
+import { calculateCharacterStats } from '../../utils/combatStats';
 import { InventoryPanel } from '../Inventory/InventoryPanel';
 
 type CharacterTabId = 'inventory' | 'attributes' | 'skills' | 'professions' | 'achievements';
@@ -87,7 +88,7 @@ export function CharacterTabs({
           framed={false}
         />
       ) : activeTab === 'attributes' ? (
-        <AttributesPanel attributes={character.attributes} />
+        <AttributesPanel character={character} />
       ) : activeTab === 'skills' ? (
         <SkillsPanel character={character} />
       ) : activeTab === 'professions' ? (
@@ -223,7 +224,7 @@ const ATTRIBUTE_INFO: Array<{
     key: 'strength',
     name: 'Força',
     description: 'Principal atributo para dano físico.',
-    effects: ['Aumenta ataque básico.', 'Aumenta dano de habilidades físicas.'],
+    effects: ['Aumenta ataque básico e habilidades físicas.', 'Aumenta estamina máxima.'],
   },
   {
     key: 'effort',
@@ -241,7 +242,7 @@ const ATTRIBUTE_INFO: Array<{
     key: 'intelligence',
     name: 'Inteligência',
     description: 'Principal atributo para personagens mágicos.',
-    effects: ['Aumenta poder mágico.', 'Aumenta mana/estamina máxima em menor escala.'],
+    effects: ['Aumenta poder mágico.', 'Aumenta mana máxima em menor escala.'],
   },
   {
     key: 'accuracy',
@@ -251,7 +252,8 @@ const ATTRIBUTE_INFO: Array<{
   },
 ];
 
-function AttributesPanel({ attributes }: { attributes: Attributes }) {
+function AttributesPanel({ character }: { character: SavedCharacter }) {
+  const current = calculateCharacterStats(character);
   return (
     <div>
       <div className="mb-4">
@@ -281,11 +283,12 @@ function AttributesPanel({ attributes }: { attributes: Attributes }) {
                 </p>
               </div>
               <div className="rounded-md bg-stone-950 px-3 py-1 text-sm font-black text-white">
-                {attributes[attribute.key]}
+                {character.attributes[attribute.key]}
               </div>
             </div>
 
             <div className="mt-3 space-y-1">
+              <p className="text-xs font-bold text-amber-800">Próximo ponto: {getAttributeGains(character, attribute.key, current)}</p>
               {attribute.effects.map((effect) => (
                 <div
                   key={effect}
@@ -301,6 +304,28 @@ function AttributesPanel({ attributes }: { attributes: Attributes }) {
       </div>
     </div>
   );
+}
+
+function getAttributeGains(
+  character: SavedCharacter,
+  attribute: keyof Attributes,
+  current: ReturnType<typeof calculateCharacterStats>
+) {
+  const next = calculateCharacterStats({
+    ...character,
+    attributes: { ...character.attributes, [attribute]: character.attributes[attribute] + 1 },
+  });
+  return [
+    ['ataque', next.attack - current.attack],
+    ['magia', next.magicPower - current.magicPower],
+    ['defesa', next.defense - current.defense],
+    ['vida', next.maxHealth - current.maxHealth],
+    [character.class.resourceType === 'mana' ? 'mana' : 'estamina', next.maxResource - current.maxResource],
+    ['crítico', (next.criticalChance - current.criticalChance) * 100],
+  ]
+    .filter(([, gain]) => Number(gain) > 0)
+    .map(([label, gain]) => `+${Number(gain).toFixed(1).replace('.0', '')} ${label}${label === 'crítico' ? ' p.p.' : ''}`)
+    .join(' · ');
 }
 
 function ProfessionProgressPanel({ character }: { character: SavedCharacter }) {

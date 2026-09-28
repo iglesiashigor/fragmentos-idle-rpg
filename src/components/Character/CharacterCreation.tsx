@@ -316,10 +316,10 @@ export function CharacterCreation({
               </span>
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-              {renderAttributeControl('strength', 'Força', <Sword className="h-4 w-4" />, 'Aumenta o ataque físico.')}
+              {renderAttributeControl('strength', 'Força', <Sword className="h-4 w-4" />, 'Aumenta ataque físico e estamina máxima.')}
               {renderAttributeControl('effort', 'Esforço', <Dumbbell className="h-4 w-4" />, 'Aumenta ataque e recurso.')}
               {renderAttributeControl('resistance', 'Resistência', <Shield className="h-4 w-4" />, 'Aumenta vida e defesa.')}
-              {renderAttributeControl('intelligence', 'Inteligência', <Brain className="h-4 w-4" />, 'Aumenta magia e recurso.')}
+              {renderAttributeControl('intelligence', 'Inteligência', <Brain className="h-4 w-4" />, 'Aumenta poder mágico e mana máxima.')}
               {renderAttributeControl('accuracy', 'Acurácia', <Target className="h-4 w-4" />, 'Aumenta chance crítica e magia.')}
             </div>
           </div>

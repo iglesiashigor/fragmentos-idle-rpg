@@ -69,7 +69,7 @@ export function getBossPreview(level: number) {
 
 export function generateBoss(level: number): Enemy {
   const safeLevel = Math.max(1, level);
-  const bossType = BOSS_TYPES[Math.floor(Math.random() * BOSS_TYPES.length)];
+  const bossType = BOSS_TYPES[safeLevel % BOSS_TYPES.length];
   const balance = getBossBalance(safeLevel);
   const damage = Math.floor(bossType.baseDamage * balance.damageMultiplier);
   const maxHealth = Math.floor(bossType.baseHealth * balance.healthMultiplier);
@@ -82,6 +82,7 @@ export function generateBoss(level: number): Enemy {
     health: maxHealth,
     maxHealth,
     damage,
+    defense: balance.defenseBonus,
     level: safeLevel,
     loot,
     experience: bossType.baseExp * balance.experienceMultiplier,
@@ -141,6 +142,7 @@ export function generateEnemy(level: number): Enemy {
     health: enemyType.baseHealth + balance.healthBonus,
     maxHealth: enemyType.baseHealth + balance.healthBonus,
     damage: enemyType.baseDamage + balance.damageBonus,
+    defense: balance.defenseBonus,
     level: safeLevel,
     loot,
     experience: enemyType.baseExp * balance.experienceMultiplier,

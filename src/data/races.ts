@@ -5,7 +5,7 @@ export const RACES: Race[] = [
     id: 'human',
     name: 'Humano',
     description:
-      'Versáteis e adaptáveis, os Humanos são equilibrados em todos os aspectos.',
+      'Versáteis e adaptáveis. Esforço também amplia seu recurso máximo.',
     bonuses: {
       health: 14,
       damage: 2,
@@ -16,7 +16,7 @@ export const RACES: Race[] = [
     id: 'elf',
     name: 'Elfo',
     description:
-      'Graciosos e mágicos, os Elfos são excelentes em conjurar magias.',
+      'Graciosos e mágicos. Inteligência amplia ainda mais o poder mágico.',
     bonuses: {
       health: 6,
       damage: 4,
@@ -26,7 +26,7 @@ export const RACES: Race[] = [
   {
     id: 'dwarf',
     name: 'Anão',
-    description: 'Robustos e resilientes, os Anões são tanques naturais.',
+    description: 'Robustos e resilientes. Resistência concede defesa extra.',
     bonuses: {
       health: 24,
       damage: 1,
@@ -37,7 +37,7 @@ export const RACES: Race[] = [
     id: 'halfling',
     name: 'Metadilho',
     description:
-      'Pequenos, mas sortudos, os Metadilhos são surpreendentemente resistentes',
+      'Pequenos e sortudos. Acurácia aumenta ainda mais sua chance crítica.',
     bonuses: {
       health: 8,
       damage: 3,

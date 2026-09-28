@@ -46,7 +46,10 @@ export function calculateMaxResource(character: Character): number {
     character.class.baseResource +
     character.level * 4 +
     character.attributes.effort * 4 +
-    character.attributes.intelligence * 2
+    (character.class.resourceType === 'mana'
+      ? character.attributes.intelligence * 2
+      : character.attributes.strength * 2) +
+    (character.race.id === 'human' ? Math.floor(character.attributes.effort / 2) : 0)
   );
 }
 
@@ -72,11 +75,13 @@ export function calculateCharacterStats(
     weaponPower * 0.5 +
     character.race.bonuses.damage +
     character.attributes.intelligence * 2.5 +
-    character.attributes.accuracy * 0.5;
+    character.attributes.accuracy * 0.5 +
+    (character.race.id === 'elf' ? Math.floor(character.attributes.intelligence / 2) : 0);
   const defense =
     armorPower +
     character.race.bonuses.defense +
-    character.attributes.resistance * 1.5;
+    character.attributes.resistance * 1.5 +
+    (character.race.id === 'dwarf' ? Math.floor(character.attributes.resistance / 3) : 0);
 
   return {
     attack: attack * passive.attack,
@@ -86,7 +91,8 @@ export function calculateCharacterStats(
     maxResource: calculateMaxResource(character),
     criticalChance: Math.min(
       0.45,
-      0.05 + character.attributes.accuracy * 0.015 + passive.critical
+      0.05 + character.attributes.accuracy * 0.015 + passive.critical +
+      (character.race.id === 'halfling' ? Math.min(0.08, character.attributes.accuracy * 0.005) : 0)
     ),
   };
 }
@@ -142,9 +148,12 @@ export function calculateAbilityBase(
   return Math.max(1, Math.round(baseDamage));
 }
 
-export function calculateEnemyDamage(enemy: Enemy, character: Character) {
+export function calculateIncomingDamage(baseDamage: number, enemy: Enemy, character: Character) {
   const stats = calculateCharacterStats(character);
-  const baseDamage = enemy.damage ?? 6 + enemy.level * 3;
   const defenseReduction = enemy.isBoss ? 1 : 0.75;
   return Math.max(1, Math.round(baseDamage - stats.defense * defenseReduction));
+}
+
+export function calculateDamageAgainstEnemy(damage: number, enemy: Enemy, isMagic = false) {
+  return Math.max(1, Math.round(damage - (enemy.defense || 0) * (isMagic ? 0.5 : 1)));
 }

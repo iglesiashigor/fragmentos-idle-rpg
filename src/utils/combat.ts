@@ -4,7 +4,8 @@ import {
   calculateAbilityDamage,
   calculateBasicAttackBase,
   calculateBasicAttackDamage,
-  calculateEnemyDamage,
+  calculateDamageAgainstEnemy,
+  calculateIncomingDamage,
   calculateSpellBase,
   calculateSpellDamage,
 } from './combatStats';
@@ -38,8 +39,14 @@ export function resolveCombatTurn(character: Character, enemy: Enemy, action: Co
     baseDamage = calculateBasicAttackBase(character);
   }
 
+  const isCritical = damage > baseDamage;
+  damage = calculateDamageAgainstEnemy(damage, enemy, action.type === 'spell');
   const enemyHealth = enemy.health - damage;
-  const enemyDamage = enemyHealth <= 0 ? 0 : calculateEnemyDamage(enemy, character);
+  const turnsTaken = (enemy.turnsTaken || 0) + 1;
+  const special = enemy.abilities?.find((ability) => ability.cooldown > 0 && turnsTaken % ability.cooldown === 0);
+  const enemyDamage = enemyHealth <= 0
+    ? 0
+    : calculateIncomingDamage(special?.damage ?? enemy.damage ?? 6 + enemy.level * 3, enemy, character);
   const playerHealth = character.health - enemyDamage;
   const outcome: 'enemy' | 'player' | 'continue' =
     enemyHealth <= 0 ? 'enemy' : playerHealth <= 0 ? 'player' : 'continue';
@@ -47,10 +54,11 @@ export function resolveCombatTurn(character: Character, enemy: Enemy, action: Co
     action: name,
     playerDamage: damage,
     enemyDamage,
-    isCritical: damage > baseDamage,
+    enemyAction: enemyHealth > 0 ? special?.name : undefined,
+    isCritical,
     ...(outcome === 'enemy' ? { defeatedEnemy: true } : {}),
     ...(outcome === 'player' ? { defeatedPlayer: true } : {}),
   };
 
-  return { outcome, feedback, enemyHealth, playerHealth, resourceUpdates };
+  return { outcome, feedback, enemyHealth, playerHealth, turnsTaken, resourceUpdates };
 }

@@ -4,6 +4,7 @@ import { Ability, Character, CombatTurnFeedback, Enemy, Spell } from '../types/g
 import {
   calculateAbilityBase,
   calculateBasicAttackBase,
+  calculateDamageAgainstEnemy,
   calculateSpellBase,
 } from '../utils/combatStats';
 
@@ -24,7 +25,7 @@ export function Combat({
   onUseAbility,
   feedback,
 }: CombatProps) {
-  const basicDamage = calculateBasicAttackBase(player);
+  const basicDamage = calculateDamageAgainstEnemy(calculateBasicAttackBase(player), enemy);
 
   const hasResource = (cost: number, type: 'mana' | 'stamina') => {
     if (type === 'mana' && player.mana !== undefined) {
@@ -65,7 +66,8 @@ export function Combat({
           <Bar label="Vida" value={enemy.health} max={enemy.maxHealth} color="bg-red-700" />
           {enemy.abilities?.[0] && (
             <div className="rounded-md border border-purple-200 bg-purple-50 px-3 py-2 text-xs font-black text-purple-800">
-              Especial: {enemy.abilities[0].name} ~{enemy.abilities[0].damage} dano
+              Especial: {enemy.abilities[0].name} a cada {enemy.abilities[0].cooldown} turnos
+              {((enemy.turnsTaken || 0) + 1) % enemy.abilities[0].cooldown === 0 && ' · próximo contra-ataque'}
             </div>
           )}
         </CombatantPanel>
@@ -98,7 +100,7 @@ export function Combat({
               >
                 <div className="flex items-center gap-2 text-sm font-bold"><Sparkles className="h-4 w-4" aria-hidden="true" />{spell.name}</div>
                 <div className="text-xs">
-                  Dano: ~{calculateSpellBase(player, spell.damage)} | Mana:{' '}
+                  Dano: ~{calculateDamageAgainstEnemy(calculateSpellBase(player, spell.damage), enemy, true)} | Mana:{' '}
                   {spell.manaCost}
                 </div>
                 {spell.level > 1 && (
@@ -125,7 +127,7 @@ export function Combat({
                 >
                   <div className="flex items-center gap-2 text-sm font-bold"><Zap className="h-4 w-4" aria-hidden="true" />{ability.name}</div>
                   <div className="text-xs">
-                    Dano: ~{calculateAbilityBase(player, ability.damage)} |
+                    Dano: ~{calculateDamageAgainstEnemy(calculateAbilityBase(player, ability.damage), enemy)} |
                     Estamina: {ability.staminaCost}
                   </div>
                   {ability.level > 1 && (
@@ -190,7 +192,7 @@ function CombatFeedback({ feedback }: { feedback: CombatTurnFeedback }) {
           {feedback.action}: <span className="text-red-700">{feedback.playerDamage}</span> dano causado
         </div>
         <div className="rounded-md bg-white px-3 py-2">
-          Contra-ataque: <span className="text-red-700">{feedback.enemyDamage}</span> dano recebido
+          {feedback.enemyAction || 'Contra-ataque'}: <span className="text-red-700">{feedback.enemyDamage}</span> dano recebido
         </div>
       </div>
     </div>

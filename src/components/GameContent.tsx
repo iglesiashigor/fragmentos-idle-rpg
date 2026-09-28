@@ -22,7 +22,7 @@ import {
   Quest,
 } from '../types/game';
 import { CraftingRecipe } from '../data/recipes';
-import { REST_COST } from '../utils/economy';
+import { getRestCost } from '../utils/economy';
 import { getDifficultyTone } from '../data/balance';
 import {
   EquipmentSlotId,
@@ -282,8 +282,9 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
   };
 
   const handleRest = () => {
-    if (gameState.character.gold < REST_COST) {
-      setActionNotice({ title: `Você precisa de ${REST_COST} ouro para descansar.` });
+    const restCost = getRestCost(gameState.character.level);
+    if (gameState.character.gold < restCost) {
+      setActionNotice({ title: `Você precisa de ${restCost} ouro para descansar.` });
       return;
     }
     gameState.handleRest();

@@ -1,9 +1,15 @@
 import { getGuildGoldBonus } from '../data/guild';
 import { Character, Enemy } from '../types/game';
 
-export const REST_COST = 20;
 export const RESPAWN_COST = 100;
-export const BOSS_LAIR_ENTRY_COST = 40;
+
+export function getRestCost(level: number) {
+  return 20 + Math.max(0, level - 1) * 3;
+}
+
+export function getBossLairEntryCost(level: number) {
+  return 40 + Math.max(0, level - 1) * 10;
+}
 
 export function getSellPrice(itemPrice: number, quantity: number) {
   return Math.floor(itemPrice * 0.7) * quantity;

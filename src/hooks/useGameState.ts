@@ -72,7 +72,7 @@ import {
   normalizeDailyTasks,
 } from '../data/dailyTasks';
 import { getAttributeIncreaseUpdates, LEVEL_UP_ATTRIBUTE_POINTS } from '../utils/attributes';
-import { BOSS_LAIR_ENTRY_COST, getSellPrice, RESPAWN_COST, REST_COST } from '../utils/economy';
+import { getBossLairEntryCost, getRestCost, getSellPrice, RESPAWN_COST } from '../utils/economy';
 import { CombatAction, resolveCombatTurn } from '../utils/combat';
 import { calculateCombatRewards } from '../utils/combatRewards';
 import {
@@ -420,7 +420,7 @@ export function useGameState(
       return;
     }
 
-    setEnemy({ ...enemy, health: turn.enemyHealth });
+    setEnemy({ ...enemy, health: turn.enemyHealth, turnsTaken: turn.turnsTaken });
     updateCharacter({ health: turn.playerHealth, ...turn.resourceUpdates });
   };
 
@@ -507,10 +507,11 @@ export function useGameState(
   const handleEnterBossLair = () => {
     if (!currentLocation || currentLocation.type !== 'boss_lair') return;
     if (!canEnterBossLair()) return;
-    if (character.gold < BOSS_LAIR_ENTRY_COST) return;
+    const entryCost = getBossLairEntryCost(character.level);
+    if (character.gold < entryCost) return;
 
     updateCharacter({
-      gold: character.gold - BOSS_LAIR_ENTRY_COST,
+      gold: character.gold - entryCost,
     });
     setEnemy(generateBoss(Math.max(1, character.level)));
     setLastCombatRewards(null);
@@ -540,10 +541,11 @@ export function useGameState(
   };
 
   const handleRest = () => {
-    if (character.gold >= REST_COST) {
+    const restCost = getRestCost(character.level);
+    if (character.gold >= restCost) {
       const updates: Partial<SavedCharacter> = {
         health: character.maxHealth,
-        gold: character.gold - REST_COST,
+        gold: character.gold - restCost,
       };
 
       // Restore mana or stamina based on class type
@@ -1024,7 +1026,7 @@ export function useGameState(
         ? getGatheringNodeState(character.gatheringNodes, currentLocation.id)
         : null,
     gatheringResetMs: GATHERING_NODE_RESET_MS,
-    bossLairEntryCost: BOSS_LAIR_ENTRY_COST,
+    bossLairEntryCost: getBossLairEntryCost(character.level),
     bossLairResetMs: BOSS_LAIR_RESET_MS,
     canEnterBossLair: canEnterBossLair(),
     updateCharacter,
