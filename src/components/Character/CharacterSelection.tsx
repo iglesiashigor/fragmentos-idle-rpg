@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { SavedCharacter } from '../../types/game';
-import { Crown, Plus, Swords, Trash2, UserCircle2 } from 'lucide-react';
+import { Crown, LogOut, Plus, Swords, Trash2, UserCircle2 } from 'lucide-react';
 
 interface CharacterSelectionProps {
   characters: SavedCharacter[];
   onSelectCharacter: (character: SavedCharacter) => void;
   onCreateNew: () => void;
-  onDeleteCharacter: (characterId: string) => void;
+  onDeleteCharacter: (characterId: string) => Promise<boolean>;
+  onLogout: () => void;
 }
 
 export function CharacterSelection({
@@ -14,6 +15,7 @@ export function CharacterSelection({
   onSelectCharacter,
   onCreateNew,
   onDeleteCharacter,
+  onLogout,
 }: CharacterSelectionProps) {
   const MAX_CHARACTERS = 5;
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
@@ -22,18 +24,31 @@ export function CharacterSelection({
     setShowDeleteConfirm(characterId);
   };
 
-  const handleConfirmDelete = (characterId: string) => {
-    onDeleteCharacter(characterId);
-    setShowDeleteConfirm(null);
+  const handleConfirmDelete = async (characterId: string) => {
+    if (await onDeleteCharacter(characterId)) setShowDeleteConfirm(null);
   };
 
   return (
     <div className="app-bg flex items-center justify-center px-4">
-      <div className="rpg-panel w-full max-w-3xl rounded-lg p-8">
-        <div className="mb-6 flex items-center justify-center gap-3 text-stone-950">
-          <Crown className="h-7 w-7 text-amber-600" />
-          <h2 className="text-3xl font-black">Seus Personagens</h2>
+      <div className="rpg-panel w-full max-w-3xl rounded-lg p-5 sm:p-8">
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="mb-2 flex items-center gap-3 text-stone-950">
+              <Crown className="h-7 w-7 text-amber-600" aria-hidden="true" />
+              <h2 className="text-2xl font-black sm:text-3xl">Seus Personagens</h2>
+            </div>
+            <p className="text-sm text-stone-600">Escolha quem vai explorar o mundo de Fragmentos.</p>
+          </div>
+          <button onClick={onLogout} className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-stone-600 hover:bg-stone-200 hover:text-stone-950">
+            <LogOut className="h-4 w-4" aria-hidden="true" /> Sair
+          </button>
         </div>
+
+        {characters.length === 0 && (
+          <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-center text-sm font-semibold text-stone-700">
+            Sua aventura começa com um personagem. Crie o primeiro para jogar.
+          </p>
+        )}
 
         <div className="grid grid-cols-1 gap-4 mb-6">
           {characters.map((character) => (
@@ -78,6 +93,7 @@ export function CharacterSelection({
                       onClick={() => handleDeleteClick(character.id)}
                       className="rounded-md p-2 text-red-600 transition-colors hover:bg-red-50"
                       title="Excluir personagem"
+                      aria-label={`Excluir ${character.name}`}
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>

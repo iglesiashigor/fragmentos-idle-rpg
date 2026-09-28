@@ -35,6 +35,7 @@ interface GameContentProps {
   character: SavedCharacter;
   onCharacterUpdate: (character: SavedCharacter) => void;
   onLogout: () => void;
+  onBackToSelection: () => void;
   onCreateNew: () => void;
 }
 
@@ -50,7 +51,7 @@ type MarkerState = {
   label?: string;
 };
 
-export function GameContent({ character: initialCharacter, onCharacterUpdate, onLogout, onCreateNew }: GameContentProps) {
+export function GameContent({ character: initialCharacter, onCharacterUpdate, onLogout, onBackToSelection, onCreateNew }: GameContentProps) {
   const gameState = useGameState(initialCharacter, onCharacterUpdate);
   const [inventoryNotice, setInventoryNotice] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<ActionNotice | null>(null);
@@ -444,7 +445,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
   return (
     <div className="app-bg">
       <div className="page-wrap space-y-6">
-        <UserProfile username={initialCharacter.name} onLogout={onLogout} />
+        <UserProfile username={initialCharacter.name} onLogout={onLogout} onBackToSelection={onBackToSelection} />
 
         {actionNotice && (
           <ActionToast notice={actionNotice} />
@@ -546,10 +547,11 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
           </div>
         </div>
 
-        {gameState.showDeathModal && gameState.enemy && (
+        {gameState.showDeathModal && (
           <DeathModal
             characterName={gameState.character.name}
-            killedBy={gameState.enemy.name}
+            killedBy={gameState.enemy?.name || 'um inimigo'}
+            gold={gameState.character.gold}
             onRespawn={gameState.handleRespawn}
             onCreateNew={onCreateNew}
           />

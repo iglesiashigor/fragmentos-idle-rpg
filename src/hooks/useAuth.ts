@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { User, SavedCharacter } from '../types/game';
 import {
   canUseLocalAuthFallback,
@@ -16,7 +16,10 @@ interface CharacterRow {
   data: SavedCharacter;
 }
 
+export type AuthFeedback = { type: 'error' | 'info'; message: string } | null;
+
 const USER_STORAGE_KEY = 'user';
+const SESSION_STORAGE_KEY = 'local-user-session';
 
 const getStoredUser = (): StoredUser | null => {
   const savedUser = localStorage.getItem(USER_STORAGE_KEY);
@@ -34,11 +37,8 @@ const saveStoredUser = (user: StoredUser) => {
   localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
 };
 
-const showSupabaseConfigError = () => {
-  alert(
-    'Supabase não está configurado neste deploy. Verifique as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY na Vercel e faça um novo deploy.'
-  );
-};
+const supabaseConfigError =
+  'Supabase não está configurado neste deploy. Verifique as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY na Vercel.';
 
 const toSavedCharacter = (row: CharacterRow): SavedCharacter => ({
   ...row.data,
@@ -49,45 +49,55 @@ const toSavedCharacter = (row: CharacterRow): SavedCharacter => ({
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
 
   const loadSupabaseUser = useCallback(async () => {
     if (!supabase) return;
 
-    const { data: sessionData } = await supabase.auth.getSession();
-    const authUser = sessionData.session?.user;
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      const authUser = sessionData.session?.user;
 
-    if (!authUser) {
-      setUser(null);
-      return;
-    }
+      if (!authUser) {
+        setLoadError(null);
+        setUser(null);
+        return;
+      }
 
-    const { data, error } = await supabase
-      .from('characters')
-      .select('id, name, data')
-      .order('created_at', { ascending: true });
+      const { data, error } = await supabase
+        .from('characters')
+        .select('id, name, data')
+        .order('created_at', { ascending: true });
 
-    if (error) {
-      alert(`Erro ao carregar personagens: ${error.message}`);
+      if (error) throw error;
+
+      setLoadError(null);
       setUser({
         id: authUser.id,
         email: authUser.email || '',
-        characters: [],
+        characters: (data as CharacterRow[]).map(toSavedCharacter),
       });
-      return;
+    } catch (error) {
+      setLoadError(`Não foi possível carregar seus personagens: ${error instanceof Error ? error.message : 'tente novamente.'}`);
     }
-
-    setUser({
-      id: authUser.id,
-      email: authUser.email || '',
-      characters: (data as CharacterRow[]).map(toSavedCharacter),
-    });
   }, []);
+
+  const retryLoad = async () => {
+    setIsLoading(true);
+    try {
+      await loadSupabaseUser();
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
       if (canUseLocalAuthFallback) {
         const savedUser = getStoredUser();
-        if (savedUser) {
+        if (savedUser && localStorage.getItem(SESSION_STORAGE_KEY) === savedUser.id) {
           setUser(savedUser);
         }
       }
@@ -109,7 +119,7 @@ export function useAuth() {
     };
   }, [loadSupabaseUser]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<AuthFeedback> => {
     if (supabase) {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -117,29 +127,28 @@ export function useAuth() {
       });
 
       if (error) {
-        alert(`Email ou senha incorretos: ${error.message}`);
-        return;
+        return { type: 'error', message: `Não foi possível entrar: ${error.message}` };
       }
 
       await loadSupabaseUser();
-      return;
+      return null;
     }
 
     if (!canUseLocalAuthFallback) {
-      showSupabaseConfigError();
-      return;
+      return { type: 'error', message: supabaseConfigError };
     }
 
     const savedUser = getStoredUser();
     if (savedUser?.email === email && savedUser.password === password) {
+      localStorage.setItem(SESSION_STORAGE_KEY, savedUser.id);
       setUser(savedUser);
-      return;
+      return null;
     }
 
-    alert('Email ou senha incorretos');
+    return { type: 'error', message: 'Email ou senha incorretos.' };
   };
 
-  const register = async (email: string, password: string) => {
+  const register = async (email: string, password: string): Promise<AuthFeedback> => {
     if (supabase) {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -147,28 +156,24 @@ export function useAuth() {
       });
 
       if (error) {
-        alert(`Erro ao criar conta: ${error.message}`);
-        return;
+        return { type: 'error', message: `Não foi possível criar a conta: ${error.message}` };
       }
 
       if (!data.session) {
-        alert('Conta criada. Confirme seu email antes de entrar.');
-        return;
+        return { type: 'info', message: 'Conta criada. Confirme seu email antes de entrar.' };
       }
 
       await loadSupabaseUser();
-      return;
+      return null;
     }
 
     if (!canUseLocalAuthFallback) {
-      showSupabaseConfigError();
-      return;
+      return { type: 'error', message: supabaseConfigError };
     }
 
     const savedUser = getStoredUser();
     if (savedUser?.email === email) {
-      alert('Email já cadastrado');
-      return;
+      return { type: 'error', message: 'Email já cadastrado.' };
     }
 
     const newUser: StoredUser = {
@@ -179,19 +184,29 @@ export function useAuth() {
     };
 
     saveStoredUser(newUser);
+    localStorage.setItem(SESSION_STORAGE_KEY, newUser.id);
     setUser(newUser);
+    return null;
   };
 
   const logout = async () => {
     if (supabase) {
+      await saveQueueRef.current;
       await supabase.auth.signOut();
+    } else {
+      localStorage.removeItem(SESSION_STORAGE_KEY);
     }
 
+    setLoadError(null);
     setUser(null);
   };
 
-  const saveCharacter = async (character: SavedCharacter) => {
-    if (!user) return;
+  const saveCharacter = async (character: SavedCharacter): Promise<boolean> => {
+    if (!user) return false;
+    if (user.characters.length >= 5) {
+      alert('Limite de 5 personagens atingido. Exclua um personagem para criar outro.');
+      return false;
+    }
 
     if (supabase) {
       const characterId = crypto.randomUUID();
@@ -205,14 +220,14 @@ export function useAuth() {
 
       if (error) {
         alert(`Erro ao salvar personagem: ${error.message}`);
-        return;
+        return false;
       }
 
       setUser({
         ...user,
         characters: [...user.characters, savedCharacter],
       });
-      return;
+      return true;
     }
 
     const updatedUser = {
@@ -222,24 +237,23 @@ export function useAuth() {
 
     saveStoredUser(updatedUser as StoredUser);
     setUser(updatedUser);
+    return true;
   };
 
-  const updateCharacter = async (character: SavedCharacter) => {
+  const updateCharacter = (character: SavedCharacter) => {
     if (!user) return;
 
     if (supabase) {
-      const { error } = await supabase
-        .from('characters')
-        .update({
-          name: character.name,
-          data: character,
-        })
-        .eq('id', character.id);
-
-      if (error) {
-        alert(`Erro ao atualizar personagem: ${error.message}`);
-        return;
-      }
+      const client = supabase;
+      saveQueueRef.current = saveQueueRef.current.then(async () => {
+        const { error } = await client
+          .from('characters')
+          .update({ name: character.name, data: character })
+          .eq('id', character.id);
+        if (error) throw error;
+      }).catch((error: unknown) => {
+        alert(`Erro ao salvar progresso: ${error instanceof Error ? error.message : 'tente novamente.'}`);
+      });
     }
 
     const updatedUser = {
@@ -256,8 +270,8 @@ export function useAuth() {
     setUser(updatedUser);
   };
 
-  const deleteCharacter = async (characterId: string) => {
-    if (!user) return;
+  const deleteCharacter = async (characterId: string): Promise<boolean> => {
+    if (!user) return false;
 
     if (supabase) {
       const { error } = await supabase
@@ -267,7 +281,7 @@ export function useAuth() {
 
       if (error) {
         alert(`Erro ao excluir personagem: ${error.message}`);
-        return;
+        return false;
       }
     }
 
@@ -283,11 +297,14 @@ export function useAuth() {
     }
 
     setUser(updatedUser);
+    return true;
   };
 
   return {
     user,
     isLoading,
+    loadError,
+    retryLoad,
     login,
     register,
     logout,

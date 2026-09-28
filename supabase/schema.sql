@@ -9,6 +9,7 @@ create table if not exists public.characters (
 
 alter table public.characters enable row level security;
 
+revoke all on table public.characters from anon;
 grant select, insert, update, delete on table public.characters to authenticated;
 
 drop policy if exists "Users can read own characters" on public.characters;
@@ -44,6 +45,7 @@ create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
 security invoker
+set search_path = ''
 as $$
 begin
   new.updated_at = now();

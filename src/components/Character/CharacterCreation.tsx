@@ -23,7 +23,7 @@ interface CharacterCreationProps {
     race: Race,
     characterClass: CharacterClass,
     attributes: Attributes
-  ) => void;
+  ) => Promise<void>;
   onBack: () => void;
 }
 
@@ -32,6 +32,7 @@ export function CharacterCreation({
   onBack,
 }: CharacterCreationProps) {
   const [name, setName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedRace, setSelectedRace] = useState<Race>(RACES[0]);
   const [selectedClass, setSelectedClass] = useState<CharacterClass>(
     CLASSES[0]
@@ -68,10 +69,15 @@ export function CharacterCreation({
     }));
   };
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (name.trim() && remainingPoints === 0) {
-      onCreateCharacter(name, selectedRace, selectedClass, attributes);
+    if (name.trim() && remainingPoints === 0 && !isSaving) {
+      setIsSaving(true);
+      try {
+        await onCreateCharacter(name.trim(), selectedRace, selectedClass, attributes);
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -92,13 +98,14 @@ export function CharacterCreation({
             <span>{label}</span>
           </div>
           <div className="text-sm font-semibold text-stone-500">
-            {baseValue} <span className="text-amber-700">â†’ {modifiedValue}</span>
+            {baseValue} <span className="text-amber-700">→ {modifiedValue}</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => handleAttributeChange(attribute, baseValue - 1)}
+            aria-label={`Diminuir ${label}`}
             className="flex h-8 w-8 items-center justify-center rounded-md bg-stone-700 font-bold text-white hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-300"
             disabled={baseValue <= MIN_ATTRIBUTE_VALUE}
           >
@@ -113,6 +120,7 @@ export function CharacterCreation({
           <button
             type="button"
             onClick={() => handleAttributeChange(attribute, baseValue + 1)}
+            aria-label={`Aumentar ${label}`}
             className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-600 font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-stone-300"
             disabled={baseValue >= MAX_ATTRIBUTE_VALUE || remainingPoints <= 0}
           >
@@ -151,13 +159,15 @@ export function CharacterCreation({
 
           <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
             <div className="rpg-panel rounded-lg p-5">
-              <label className="mb-2 block text-sm font-bold text-stone-700">
+              <label htmlFor="character-name" className="mb-2 block text-sm font-bold text-stone-700">
                 Nome do Personagem
               </label>
               <input
+                id="character-name"
                 type="text"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
+                maxLength={24}
                 className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 font-semibold shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
                 required
               />
@@ -189,6 +199,7 @@ export function CharacterCreation({
                     key={race.id}
                     type="button"
                     onClick={() => setSelectedRace(race)}
+                    aria-pressed={selectedRace.id === race.id}
                     className={`rounded-lg border p-4 text-left transition-colors ${
                       selectedRace.id === race.id
                         ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'
@@ -216,6 +227,7 @@ export function CharacterCreation({
                   key={characterClass.id}
                   type="button"
                   onClick={() => setSelectedClass(characterClass)}
+                  aria-pressed={selectedClass.id === characterClass.id}
                   className={`rounded-lg border p-4 text-left transition-colors ${
                     selectedClass.id === characterClass.id
                       ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200'
@@ -272,10 +284,12 @@ export function CharacterCreation({
 
           <button
             type="submit"
-            disabled={!name.trim() || remainingPoints !== 0}
+            disabled={!name.trim() || remainingPoints !== 0 || isSaving}
             className="rpg-button-primary w-full py-3 text-lg"
           >
-            {!name.trim()
+            {isSaving
+              ? 'Salvando personagem...'
+              : !name.trim()
               ? 'Digite um nome'
               : remainingPoints !== 0
                 ? `Distribua os ${remainingPoints} pontos restantes`
