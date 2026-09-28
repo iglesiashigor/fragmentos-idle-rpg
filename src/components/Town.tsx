@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BedDouble, Coins, FlaskRound, Hammer, Info, Package, ScrollText, Shield, ShoppingCart, Store, Sword } from 'lucide-react';
+import { BedDouble, FlaskRound, Hammer, Info, Package, ScrollText, Shield, ShoppingCart, Store, Sword } from 'lucide-react';
 import { ARMORS, BOOTS, GLOVES, HELMETS, PANTS, POTIONS, WEAPONS } from '../data/items';
 import {
   CRAFTING_RECIPES,
@@ -115,12 +115,6 @@ export function Town({
 
   return (
     <div className="space-y-5">
-      <div className="flex justify-end">
-        <span className="inline-flex items-center gap-2 rounded-md border border-amber-300 bg-amber-100 px-3 py-2 font-black text-amber-900">
-          <Coins className="h-4 w-4" aria-hidden="true" /> {gold} ouro
-        </span>
-      </div>
-
       <div className="overflow-x-auto rounded-xl border-4 border-[#d5c7a7] bg-amber-950 shadow-inner" aria-label="Mapa da cidade">
         <div className="relative aspect-[1672/941] min-w-[640px]">
           <img src="/town-map.png" alt="" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
