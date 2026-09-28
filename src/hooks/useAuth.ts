@@ -20,7 +20,6 @@ export type AuthFeedback = { type: 'error' | 'info'; message: string } | null;
 
 const USER_STORAGE_KEY = 'user';
 const SESSION_STORAGE_KEY = 'local-user-session';
-const CHARACTER_SAVE_DEBOUNCE_MS = 5_000;
 
 const getStoredUser = (): StoredUser | null => {
   const savedUser = localStorage.getItem(USER_STORAGE_KEY);
@@ -52,40 +51,6 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
-  const pendingCharacterSavesRef = useRef<Map<string, SavedCharacter>>(new Map());
-  const characterSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const flushCharacterSaves = useCallback(() => {
-    const client = supabase;
-    if (!client || pendingCharacterSavesRef.current.size === 0) return saveQueueRef.current;
-
-    const characters = [...pendingCharacterSavesRef.current.values()];
-    pendingCharacterSavesRef.current.clear();
-    saveQueueRef.current = saveQueueRef.current.then(async () => {
-      for (const character of characters) {
-        const { error } = await client
-          .from('characters')
-          .update({ name: character.name, data: character })
-          .eq('id', character.id);
-        if (error) throw error;
-      }
-    }).catch((error: unknown) => {
-      alert(`Erro ao salvar progresso: ${error instanceof Error ? error.message : 'tente novamente.'}`);
-    });
-    return saveQueueRef.current;
-  }, []);
-
-  useEffect(() => {
-    const flushWhenHidden = () => {
-      if (document.visibilityState === 'hidden') void flushCharacterSaves();
-    };
-    document.addEventListener('visibilitychange', flushWhenHidden);
-    return () => {
-      document.removeEventListener('visibilitychange', flushWhenHidden);
-      if (characterSaveTimerRef.current) clearTimeout(characterSaveTimerRef.current);
-      void flushCharacterSaves();
-    };
-  }, [flushCharacterSaves]);
 
   const loadSupabaseUser = useCallback(async () => {
     if (!supabase) return;
@@ -225,9 +190,6 @@ export function useAuth() {
   };
 
   const logout = async () => {
-    if (characterSaveTimerRef.current) clearTimeout(characterSaveTimerRef.current);
-    characterSaveTimerRef.current = null;
-    await flushCharacterSaves();
     if (supabase) {
       await saveQueueRef.current;
       await supabase.auth.signOut();
@@ -282,13 +244,16 @@ export function useAuth() {
     if (!user) return;
 
     if (supabase) {
-      pendingCharacterSavesRef.current.set(character.id, character);
-      if (!characterSaveTimerRef.current) {
-        characterSaveTimerRef.current = setTimeout(() => {
-          characterSaveTimerRef.current = null;
-          void flushCharacterSaves();
-        }, CHARACTER_SAVE_DEBOUNCE_MS);
-      }
+      const client = supabase;
+      saveQueueRef.current = saveQueueRef.current.then(async () => {
+        const { error } = await client
+          .from('characters')
+          .update({ name: character.name, data: character })
+          .eq('id', character.id);
+        if (error) throw error;
+      }).catch((error: unknown) => {
+        alert(`Erro ao salvar progresso: ${error instanceof Error ? error.message : 'tente novamente.'}`);
+      });
     }
 
     const updatedUser = {

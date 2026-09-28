@@ -4,7 +4,7 @@ import { Character } from './Character';
 import { GameMap } from './GameMap';
 import { Town } from './Town';
 import { Combat } from './Combat';
-import { AutoGatherField } from './AutoGatherField';
+import { Gathering } from './Gathering';
 import { BossLair } from './BossLair';
 import { RewardSummary } from './RewardSummary';
 import { RandomEventModal } from './RandomEventModal';
@@ -13,7 +13,6 @@ import { DeathModal } from './Character/DeathModal';
 import { CharacterTabs } from './Character/CharacterTabs';
 import { LevelUpModal } from './LevelUp/LevelUpModal';
 import { TutorialModal } from './TutorialModal';
-import { AutoFarmField } from './AutoFarmField';
 import { useGameState } from '../hooks/useGameState';
 import {
   DailyTaskProgress,
@@ -295,6 +294,16 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
     });
   };
 
+  const handleGather = () => {
+    gameState.handleGather();
+    setActionNotice({
+      title: 'Coleta realizada.',
+      detail: 'Os recursos foram enviados para a mochila.',
+      tone: 'success',
+      icon: <Hammer className="h-5 w-5" />,
+    });
+  };
+
   const handleAcceptQuest = (quest: Quest) => {
     gameState.handleAcceptQuest(quest);
     setActionNotice({
@@ -411,32 +420,10 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
       }
 
       if (location.type === 'enemy') {
-        const region = gameState.enemyRegionStates[location.id];
-        const isExhausted = Boolean(
-          region && region.remaining <= 0 && region.resetAt > now
-        );
         const difficulty = getDifficultyTone(
           location.level,
           gameState.character.level
         );
-        if (isExhausted) {
-          return [
-            location.id,
-            {
-              status: 'cooldown',
-              label: `Recarrega em ${Math.max(1, Math.ceil((region!.resetAt - now) / 60000))} min`,
-            },
-          ];
-        }
-        if (region) {
-          return [
-            location.id,
-            {
-              status: difficulty,
-              label: `${region.remaining}/${region.total} inimigos`,
-            },
-          ];
-        }
         return [
           location.id,
           {
@@ -457,14 +444,14 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
 
   return (
     <div className="app-bg">
-      <div className="page-wrap space-y-5 sm:space-y-6">
+      <div className="page-wrap space-y-6">
         <UserProfile username={initialCharacter.name} onLogout={onLogout} onBackToSelection={onBackToSelection} />
 
         {actionNotice && (
           <ActionToast notice={actionNotice} />
         )}
 
-        <div className="grid gap-5 xl:grid-cols-[400px_minmax(0,1fr)] xl:gap-6 2xl:grid-cols-[430px_minmax(0,1fr)]">
+        <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[440px_minmax(0,1fr)]">
           <div className="space-y-6">
             <Character character={gameState.character} />
             <CharacterTabs
@@ -479,18 +466,17 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
             />
           </div>
 
-          <main className="rpg-panel min-w-0 rounded-2xl p-4 sm:p-6">
+          <div className="rpg-panel min-w-0 rounded-lg p-4 sm:p-6">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <div className="mb-1 text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">O mundo espera</div>
-                <h1 className="text-2xl font-black text-stone-950 sm:text-3xl">Mapa</h1>
+                <h2 className="text-2xl font-black text-stone-950">Mapa</h2>
                 <p className="text-sm font-semibold text-stone-500">
                   Escolha um destino para continuar a aventura
                 </p>
               </div>
               <button
                 onClick={() => setShowTutorial(true)}
-                className="self-start rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-black text-amber-900 transition-colors hover:bg-amber-100"
+                className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-black text-amber-800 transition-colors hover:bg-amber-100"
               >
                 Tutorial
               </button>
@@ -503,7 +489,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
             />
 
             {gameState.currentLocation && (
-              <div className="mt-6 border-t border-stone-200 pt-5">
+              <div className="mt-6">
                 <h2 className="mb-4 text-2xl font-black text-stone-950">
                   {gameState.currentLocation.name}
                 </h2>
@@ -526,13 +512,12 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                     onClaimDailyTask={handleClaimDailyTask}
                   />
                 ) : gameState.currentLocation.type === 'gathering' ? (
-                  <AutoGatherField
-                    player={gameState.character}
+                  <Gathering
+                    character={gameState.character}
                     location={gameState.currentLocation}
                     lastRewards={gameState.lastGatheringRewards}
                     nodeState={gameState.gatheringNodeState}
-                    onAutoGather={gameState.handleGather}
-                    onLeave={gameState.handleLeaveLocation}
+                    onGather={handleGather}
                   />
                 ) : gameState.currentLocation.type === 'boss_lair' && !gameState.enemy ? (
                   <BossLair
@@ -540,29 +525,6 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                     entryCost={gameState.bossLairEntryCost}
                     canEnter={gameState.canEnterBossLair}
                     onEnter={gameState.handleEnterBossLair}
-                  />
-                ) : (gameState.currentLocation.type === 'enemy' ||
-                    (gameState.currentLocation.type === 'boss_lair' && gameState.enemy) ||
-                    (gameState.currentLocation.type === 'event' && gameState.enemy)) ? (
-                  <AutoFarmField
-                    player={gameState.character}
-                    enemy={gameState.enemy}
-                    location={gameState.currentLocation}
-                    feedback={gameState.combatFeedback}
-                    onAutoTurn={gameState.handleAutoCombatTurn}
-                    strategy={gameState.character.autoCombatSettings?.strategy || 'balanced'}
-                    onStrategyChange={gameState.handleSetAutoCombatStrategy}
-                    remainingEncounters={
-                      gameState.currentLocation.type === 'enemy'
-                        ? gameState.enemyRegionStates[gameState.currentLocation.id]?.remaining
-                        : undefined
-                    }
-                    totalEncounters={
-                      gameState.currentLocation.type === 'enemy'
-                        ? gameState.enemyRegionStates[gameState.currentLocation.id]?.total
-                        : undefined
-                    }
-                    onLeave={gameState.handleLeaveLocation}
                   />
                 ) : (
                   gameState.enemy && (
@@ -582,7 +544,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
             {gameState.lastCombatRewards && (
               <RewardSummary reward={gameState.lastCombatRewards} />
             )}
-          </main>
+          </div>
         </div>
 
         {gameState.showDeathModal && (

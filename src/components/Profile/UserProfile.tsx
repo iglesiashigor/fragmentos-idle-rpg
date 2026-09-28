@@ -1,4 +1,4 @@
-import { Castle, LogOut, User } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 
 interface UserProfileProps {
   username: string;
@@ -8,18 +8,17 @@ interface UserProfileProps {
 
 export function UserProfile({ username, onLogout, onBackToSelection }: UserProfileProps) {
   return (
-    <header className="rpg-panel-dark rounded-2xl px-4 py-3 sm:px-5">
+    <div className="rpg-panel-dark rounded-lg p-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-amber-300/30 bg-amber-500/15 text-amber-300">
-            <Castle className="h-6 w-6" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-500 text-stone-950">
+            <User className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-lg font-black leading-tight text-amber-100">Fragmentos</div>
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-stone-400">
-              <User className="h-3 w-3" />
-              {username}
+            <div className="text-xs font-semibold uppercase tracking-wide text-stone-400">
+              Personagem ativo
             </div>
+            <span className="font-bold text-stone-50">{username}</span>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -38,6 +37,6 @@ export function UserProfile({ username, onLogout, onBackToSelection }: UserProfi
           </button>
         </div>
       </div>
-    </header>
+    </div>
   );
 }

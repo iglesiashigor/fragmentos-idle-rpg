@@ -51,56 +51,6 @@ export interface GatheringNodeState {
   resetAt: number;
 }
 
-export type AutoCombatStrategy = 'conservative' | 'balanced' | 'aggressive';
-
-export interface AutoCombatSettings {
-  strategy: AutoCombatStrategy;
-  autoPotionHealthPercent: number;
-}
-
-export interface ActiveIdleCombat {
-  locationId: string;
-  locationName: string;
-  level: number;
-  remainingEncounters: number;
-  totalEncounters: number;
-  startedAt: number;
-  lastProcessedAt: number;
-}
-
-export interface IdleCombatReport {
-  locationName: string;
-  elapsedMs: number;
-  kills: number;
-  gold: number;
-  experience: number;
-  healthLost: number;
-  defeated: boolean;
-  remainingEncounters: number;
-}
-
-export type HuntStrategy = 'balanced' | 'experience' | 'gold' | 'safe';
-
-export interface ActiveHunt {
-  areaId: string;
-  startedAt: number;
-  lastClaimedAt: number;
-  strategy: HuntStrategy;
-  autoPotionHealthPercent: number;
-  autoSellCommon: boolean;
-}
-
-export interface HuntClaimSummary {
-  areaName: string;
-  elapsedMs: number;
-  kills: number;
-  gold: number;
-  experience: number;
-  healthLost: number;
-  defeated: boolean;
-  strategy: HuntStrategy;
-}
-
 export interface GuildProgress {
   name: string;
   level: number;
@@ -240,15 +190,10 @@ export interface Character {
   stats?: CharacterStats;
   unlockedTitleIds?: string[];
   activeTitleId?: string;
-  autoCombatSettings?: AutoCombatSettings;
-  activeIdleCombat?: ActiveIdleCombat;
-  lastIdleCombatReport?: IdleCombatReport;
   bossLairResetAt?: number;
   guild?: GuildProgress;
   dailyTasks?: DailyTaskProgress[];
   dailyTasksResetAt?: number;
-  activeHunt?: ActiveHunt;
-  lastHuntSummary?: HuntClaimSummary;
   tutorialSeen?: boolean;
   tutorialDismissed?: boolean;
 }

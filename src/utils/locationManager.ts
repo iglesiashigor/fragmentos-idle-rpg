@@ -77,7 +77,7 @@ export function generateRandomLocation(characterLevel = 1): MapLocation {
 }
 
 export const MAX_ENEMIES = 5;
-export const MAX_EVENTS = 1;
+export const MAX_EVENTS = 2;
 
 export const INITIAL_LOCATIONS: MapLocation[] = [
   { id: 'town_1', type: 'town', x: 49.3, y: 49.3, name: 'Cidade' },

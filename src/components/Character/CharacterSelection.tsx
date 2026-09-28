@@ -29,8 +29,8 @@ export function CharacterSelection({
   };
 
   return (
-    <div className="app-bg flex items-center justify-center px-4 py-8">
-      <div className="rpg-panel w-full max-w-3xl rounded-2xl p-5 sm:p-8">
+    <div className="app-bg flex items-center justify-center px-4">
+      <div className="rpg-panel w-full max-w-3xl rounded-lg p-5 sm:p-8">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="mb-2 flex items-center gap-3 text-stone-950">
@@ -54,7 +54,7 @@ export function CharacterSelection({
           {characters.map((character) => (
             <div
               key={character.id}
-              className="rpg-item relative rounded-xl"
+              className="rpg-item relative rounded-lg"
             >
               {showDeleteConfirm === character.id ? (
                 <div className="p-4">
@@ -113,7 +113,7 @@ export function CharacterSelection({
           {characters.length < MAX_CHARACTERS && (
             <button
               onClick={onCreateNew}
-              className="flex min-h-16 items-center justify-center rounded-xl border-2 border-dashed border-stone-300 p-4 font-semibold text-stone-600 transition-colors hover:border-amber-400 hover:bg-amber-50 hover:text-stone-950"
+              className="flex items-center justify-center rounded-lg border-2 border-dashed border-stone-300 p-4 font-semibold text-stone-600 transition-colors hover:border-amber-400 hover:bg-amber-50 hover:text-stone-950"
             >
               <Plus className="w-6 h-6 mr-2" />
               <span>Criar Novo Personagem</span>

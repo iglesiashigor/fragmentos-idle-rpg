@@ -21,14 +21,17 @@ export function GameMap({
   onLocationSelect,
 }: GameMapProps) {
   return (
-    <div className="relative aspect-[16/9] min-h-[280px] w-full overflow-hidden rounded-xl border-4 border-stone-800 bg-emerald-950 shadow-xl shadow-stone-950/20 sm:min-h-[360px]">
-      <img
-        src="/world-map.webp"
-        alt="Mapa do mundo"
-        className="absolute inset-0 h-full w-full object-cover"
-        draggable={false}
-      />
-      <div className="absolute inset-0 bg-stone-950/10 ring-1 ring-inset ring-amber-100/20" />
+    <div className="relative aspect-[16/9] min-h-[360px] w-full overflow-hidden rounded-lg border border-emerald-900/30 bg-emerald-950 shadow-inner">
+      <picture>
+        <source srcSet="/world-map.webp" type="image/webp" />
+        <img
+          src="/world-map.png"
+          alt="Mapa do mundo"
+          className="absolute inset-0 h-full w-full object-cover"
+          draggable={false}
+        />
+      </picture>
+      <div className="absolute inset-0 bg-stone-950/10" />
       {locations.map((location) => {
         const isSelected = currentLocationId === location.id;
         const markerState = markerStates[location.id];
@@ -47,13 +50,13 @@ export function GameMap({
             title={location.name}
           >
             {location.type === 'enemy' ? (
-              <EnemyPresence difficulty={markerState?.status} />
+              <Sword className="h-6 w-6" />
             ) : location.type === 'boss_lair' ? (
-              <span className="map-boss-presence"><Crown className="h-6 w-6" /></span>
+              <Crown className="h-6 w-6" />
             ) : location.type === 'event' ? (
-              <span className="map-event-presence"><Sparkles className="h-6 w-6" /></span>
+              <Sparkles className="h-6 w-6" />
             ) : location.type === 'gathering' ? (
-              <span className="map-gathering-presence"><GatheringIcon resourcePool={location.resourcePool} /></span>
+              <GatheringIcon resourcePool={location.resourcePool} />
             ) : (
               <Home className="h-6 w-6" />
             )}
@@ -66,26 +69,6 @@ export function GameMap({
         );
       })}
     </div>
-  );
-}
-
-function EnemyPresence({ difficulty }: { difficulty?: 'ready' | 'cooldown' | 'easy' | 'normal' | 'hard' }) {
-  const patrolCount = difficulty === 'hard' ? 3 : 2;
-  return (
-    <span className={`map-danger-presence ${difficulty === 'hard' ? 'map-danger-hard' : ''}`}>
-      <span className="map-danger-aura" aria-hidden="true" />
-      {Array.from({ length: patrolCount }).map((_, index) => (
-        <span
-          className="map-danger-patrol"
-          style={{ animationDelay: `${index * -1.15}s` }}
-          aria-hidden="true"
-          key={index}
-        >
-          <Sword className="h-3.5 w-3.5" />
-        </span>
-      ))}
-      <Sword className="relative z-10 h-6 w-6" />
-    </span>
   );
 }
 
