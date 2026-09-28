@@ -11,7 +11,6 @@ import {
   Ability,
   Quest,
   ProfessionId,
-  ProfessionProgress,
   DailyTaskProgress,
   DailyTaskType,
 } from '../types/game';
@@ -33,15 +32,8 @@ import {
 } from '../utils/randomEvents';
 import { calculateRequiredExperience, checkLevelUp } from '../utils/experience';
 import {
-  calculateAbilityDamage,
-  calculateAbilityBase,
-  calculateBasicAttackDamage,
-  calculateBasicAttackBase,
-  calculateEnemyDamage,
   calculateMaxHealth,
   calculateMaxResource,
-  calculateSpellDamage,
-  calculateSpellBase,
 } from '../utils/combatStats';
 import {
   addItemToInventory,
@@ -55,7 +47,6 @@ import {
   createActiveQuest,
   isQuestReadyToClaim,
   updateQuestsForCollect,
-  updateQuestsForKill,
 } from '../utils/questManager';
 import {
   CraftingRecipe,
@@ -66,17 +57,12 @@ import {
 } from '../data/recipes';
 import {
   createProfession,
-  getProfessionExtraChance,
-  getProfessionRequiredExperience,
-  getProfessionYieldBonus,
-  MAX_PROFESSION_LEVEL,
+  getProfessionForResourcePool,
   PROFESSION_BY_ID,
 } from '../data/professions';
 import { getUnlockedTitleIds } from '../data/achievements';
 import {
   createGuild,
-  getGuildExperienceBonus,
-  getGuildGatheringBonus,
   getGuildUpgradeCost,
   GUILD_FOUNDATION_COST,
   MAX_GUILD_LEVEL,
@@ -86,10 +72,16 @@ import {
   normalizeDailyTasks,
 } from '../data/dailyTasks';
 import { getAttributeIncreaseUpdates, LEVEL_UP_ATTRIBUTE_POINTS } from '../utils/attributes';
-import { BOSS_LAIR_ENTRY_COST, getCombatGoldReward, getSellPrice, RESPAWN_COST, REST_COST } from '../utils/economy';
+import { BOSS_LAIR_ENTRY_COST, getSellPrice, RESPAWN_COST, REST_COST } from '../utils/economy';
+import { CombatAction, resolveCombatTurn } from '../utils/combat';
+import { calculateCombatRewards } from '../utils/combatRewards';
+import {
+  collectResources,
+  consumeGatheringCharge,
+  GATHERING_NODE_RESET_MS,
+  getGatheringNodeState,
+} from '../utils/gathering';
 
-const GATHERING_NODE_MAX_CHARGES = 5;
-const GATHERING_NODE_RESET_MS = 5 * 60 * 1000;
 const BOSS_LAIR_RESET_MS = 10 * 60 * 1000;
 
 export function useGameState(
@@ -412,158 +404,29 @@ export function useGameState(
     return Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
   };
 
-  const handleAttack = () => {
+  const handleCombatAction = (action: CombatAction) => {
     if (!enemy) return;
+    const turn = resolveCombatTurn(character, enemy, action);
+    if (!turn) return;
 
-    // Player attacks enemy
-    const playerDamage = calculateBasicAttackDamage(character);
-    const isCritical = playerDamage > calculateBasicAttackBase(character);
-    const newEnemyHealth = enemy.health - playerDamage;
-
-    if (newEnemyHealth <= 0) {
-      setCombatFeedback({
-        action: 'Ataque básico',
-        playerDamage,
-        enemyDamage: 0,
-        isCritical,
-        defeatedEnemy: true,
-      });
-      handleEnemyDefeat({}, 'Ataque básico', playerDamage);
+    setCombatFeedback(turn.feedback);
+    if (turn.outcome === 'enemy') {
+      handleEnemyDefeat(turn.resourceUpdates, turn.feedback.action, turn.feedback.playerDamage);
       return;
     }
-
-    // Enemy attacks player
-    const enemyDamage = calculateEnemyDamage(enemy, character);
-    const newPlayerHealth = character.health - enemyDamage;
-
-    if (newPlayerHealth <= 0) {
-      setCombatFeedback({
-        action: 'Ataque básico',
-        playerDamage,
-        enemyDamage,
-        isCritical,
-        defeatedPlayer: true,
-      });
+    if (turn.outcome === 'player') {
       setShowDeathModal(true);
-      updateCharacter({ health: 0 });
+      updateCharacter({ health: 0, ...turn.resourceUpdates });
       return;
     }
 
-    setEnemy({ ...enemy, health: newEnemyHealth });
-    updateCharacter({ health: newPlayerHealth });
-    setCombatFeedback({
-      action: 'Ataque básico',
-      playerDamage,
-      enemyDamage,
-      isCritical,
-    });
+    setEnemy({ ...enemy, health: turn.enemyHealth });
+    updateCharacter({ health: turn.playerHealth, ...turn.resourceUpdates });
   };
 
-  const handleCastSpell = (spell: Spell) => {
-    if (!enemy || character.mana === undefined) return;
-
-    // Check if player has enough mana
-    if (character.mana < spell.manaCost) return;
-
-    const playerDamage = calculateSpellDamage(character, spell.damage);
-    const isCritical = playerDamage > calculateSpellBase(character, spell.damage);
-    const newEnemyHealth = enemy.health - playerDamage;
-    const newMana = character.mana - spell.manaCost;
-
-    if (newEnemyHealth <= 0) {
-      setCombatFeedback({
-        action: spell.name,
-        playerDamage,
-        enemyDamage: 0,
-        isCritical,
-        defeatedEnemy: true,
-      });
-      handleEnemyDefeat({ mana: newMana }, spell.name, playerDamage);
-      return;
-    }
-
-    // Enemy attacks player
-    const enemyDamage = calculateEnemyDamage(enemy, character);
-    const newPlayerHealth = character.health - enemyDamage;
-
-    if (newPlayerHealth <= 0) {
-      setCombatFeedback({
-        action: spell.name,
-        playerDamage,
-        enemyDamage,
-        isCritical,
-        defeatedPlayer: true,
-      });
-      setShowDeathModal(true);
-      updateCharacter({ health: 0, mana: newMana });
-      return;
-    }
-
-    setEnemy({ ...enemy, health: newEnemyHealth });
-    updateCharacter({ 
-      health: newPlayerHealth,
-      mana: newMana
-    });
-    setCombatFeedback({
-      action: spell.name,
-      playerDamage,
-      enemyDamage,
-      isCritical,
-    });
-  };
-
-  const handleUseAbility = (ability: Ability) => {
-    if (!enemy || character.stamina === undefined) return;
-
-    // Check if player has enough stamina
-    if (character.stamina < ability.staminaCost) return;
-
-    const playerDamage = calculateAbilityDamage(character, ability.damage);
-    const isCritical = playerDamage > calculateAbilityBase(character, ability.damage);
-    const newEnemyHealth = enemy.health - playerDamage;
-    const newStamina = character.stamina - ability.staminaCost;
-
-    if (newEnemyHealth <= 0) {
-      setCombatFeedback({
-        action: ability.name,
-        playerDamage,
-        enemyDamage: 0,
-        isCritical,
-        defeatedEnemy: true,
-      });
-      handleEnemyDefeat({ stamina: newStamina }, ability.name, playerDamage);
-      return;
-    }
-
-    // Enemy attacks player
-    const enemyDamage = calculateEnemyDamage(enemy, character);
-    const newPlayerHealth = character.health - enemyDamage;
-
-    if (newPlayerHealth <= 0) {
-      setCombatFeedback({
-        action: ability.name,
-        playerDamage,
-        enemyDamage,
-        isCritical,
-        defeatedPlayer: true,
-      });
-      setShowDeathModal(true);
-      updateCharacter({ health: 0, stamina: newStamina });
-      return;
-    }
-
-    setEnemy({ ...enemy, health: newEnemyHealth });
-    updateCharacter({ 
-      health: newPlayerHealth,
-      stamina: newStamina
-    });
-    setCombatFeedback({
-      action: ability.name,
-      playerDamage,
-      enemyDamage,
-      isCritical,
-    });
-  };
+  const handleAttack = () => handleCombatAction({ type: 'attack' });
+  const handleCastSpell = (spell: Spell) => handleCombatAction({ type: 'spell', spell });
+  const handleUseAbility = (ability: Ability) => handleCombatAction({ type: 'ability', ability });
 
   const handleEnemyDefeat = (
     preRewardUpdates: Partial<SavedCharacter> = {},
@@ -608,87 +471,24 @@ export function useGameState(
       return newLocations;
     });
 
-    // Calculate rewards
-    const baseExpReward = enemy.experience;
-    const goldReward = getCombatGoldReward(enemy, character.guild);
-    const expReward = Math.floor(baseExpReward * getGuildExperienceBonus(character.guild));
-    const rewardBaseCharacter = {
-      ...character,
-      ...preRewardUpdates,
+    const reward = calculateCombatRewards(character, enemy, preRewardUpdates);
+    const updates = {
+      ...reward.updates,
+      ...(currentLocation.type === 'boss_lair'
+        ? { bossLairResetAt: Date.now() + BOSS_LAIR_RESET_MS }
+        : {}),
     };
-    const newExp = rewardBaseCharacter.experience + expReward;
-
-    // Add gold and experience
-    const updates: Partial<SavedCharacter> = {
-      ...preRewardUpdates,
-      gold: rewardBaseCharacter.gold + goldReward,
-      experience: newExp,
-      stats: {
-        ...(rewardBaseCharacter.stats || {
-          kills: 0,
-          bossesKilled: 0,
-          resourcesGathered: 0,
-          itemsCrafted: 0,
-          equipmentUpgrades: 0,
-        }),
-        kills: (rewardBaseCharacter.stats?.kills || 0) + 1,
-        bossesKilled:
-          (rewardBaseCharacter.stats?.bossesKilled || 0) +
-          (enemy.isBoss ? 1 : 0),
-      },
-    };
-    const dailyProgress = getAdvancedDailyTasks('kill', 1, rewardBaseCharacter);
-    updates.dailyTasks = dailyProgress.tasks;
-    updates.dailyTasksResetAt = dailyProgress.resetAt;
-
-    // Add loot items to inventory
-    let collectedItems: { itemId: string; quantity: number }[] = [];
-
-    if (enemy.loot && enemy.loot.length > 0) {
-      const updatedInventory = [...rewardBaseCharacter.inventory];
-      
-      enemy.loot.forEach(lootItem => {
-        if (canAddItemToInventory(lootItem, updatedInventory)) {
-          const nextInventory = addItemToInventory(lootItem, updatedInventory);
-          updatedInventory.splice(0, updatedInventory.length, ...nextInventory);
-          collectedItems = [
-            ...collectedItems,
-            { itemId: lootItem.id, quantity: 1 },
-          ];
-        }
-      });
-      
-      updates.inventory = updatedInventory;
-    }
-
-    if (currentLocation.type === 'boss_lair') {
-      updates.bossLairResetAt = Date.now() + BOSS_LAIR_RESET_MS;
-    }
-
-    const activeQuests = rewardBaseCharacter.quests || [];
-    updates.quests = updateQuestsForCollect(
-      updateQuestsForKill(activeQuests, enemy.name),
-      collectedItems
-    );
-
-    const updatedCharacter = {
-      ...rewardBaseCharacter,
-      ...updates,
-    };
-    const levelUpUpdates = getLevelUpUpdates(updatedCharacter, newExp);
-
-    updateCharacter({
-      ...updates,
-      ...levelUpUpdates,
-    });
+    const rewardedCharacter = { ...character, ...updates };
+    const levelUpUpdates = getLevelUpUpdates(rewardedCharacter, rewardedCharacter.experience);
+    updateCharacter({ ...updates, ...levelUpUpdates });
 
     setLastCombatRewards({
       enemyName: enemy.name,
-      gold: goldReward,
-      experience: expReward,
+      gold: reward.gold,
+      experience: reward.experience,
       finishingBlow,
       finishingDamage,
-      loot: collectedItems.map((item) => ({
+      loot: reward.collectedItems.map((item) => ({
         name:
           enemy.loot.find((lootItem) => lootItem.id === item.itemId)?.name ||
           item.itemId,
@@ -822,42 +622,18 @@ export function useGameState(
     if (!randomEventReward || !currentLocation) return;
 
     if (randomEventReward.type === 'resource') {
-      let updatedInventory = [...character.inventory];
-      const collectedItems: { itemId: string; quantity: number }[] = [];
-      const professionDefinition = getProfessionForResourcePool(
+      const collected = collectResources(
+        character,
+        randomEventReward.rewards,
         currentLocation.resourcePool
       );
-      const currentProfession = professionDefinition
-        ? character.professions?.[professionDefinition.id] ||
-          createProfession(professionDefinition.id)
-        : undefined;
-      const professionUpdate = getGatheringProfessionUpdate(
-        currentProfession,
-        currentLocation.resourcePool
-      );
-
-      randomEventReward.rewards.forEach(({ item, quantity }) => {
-        const finalQuantity =
-          quantity +
-          professionUpdate.quantityBonus +
-          getGuildGatheringBonus(character.guild);
-        if (canAddItemToInventory(item, updatedInventory)) {
-          updatedInventory = addItemToInventory(item, updatedInventory, finalQuantity);
-          collectedItems.push({ itemId: item.id, quantity: finalQuantity });
-        }
-      });
       const dailyProgress = getAdvancedDailyTasks('gather', 1);
 
       updateCharacter({
-        inventory: updatedInventory,
-        quests: updateQuestsForCollect(character.quests || [], collectedItems),
+        inventory: collected.inventory,
+        quests: updateQuestsForCollect(character.quests || [], collected.collectedItems),
         profession: undefined,
-        professions: professionUpdate.profession
-          ? {
-              ...(character.professions || {}),
-              [professionUpdate.profession.id]: professionUpdate.profession,
-            }
-          : character.professions,
+        professions: collected.professions,
         activeProfessionId: undefined,
         dailyTasks: dailyProgress.tasks,
         dailyTasksResetAt: dailyProgress.resetAt,
@@ -951,39 +727,11 @@ export function useGameState(
     return Boolean(getProfessionForResourcePool(currentLocation.resourcePool));
   };
 
-  const getProfessionForResourcePool = (resourcePool?: string) => {
-    if (!resourcePool) return undefined;
-
-    return Object.values(PROFESSION_BY_ID).find((profession) =>
-      profession.resourcePools.includes(resourcePool)
-    );
-  };
-
-  const getGatheringNodeState = (nodeId: string) => {
-    const savedNode = character.gatheringNodes?.[nodeId];
-    const now = Date.now();
-
-    if (!savedNode) {
-      return {
-        remaining: GATHERING_NODE_MAX_CHARGES,
-        resetAt: 0,
-      };
-    }
-
-    if (savedNode.remaining <= 0 && savedNode.resetAt <= now) {
-      return {
-        remaining: GATHERING_NODE_MAX_CHARGES,
-        resetAt: 0,
-      };
-    }
-
-    return savedNode;
-  };
 
   const handleGather = () => {
     if (!currentLocation || currentLocation.type !== 'gathering') return;
     if (!canGatherAtCurrentLocation()) return;
-    const nodeState = getGatheringNodeState(currentLocation.id);
+    const nodeState = getGatheringNodeState(character.gatheringNodes, currentLocation.id);
     if (nodeState.remaining <= 0) {
       updateCharacter({
         gatheringNodes: {
@@ -998,59 +746,19 @@ export function useGameState(
       Math.max(currentLocation.level || 1, Math.ceil(character.level / 4)),
       currentLocation.resourcePool
     );
-    let updatedInventory = [...character.inventory];
-    const collectedItems: { itemId: string; quantity: number }[] = [];
-    const displayedRewards: { name: string; quantity: number }[] = [];
-    const professionDefinition = getProfessionForResourcePool(
-      currentLocation.resourcePool
-    );
-    const currentProfession = professionDefinition
-      ? character.professions?.[professionDefinition.id] ||
-        createProfession(professionDefinition.id)
-      : undefined;
-    const professionUpdate = getGatheringProfessionUpdate(
-      currentProfession,
-      currentLocation.resourcePool
-    );
-
-    gatheringReward.rewards.forEach(({ item, quantity }) => {
-      const finalQuantity =
-        quantity +
-        professionUpdate.quantityBonus +
-        getGuildGatheringBonus(character.guild);
-
-      if (canAddItemToInventory(item, updatedInventory)) {
-        updatedInventory = addItemToInventory(item, updatedInventory, finalQuantity);
-        collectedItems.push({ itemId: item.id, quantity: finalQuantity });
-        displayedRewards.push({ name: item.name, quantity: finalQuantity });
-      }
-    });
-    const totalCollected = collectedItems.reduce(
-      (total, item) => total + item.quantity,
-      0
-    );
+    const collected = collectResources(character, gatheringReward.rewards, currentLocation.resourcePool);
+    const totalCollected = collected.collectedItems.reduce((total, item) => total + item.quantity, 0);
     const dailyProgress = getAdvancedDailyTasks('gather', 1);
 
     updateCharacter({
-      inventory: updatedInventory,
-      quests: updateQuestsForCollect(character.quests || [], collectedItems),
+      inventory: collected.inventory,
+      quests: updateQuestsForCollect(character.quests || [], collected.collectedItems),
       profession: undefined,
-      professions: professionUpdate.profession
-        ? {
-            ...(character.professions || {}),
-            [professionUpdate.profession.id]: professionUpdate.profession,
-          }
-        : character.professions,
+      professions: collected.professions,
       activeProfessionId: undefined,
       gatheringNodes: {
         ...(character.gatheringNodes || {}),
-        [currentLocation.id]: {
-          remaining: nodeState.remaining - 1,
-          resetAt:
-            nodeState.remaining - 1 <= 0
-              ? Date.now() + GATHERING_NODE_RESET_MS
-              : nodeState.resetAt,
-          },
+        [currentLocation.id]: consumeGatheringCharge(nodeState),
       },
       stats: {
         ...(character.stats || {
@@ -1066,7 +774,7 @@ export function useGameState(
       dailyTasks: dailyProgress.tasks,
       dailyTasksResetAt: dailyProgress.resetAt,
     });
-    setLastGatheringRewards(displayedRewards);
+    setLastGatheringRewards(collected.displayedRewards);
   };
 
   const handleAcceptQuest = (quest: Quest) => {
@@ -1297,64 +1005,6 @@ export function useGameState(
     });
   };
 
-  const getGatheringProfessionUpdate = (
-    profession: ProfessionProgress | undefined,
-    resourcePool?: string
-  ): { profession: ProfessionProgress | undefined; quantityBonus: number } => {
-    if (!profession || !resourcePool) {
-      return { profession, quantityBonus: 0 };
-    }
-
-    const professionDefinition = PROFESSION_BY_ID[profession.id];
-    if (!professionDefinition.resourcePools.includes(resourcePool)) {
-      return { profession, quantityBonus: 0 };
-    }
-
-    const baseBonus = getProfessionYieldBonus(profession.level);
-    const extraBonus = Math.random() < getProfessionExtraChance(profession.level) ? 1 : 0;
-    if (profession.level >= MAX_PROFESSION_LEVEL) {
-      return {
-        profession: {
-          ...profession,
-          level: MAX_PROFESSION_LEVEL,
-          experience: 0,
-        },
-        quantityBonus: baseBonus + extraBonus,
-      };
-    }
-
-    let nextProfession: ProfessionProgress = {
-      ...profession,
-      experience: profession.experience + 25,
-    };
-
-    while (
-      nextProfession.level < MAX_PROFESSION_LEVEL &&
-      nextProfession.experience >=
-      getProfessionRequiredExperience(nextProfession.level)
-    ) {
-      nextProfession = {
-        ...nextProfession,
-        experience:
-          nextProfession.experience -
-          getProfessionRequiredExperience(nextProfession.level),
-        level: nextProfession.level + 1,
-      };
-    }
-
-    if (nextProfession.level >= MAX_PROFESSION_LEVEL) {
-      nextProfession = {
-        ...nextProfession,
-        level: MAX_PROFESSION_LEVEL,
-        experience: 0,
-      };
-    }
-
-    return {
-      profession: nextProfession,
-      quantityBonus: baseBonus + extraBonus,
-    };
-  };
 
   return {
     character,
@@ -1371,7 +1021,7 @@ export function useGameState(
     combatFeedback,
     gatheringNodeState:
       currentLocation?.type === 'gathering'
-        ? getGatheringNodeState(currentLocation.id)
+        ? getGatheringNodeState(character.gatheringNodes, currentLocation.id)
         : null,
     gatheringResetMs: GATHERING_NODE_RESET_MS,
     bossLairEntryCost: BOSS_LAIR_ENTRY_COST,
