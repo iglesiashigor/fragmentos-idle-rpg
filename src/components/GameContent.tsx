@@ -474,7 +474,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-800">Mundo de Fragmentos</p>
                 <h2 className="flex items-center gap-2 text-2xl font-black text-stone-950"><MapPinned className="h-6 w-6 text-amber-700" aria-hidden="true" />Mapa</h2>
                 <p className="text-sm font-semibold text-stone-500">
-                  Escolha um marcador ou destino da lista para continuar a aventura.
+                  Escolha um marcador no mapa para continuar a aventura.
                 </p>
               </div>
               <button
