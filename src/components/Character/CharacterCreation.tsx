@@ -153,7 +153,7 @@ export function CharacterCreation({
 
   return (
     <div className="app-bg">
-      <div className="page-wrap">
+      <div className="mx-auto w-full max-w-[1000px] px-4 py-6 sm:px-6 lg:px-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="rpg-panel-dark rounded-lg p-5">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -213,7 +213,7 @@ export function CharacterCreation({
             </div>
           </div>
 
-          {step === 0 && <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
+          {step === 0 && <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
             <div className="rpg-panel rounded-lg p-5">
               <label htmlFor="character-name" className="mb-2 block text-sm font-bold text-stone-700">
                 Nome do Personagem
@@ -260,7 +260,7 @@ export function CharacterCreation({
 
           {step === 1 && <div className="rpg-panel rounded-lg p-5">
             <SectionTitle title="Classe" subtitle="Define estilo de combate e evolução" />
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {CLASSES.map((characterClass) => (
                 <button
                   key={characterClass.id}
@@ -315,7 +315,7 @@ export function CharacterCreation({
                 Pontos restantes: {remainingPoints}
               </span>
             </div>
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
               {renderAttributeControl('strength', 'Força', <Sword className="h-4 w-4" />, 'Aumenta ataque físico e estamina máxima.')}
               {renderAttributeControl('effort', 'Esforço', <Dumbbell className="h-4 w-4" />, 'Aumenta ataque e recurso.')}
               {renderAttributeControl('resistance', 'Resistência', <Shield className="h-4 w-4" />, 'Aumenta vida e defesa.')}
