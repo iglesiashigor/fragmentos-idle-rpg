@@ -36,8 +36,12 @@ export function CharacterTabs({
   const [activeTab, setActiveTab] = useState<CharacterTabId>('inventory');
 
   return (
-    <div className="rpg-panel rounded-lg p-4">
-      <div className="mb-4 grid grid-cols-5 gap-2">
+    <div className="rpg-panel rounded-xl p-4 sm:p-5">
+      <div className="mb-3">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-800">Personagem</p>
+        <h2 className="text-xl font-black text-stone-950">Detalhes e progresso</h2>
+      </div>
+      <div className="mb-5 flex flex-wrap gap-2" aria-label="Menu do personagem">
         <SidebarTab
           label="Inventário"
           active={activeTab === 'inventory'}
@@ -194,15 +198,17 @@ function SidebarTab({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`flex min-h-11 items-center justify-center gap-1 rounded-md px-2 py-2 text-xs font-black transition-colors ${
+      aria-pressed={active}
+      className={`flex min-h-11 min-w-[8rem] flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-black transition-colors ${
         active
-          ? 'bg-stone-950 text-white'
-          : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
+          ? 'border-stone-950 bg-stone-950 text-white shadow-sm'
+          : 'border-stone-200 bg-white text-stone-700 hover:border-amber-400 hover:bg-amber-50'
       }`}
     >
       {icon}
-      <span className="hidden sm:inline">{label}</span>
+      <span>{label}</span>
     </button>
   );
 }

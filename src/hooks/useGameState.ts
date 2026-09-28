@@ -17,8 +17,6 @@ import {
 } from '../types/game';
 import { generateBoss, generateEnemy } from '../data/enemies';
 import {
-  getBossBalance,
-  getEnemyBalance,
   getEncounterLevelRange,
 } from '../data/balance';
 import {
@@ -79,7 +77,6 @@ import {
   createGuild,
   getGuildExperienceBonus,
   getGuildGatheringBonus,
-  getGuildGoldBonus,
   getGuildUpgradeCost,
   GUILD_FOUNDATION_COST,
   MAX_GUILD_LEVEL,
@@ -88,10 +85,11 @@ import {
   advanceDailyTasks,
   normalizeDailyTasks,
 } from '../data/dailyTasks';
+import { getAttributeIncreaseUpdates, LEVEL_UP_ATTRIBUTE_POINTS } from '../utils/attributes';
+import { BOSS_LAIR_ENTRY_COST, getCombatGoldReward, getSellPrice, RESPAWN_COST, REST_COST } from '../utils/economy';
 
 const GATHERING_NODE_MAX_CHARGES = 5;
 const GATHERING_NODE_RESET_MS = 5 * 60 * 1000;
-const BOSS_LAIR_ENTRY_COST = 40;
 const BOSS_LAIR_RESET_MS = 10 * 60 * 1000;
 
 export function useGameState(
@@ -247,39 +245,7 @@ export function useGameState(
 
   const handleAttributeIncrease = (attribute: keyof Attributes) => {
     if (attributePoints > 0) {
-      const updatedAttributes = {
-        ...character.attributes,
-        [attribute]: character.attributes[attribute] + 1,
-      };
-      const updatedCharacter = {
-        ...character,
-        attributes: updatedAttributes,
-      };
-      const newMaxHealth = calculateMaxHealth(updatedCharacter);
-      const newMaxResource = calculateMaxResource(updatedCharacter);
-      const updates: Partial<SavedCharacter> = {
-        attributes: updatedAttributes,
-        maxHealth: newMaxHealth,
-        health: Math.min(character.health + (newMaxHealth - character.maxHealth), newMaxHealth),
-      };
-
-      if (character.maxMana !== undefined) {
-        updates.maxMana = newMaxResource;
-        updates.mana = Math.min(
-          (character.mana || 0) + (newMaxResource - character.maxMana),
-          newMaxResource
-        );
-      }
-
-      if (character.maxStamina !== undefined) {
-        updates.maxStamina = newMaxResource;
-        updates.stamina = Math.min(
-          (character.stamina || 0) + (newMaxResource - character.maxStamina),
-          newMaxResource
-        );
-      }
-
-      updateCharacter(updates);
+      updateCharacter(getAttributeIncreaseUpdates(character, attribute));
       setAttributePoints(points => points - 1);
     }
   };
@@ -359,7 +325,7 @@ export function useGameState(
 
       // Add attribute points on odd levels
       if (newLevel % 2 === 1) {
-        setAttributePoints(3); // Give 3 points to distribute
+        setAttributePoints(LEVEL_UP_ATTRIBUTE_POINTS);
       }
 
       const leveledCharacter = {
@@ -643,11 +609,8 @@ export function useGameState(
     });
 
     // Calculate rewards
-    const baseGoldReward = enemy.isBoss
-      ? getBossBalance(enemy.level).goldReward
-      : getEnemyBalance(enemy.level).goldReward;
     const baseExpReward = enemy.experience;
-    const goldReward = Math.floor(baseGoldReward * getGuildGoldBonus(character.guild));
+    const goldReward = getCombatGoldReward(enemy, character.guild);
     const expReward = Math.floor(baseExpReward * getGuildExperienceBonus(character.guild));
     const rewardBaseCharacter = {
       ...character,
@@ -755,10 +718,10 @@ export function useGameState(
   };
 
   const handleRespawn = () => {
-    if (character.gold >= 100) {
+    if (character.gold >= RESPAWN_COST) {
       const updates: Partial<SavedCharacter> = {
         health: character.maxHealth,
-        gold: character.gold - 100,
+        gold: character.gold - RESPAWN_COST,
       };
 
       // Restore mana or stamina based on class type
@@ -777,7 +740,6 @@ export function useGameState(
   };
 
   const handleRest = () => {
-    const REST_COST = 20;
     if (character.gold >= REST_COST) {
       const updates: Partial<SavedCharacter> = {
         health: character.maxHealth,
@@ -819,7 +781,7 @@ export function useGameState(
     if (!inventoryItem || inventoryItem.equipped) return;
 
     const sellQuantity = Math.max(1, Math.min(quantity, inventoryItem.quantity));
-    const sellPrice = Math.floor(inventoryItem.price * 0.7) * sellQuantity;
+    const sellPrice = getSellPrice(inventoryItem.price, sellQuantity);
     const isSameInventoryItem = (
       first: InventoryItem,
       second: InventoryItem

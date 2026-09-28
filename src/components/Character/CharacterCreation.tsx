@@ -12,10 +12,18 @@ import { CLASSES } from '../../data/classes';
 import { CLASS_PASSIVE_DESCRIPTIONS } from '../../data/classPassives';
 import { RACES } from '../../data/races';
 import { Attributes, CharacterClass, Race } from '../../types/game';
+import { CREATION_ATTRIBUTE_POINTS } from '../../utils/attributes';
 
-const TOTAL_ATTRIBUTE_POINTS = 10;
 const MIN_ATTRIBUTE_VALUE = 0;
 const MAX_ATTRIBUTE_VALUE = 10;
+const STEPS = ['Raça', 'Classe', 'Atributos'] as const;
+const ATTRIBUTE_NAMES: Record<keyof Attributes, string> = {
+  strength: 'Força',
+  effort: 'Esforço',
+  resistance: 'Resistência',
+  intelligence: 'Inteligência',
+  accuracy: 'Acurácia',
+};
 
 interface CharacterCreationProps {
   onCreateCharacter: (
@@ -32,6 +40,7 @@ export function CharacterCreation({
   onBack,
 }: CharacterCreationProps) {
   const [name, setName] = useState('');
+  const [step, setStep] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedRace, setSelectedRace] = useState<Race>(RACES[0]);
   const [selectedClass, setSelectedClass] = useState<CharacterClass>(
@@ -52,7 +61,11 @@ export function CharacterCreation({
     attributes.intelligence +
     attributes.accuracy;
 
-  const remainingPoints = TOTAL_ATTRIBUTE_POINTS - usedPoints;
+  const remainingPoints = CREATION_ATTRIBUTE_POINTS - usedPoints;
+  const goToStep = (nextStep: number) => {
+    setStep(nextStep);
+    window.scrollTo(0, 0);
+  };
 
   const handleAttributeChange = (
     attribute: keyof Attributes,
@@ -71,6 +84,10 @@ export function CharacterCreation({
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (step < STEPS.length - 1) {
+      if (step > 0 || name.trim()) goToStep(step + 1);
+      return;
+    }
     if (name.trim() && remainingPoints === 0 && !isSaving) {
       setIsSaving(true);
       try {
@@ -84,7 +101,8 @@ export function CharacterCreation({
   const renderAttributeControl = (
     attribute: keyof Attributes,
     label: string,
-    icon: ReactNode
+    icon: ReactNode,
+    description: string
   ) => {
     const baseValue = attributes[attribute];
     const modifier = selectedClass.attributeModifiers[attribute];
@@ -97,16 +115,15 @@ export function CharacterCreation({
             {icon}
             <span>{label}</span>
           </div>
-          <div className="text-sm font-semibold text-stone-500">
-            {baseValue} <span className="text-amber-700">→ {modifiedValue}</span>
-          </div>
+          <div className="text-sm font-semibold text-stone-500">{baseValue} pontos</div>
         </div>
+        <p className="mb-3 text-xs text-stone-600">{description}</p>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => handleAttributeChange(attribute, baseValue - 1)}
             aria-label={`Diminuir ${label}`}
-            className="flex h-8 w-8 items-center justify-center rounded-md bg-stone-700 font-bold text-white hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-300"
+            className="flex h-10 w-10 items-center justify-center rounded-md bg-stone-700 font-bold text-white hover:bg-stone-800 disabled:cursor-not-allowed disabled:bg-stone-300"
             disabled={baseValue <= MIN_ATTRIBUTE_VALUE}
           >
             -
@@ -121,11 +138,14 @@ export function CharacterCreation({
             type="button"
             onClick={() => handleAttributeChange(attribute, baseValue + 1)}
             aria-label={`Aumentar ${label}`}
-            className="flex h-8 w-8 items-center justify-center rounded-md bg-emerald-600 font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+            className="flex h-10 w-10 items-center justify-center rounded-md bg-emerald-600 font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-stone-300"
             disabled={baseValue >= MAX_ATTRIBUTE_VALUE || remainingPoints <= 0}
           >
             +
           </button>
+        </div>
+        <div className="mt-2 text-right text-xs font-semibold text-amber-800">
+          Valor com ajuste da classe: {modifiedValue}
         </div>
       </div>
     );
@@ -157,7 +177,43 @@ export function CharacterCreation({
             </div>
           </div>
 
-          <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
+          <nav aria-label="Etapas da criação" className="grid grid-cols-3 gap-2">
+            {STEPS.map((label, index) => (
+              <button
+                key={label}
+                type="button"
+                onClick={() => goToStep(index)}
+                disabled={index > step}
+                aria-current={index === step ? 'step' : undefined}
+                className={`rounded-lg border px-2 py-3 text-sm font-bold transition-colors sm:text-base ${
+                  index === step
+                    ? 'border-amber-600 bg-amber-100 text-stone-900'
+                    : index < step
+                      ? 'border-stone-300 bg-[#f7eedb] text-stone-700 hover:bg-amber-50'
+                      : 'border-stone-200 bg-stone-100 text-stone-400'
+                }`}
+              >
+                {index + 1}. {label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="rpg-panel rounded-lg p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-bold uppercase tracking-wide text-amber-800">Seu aventureiro</div>
+                <div className="text-xl font-black text-stone-950">{name.trim() || 'Sem nome'}</div>
+                <div className="text-sm font-semibold text-stone-600">{selectedRace.name} · {selectedClass.name}</div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <SummaryTile label="Vida base" value={selectedClass.baseHealth + selectedRace.bonuses.health} />
+                <SummaryTile label="Recurso base" value={selectedClass.baseResource} />
+                <SummaryTile label="Pontos livres" value={remainingPoints} />
+              </div>
+            </div>
+          </div>
+
+          {step === 0 && <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
             <div className="rpg-panel rounded-lg p-5">
               <label htmlFor="character-name" className="mb-2 block text-sm font-bold text-stone-700">
                 Nome do Personagem
@@ -171,24 +227,7 @@ export function CharacterCreation({
                 className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 font-semibold shadow-sm focus:border-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
                 required
               />
-
-              <div className="mt-6 rounded-md border border-amber-200 bg-amber-50 p-4">
-                <div className="text-sm font-bold uppercase tracking-wide text-amber-700">
-                  Resumo
-                </div>
-                <div className="mt-2 text-xl font-black text-stone-950">
-                  {name.trim() || 'Sem nome'}
-                </div>
-                <div className="font-semibold text-stone-600">
-                  {selectedRace.name} {selectedClass.name}
-                </div>
-                <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                  <SummaryTile label="Vida" value={selectedClass.baseHealth + selectedRace.bonuses.health} />
-                  <SummaryTile label="Recurso" value={selectedClass.baseResource} />
-                  <SummaryTile label="Ouro" value={selectedClass.startingGold} />
-                  <SummaryTile label="Pontos" value={remainingPoints} />
-                </div>
-              </div>
+              <p className="mt-3 text-sm text-stone-600">Escolha um nome para aparecer nas suas aventuras.</p>
             </div>
 
             <div className="rpg-panel rounded-lg p-5">
@@ -217,9 +256,9 @@ export function CharacterCreation({
                 ))}
               </div>
             </div>
-          </div>
+          </div>}
 
-          <div className="rpg-panel rounded-lg p-5">
+          {step === 1 && <div className="rpg-panel rounded-lg p-5">
             <SectionTitle title="Classe" subtitle="Define estilo de combate e evolução" />
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
               {CLASSES.map((characterClass) => (
@@ -247,23 +286,26 @@ export function CharacterCreation({
                     <div className="mt-2 text-emerald-700">
                       Passiva: {CLASS_PASSIVE_DESCRIPTIONS[characterClass.id]}
                     </div>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {Object.entries(characterClass.attributeModifiers)
+                        .filter(([, modifier]) => modifier !== 1)
+                        .map(([attribute, modifier]) => (
+                          <span key={attribute} className={`rounded px-2 py-1 ${modifier > 1 ? 'bg-emerald-100 text-emerald-800' : 'bg-stone-100 text-stone-600'}`}>
+                            {ATTRIBUTE_NAMES[attribute as keyof Attributes]} ×{modifier}
+                          </span>
+                        ))}
+                    </div>
                   </div>
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
 
-          <div className="rpg-panel rounded-lg p-5">
-            <SectionTitle title="Profissões" subtitle="Todas evoluem conforme os pontos de coleta usados" />
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">
-              Lenhador, Coletor, Minerador e Explorador ficam disponíveis desde o início. Cada uma ganha XP no ponto de coleta correspondente.
-            </div>
-          </div>
-
+          {step === 2 && <>
           <div className="rpg-panel rounded-lg p-5">
             <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <SectionTitle title="Atributos" subtitle="Distribua todos os pontos disponíveis" />
-              <span
+              <span aria-live="polite"
                 className={`rounded-md px-3 py-2 text-sm font-black ${
                   remainingPoints === 0
                     ? 'bg-emerald-100 text-emerald-700'
@@ -274,27 +316,47 @@ export function CharacterCreation({
               </span>
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-              {renderAttributeControl('strength', 'Força', <Sword className="h-4 w-4" />)}
-              {renderAttributeControl('effort', 'Esforço', <Dumbbell className="h-4 w-4" />)}
-              {renderAttributeControl('resistance', 'Resistência', <Shield className="h-4 w-4" />)}
-              {renderAttributeControl('intelligence', 'Inteligência', <Brain className="h-4 w-4" />)}
-              {renderAttributeControl('accuracy', 'Acurácia', <Target className="h-4 w-4" />)}
+              {renderAttributeControl('strength', 'Força', <Sword className="h-4 w-4" />, 'Aumenta o ataque físico.')}
+              {renderAttributeControl('effort', 'Esforço', <Dumbbell className="h-4 w-4" />, 'Aumenta ataque e recurso.')}
+              {renderAttributeControl('resistance', 'Resistência', <Shield className="h-4 w-4" />, 'Aumenta vida e defesa.')}
+              {renderAttributeControl('intelligence', 'Inteligência', <Brain className="h-4 w-4" />, 'Aumenta magia e recurso.')}
+              {renderAttributeControl('accuracy', 'Acurácia', <Target className="h-4 w-4" />, 'Aumenta chance crítica e magia.')}
             </div>
           </div>
 
+          <div className="rpg-panel rounded-lg p-5">
+            <SectionTitle title="Profissões" subtitle="Todas evoluem conforme os pontos de coleta usados" />
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-800">
+              Lenhador, Coletor, Minerador e Explorador ficam disponíveis desde o início. Cada uma ganha XP no ponto de coleta correspondente.
+            </div>
+          </div>
+
+          </>}
+
+          <div className="flex gap-3">
+          {step > 0 && <button
+            type="button"
+            onClick={() => goToStep(step - 1)}
+            className="rounded-md border border-stone-400 bg-[#f7eedb] px-5 py-3 font-bold text-stone-800 hover:bg-amber-50"
+          >
+            Voltar etapa
+          </button>}
           <button
             type="submit"
-            disabled={!name.trim() || remainingPoints !== 0 || isSaving}
-            className="rpg-button-primary w-full py-3 text-lg"
+            disabled={!name.trim() || (step === 2 && remainingPoints !== 0) || isSaving}
+            className="rpg-button-primary flex-1 py-3 text-lg"
           >
             {isSaving
               ? 'Salvando personagem...'
               : !name.trim()
               ? 'Digite um nome'
-              : remainingPoints !== 0
+              : step < 2
+                ? `Continuar: ${STEPS[step + 1]}`
+                : remainingPoints !== 0
                 ? `Distribua os ${remainingPoints} pontos restantes`
                 : 'Criar Personagem'}
           </button>
+          </div>
         </form>
       </div>
     </div>

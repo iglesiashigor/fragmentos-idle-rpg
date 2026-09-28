@@ -3,6 +3,7 @@ import { Character, Race, CharacterClass, DeadCharacter, Attributes } from '../t
 import { calculateMaxHealth, calculateMaxResource } from '../utils/combatStats';
 import { createProfession, PROFESSIONS } from '../data/professions';
 import { getEquipmentSlot, isEquipmentItem } from '../utils/inventory';
+import { applyClassModifiers } from '../utils/attributes';
 
 export function useCharacter() {
   const [deadCharacters, setDeadCharacters] = useState<DeadCharacter[]>([]);
@@ -38,13 +39,7 @@ export function useCharacter() {
     );
     
     // Apply class modifiers to attributes
-    const finalAttributes = {
-      strength: Math.round(attributes.strength * characterClass.attributeModifiers.strength),
-      effort: Math.round(attributes.effort * characterClass.attributeModifiers.effort),
-      resistance: Math.round(attributes.resistance * characterClass.attributeModifiers.resistance),
-      intelligence: Math.round(attributes.intelligence * characterClass.attributeModifiers.intelligence),
-      accuracy: Math.round(attributes.accuracy * characterClass.attributeModifiers.accuracy),
-    };
+    const finalAttributes = applyClassModifiers(attributes, characterClass);
 
     // Set up resource based on class type
     const resourceSetup = characterClass.resourceType === 'mana' 

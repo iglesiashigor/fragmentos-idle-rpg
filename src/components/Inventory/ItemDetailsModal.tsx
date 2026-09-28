@@ -14,7 +14,7 @@ export function ItemDetailsModal({ item, onClose }: ItemDetailsModalProps) {
   const upgradeLevel = 'upgradeLevel' in item ? item.upgradeLevel || 0 : 0;
 
   return (
-    <div className="fixed inset-0 z-[95] flex items-center justify-center bg-stone-950/75 px-4 py-6">
+    <div className="game-modal fixed inset-0 z-[95] flex items-center justify-center bg-stone-950/75 px-4 py-6" role="dialog" aria-modal="true" aria-label={`Detalhes de ${item.name}`}>
       <section className={`w-full max-w-md rounded-lg border bg-white shadow-2xl ${rarity.border}`}>
         <div className={`flex items-start justify-between gap-4 rounded-t-lg border-b p-4 ${rarity.surface}`}>
           <div className="flex min-w-0 gap-3">

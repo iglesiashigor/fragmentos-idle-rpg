@@ -24,7 +24,7 @@ export function RandomEventModal({ reward, onClaim }: RandomEventModalProps) {
         : `Valor: ${itemReward?.price || 0} ouro`;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+    <div className="game-modal fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Evento misterioso">
       <div className="rpg-panel relative z-[101] w-full max-w-md rounded-lg p-6 shadow-2xl">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500 text-stone-950">

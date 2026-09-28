@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Sparkles, Swords, Zap } from 'lucide-react';
 import { Ability, Character, CombatTurnFeedback, Enemy, Spell } from '../types/game';
 import {
   calculateAbilityBase,
@@ -36,7 +37,12 @@ export function Combat({
   };
 
   return (
-    <div className="rounded-lg border border-red-200 bg-white p-6 shadow-sm">
+    <div className="rounded-xl border border-red-200 bg-white p-4 shadow-sm sm:p-6">
+      <div className="mb-5 border-b border-stone-200 pb-4">
+        <p className="text-xs font-black uppercase tracking-[0.16em] text-red-700">Encontro</p>
+        <h3 className="text-2xl font-black text-stone-950">Combate</h3>
+        <p className="text-sm text-stone-600">Escolha uma ação para avançar o turno.</p>
+      </div>
       <div className="mb-6 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <CombatantPanel name={player.name}>
           <Bar label="Vida" value={player.health} max={player.maxHealth} color="bg-red-600" />
@@ -70,8 +76,9 @@ export function Combat({
       <div className="space-y-4">
         <button
           onClick={onAttack}
-          className="w-full rounded-md bg-red-700 px-4 py-2 font-bold text-white transition-colors hover:bg-red-800"
+          className="flex min-h-14 w-full items-center justify-center gap-2 rounded-lg bg-red-700 px-4 py-3 font-bold text-white shadow-sm transition-colors hover:bg-red-800"
         >
+          <Swords className="h-5 w-5" aria-hidden="true" />
           Ataque Básico
           <span className="ml-2 text-red-100">~{basicDamage} dano</span>
         </button>
@@ -83,13 +90,13 @@ export function Combat({
                 key={`${spell.id}_${spell.level}`}
                 onClick={() => onCastSpell(spell)}
                 disabled={!hasResource(spell.manaCost, 'mana')}
-                className={`rounded-md px-4 py-2 transition-colors ${
+                className={`min-h-16 rounded-lg px-4 py-3 text-left transition-colors ${
                   hasResource(spell.manaCost, 'mana')
                     ? 'bg-sky-700 text-white hover:bg-sky-800'
                     : 'cursor-not-allowed bg-stone-300 text-stone-500'
                 }`}
               >
-                <div className="text-sm font-bold">{spell.name}</div>
+                <div className="flex items-center gap-2 text-sm font-bold"><Sparkles className="h-4 w-4" aria-hidden="true" />{spell.name}</div>
                 <div className="text-xs">
                   Dano: ~{calculateSpellBase(player, spell.damage)} | Mana:{' '}
                   {spell.manaCost}
@@ -110,13 +117,13 @@ export function Combat({
                   key={`${ability.id}_${ability.level}`}
                   onClick={() => onUseAbility(ability)}
                   disabled={!hasResource(ability.staminaCost, 'stamina')}
-                  className={`rounded-md px-4 py-2 transition-colors ${
+                  className={`min-h-16 rounded-lg px-4 py-3 text-left transition-colors ${
                     hasResource(ability.staminaCost, 'stamina')
                       ? 'bg-amber-600 text-white hover:bg-amber-700'
                       : 'cursor-not-allowed bg-stone-300 text-stone-500'
                   }`}
                 >
-                  <div className="text-sm font-bold">{ability.name}</div>
+                  <div className="flex items-center gap-2 text-sm font-bold"><Zap className="h-4 w-4" aria-hidden="true" />{ability.name}</div>
                   <div className="text-xs">
                     Dano: ~{calculateAbilityBase(player, ability.damage)} |
                     Estamina: {ability.staminaCost}
@@ -153,6 +160,8 @@ function CombatantPanel({
 function CombatFeedback({ feedback }: { feedback: CombatTurnFeedback }) {
   return (
     <div
+      role="status"
+      aria-live="polite"
       className={`mb-5 rounded-lg border p-3 ${
         feedback.defeatedPlayer
           ? 'border-red-300 bg-red-50'
@@ -204,9 +213,9 @@ function Bar({
       <div className="mb-1 text-sm text-stone-600">
         {label}: {value}/{max}
       </div>
-      <div className="h-4 w-full overflow-hidden rounded-full bg-stone-200">
+      <div className="h-3 w-full overflow-hidden rounded-full bg-stone-200" role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={max}>
         <div
-          className={`h-4 ${color}`}
+          className={`h-3 rounded-full ${color} transition-[width] duration-300`}
           style={{ width: `${Math.min(100, (value / max) * 100)}%` }}
         />
       </div>

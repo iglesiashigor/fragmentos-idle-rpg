@@ -1,4 +1,5 @@
 import { Bed } from 'lucide-react';
+import { REST_COST } from '../utils/economy';
 
 interface InnProps {
   gold: number;
@@ -6,8 +7,6 @@ interface InnProps {
   maxHealth: number;
   onRest: () => void;
 }
-
-const REST_COST = 50;
 
 export function Inn({ gold, currentHealth, maxHealth, onRest }: InnProps) {
   const canAffordRest = gold >= REST_COST;

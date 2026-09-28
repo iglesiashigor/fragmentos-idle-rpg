@@ -1,4 +1,5 @@
 import { Skull } from 'lucide-react';
+import { RESPAWN_COST } from '../../utils/economy';
 
 interface DeathModalProps {
   characterName: string;
@@ -10,7 +11,7 @@ interface DeathModalProps {
 
 export function DeathModal({ characterName, killedBy, gold, onRespawn, onCreateNew }: DeathModalProps) {
   return (
-    <div className="fixed inset-0 z-[100] bg-black/75 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="death-title">
+    <div className="game-modal fixed inset-0 z-[100] bg-black/75 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="death-title">
       <div className="relative z-[101] rpg-panel rounded-lg p-6 max-w-md w-full text-center">
         <div className="flex justify-center mb-4">
           <Skull className="w-16 h-16 text-red-700" aria-hidden="true" />
@@ -22,12 +23,12 @@ export function DeathModal({ characterName, killedBy, gold, onRespawn, onCreateN
         <div className="space-y-3">
           <button
             onClick={onRespawn}
-            disabled={gold < 100}
+            disabled={gold < RESPAWN_COST}
             className="rpg-button-primary w-full"
           >
-            Renascer na cidade (Custo: 100 Ouros)
+            Renascer na cidade (Custo: {RESPAWN_COST} Ouros)
           </button>
-          {gold < 100 && <p className="text-sm text-red-700">Você tem {gold} ouros. São necessários 100 para renascer.</p>}
+          {gold < RESPAWN_COST && <p className="text-sm text-red-700">Você tem {gold} ouros. São necessários {RESPAWN_COST} para renascer.</p>}
           <button
             onClick={onCreateNew}
             className="rpg-button-secondary w-full"

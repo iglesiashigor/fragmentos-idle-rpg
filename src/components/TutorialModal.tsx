@@ -17,7 +17,7 @@ export function TutorialModal({ character, onClose, onDismiss }: TutorialModalPr
   const progress = Math.round((summary.completed / summary.total) * 100);
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-stone-950/75 px-4 py-6">
+    <div className="game-modal fixed inset-0 z-[90] flex items-center justify-center bg-stone-950/75 px-4 py-6" role="dialog" aria-modal="true" aria-label="Tutorial guiado">
       <section className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-amber-200 bg-stone-50 shadow-2xl">
         <div className="border-b border-stone-200 bg-stone-950 px-5 py-4 text-white sm:px-6">
           <div className="flex gap-3">

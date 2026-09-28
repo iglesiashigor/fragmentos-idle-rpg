@@ -21,12 +21,13 @@ export function GameMap({
   onLocationSelect,
 }: GameMapProps) {
   return (
-    <div className="relative aspect-[16/9] min-h-[360px] w-full overflow-hidden rounded-lg border border-emerald-900/30 bg-emerald-950 shadow-inner">
+    <div className="space-y-3">
+    <div className="relative aspect-[16/9] min-h-[320px] w-full overflow-hidden rounded-xl border-4 border-[#d5c7a7] bg-emerald-950 shadow-inner">
       <picture>
         <source srcSet="/world-map.webp" type="image/webp" />
         <img
-          src="/world-map.png"
-          alt="Mapa do mundo"
+          src="/world-map.webp"
+          alt=""
           className="absolute inset-0 h-full w-full object-cover"
           draggable={false}
         />
@@ -40,7 +41,10 @@ export function GameMap({
         return (
           <button
             key={location.id}
-            className={`group absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 p-3 shadow-lg transition-transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-white/40 ${
+            type="button"
+            aria-label={`${location.name}${location.level ? `, nível ${location.level}` : ''}${markerState?.label ? `, ${markerState.label}` : ''}`}
+            aria-pressed={isSelected}
+            className={`group absolute z-10 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 shadow-lg transition-transform hover:scale-110 focus:scale-110 focus:outline-none focus:ring-4 focus:ring-amber-200 ${
               isSelected ? 'border-white ring-4 ring-white/45' : 'border-white/80'
             } ${getMarkerTone(location.type, markerState?.status)} ${
               isCoolingDown ? 'opacity-55 grayscale' : ''
@@ -60,7 +64,7 @@ export function GameMap({
             ) : (
               <Home className="h-6 w-6" />
             )}
-            <span className="pointer-events-none absolute left-1/2 top-full mt-2 hidden min-w-max -translate-x-1/2 rounded-md bg-stone-950/90 px-2 py-1 text-xs font-black text-white shadow-lg group-hover:block">
+            <span className="pointer-events-none absolute left-1/2 top-full mt-2 hidden min-w-max -translate-x-1/2 rounded-md bg-stone-950/95 px-3 py-2 text-xs font-black text-white shadow-lg group-hover:block group-focus:block">
               {location.name}
               {location.level ? ` Nv. ${location.level}` : ''}
               {markerState?.label ? ` - ${markerState.label}` : ''}
@@ -68,6 +72,27 @@ export function GameMap({
           </button>
         );
       })}
+    </div>
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" aria-label="Destinos do mapa">
+      {locations.map((location) => {
+        const isSelected = currentLocationId === location.id;
+        const state = markerStates[location.id];
+        return (
+          <button
+            key={location.id}
+            type="button"
+            onClick={() => onLocationSelect(location)}
+            aria-pressed={isSelected}
+            className={`min-h-14 rounded-lg border px-3 py-2 text-left transition-colors ${isSelected ? 'border-amber-600 bg-amber-100 text-stone-950 shadow-sm' : 'border-stone-300 bg-white text-stone-800 hover:border-amber-500 hover:bg-amber-50'}`}
+          >
+            <span className="block truncate text-sm font-bold">{location.name}</span>
+            <span className="block text-xs font-semibold text-stone-600">
+              {location.level ? `Nv. ${location.level}` : 'Destino'}{state?.label ? ` · ${state.label}` : ''}
+            </span>
+          </button>
+        );
+      })}
+    </div>
     </div>
   );
 }

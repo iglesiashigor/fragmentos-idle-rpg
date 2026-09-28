@@ -40,6 +40,7 @@ import {
   MAX_GUILD_LEVEL,
 } from '../data/guild';
 import { ItemDetailsModal } from './Inventory/ItemDetailsModal';
+import { getSellPrice } from '../utils/economy';
 
 interface TownProps {
   character: SavedCharacter;
@@ -497,7 +498,7 @@ function SellItemCard({
   const [quantity, setQuantity] = useState(1);
   const isEquipped = Boolean(item.equipped);
   const selectedQuantity = Math.min(item.quantity, quantity);
-  const sellPrice = Math.floor(item.price * 0.7) * selectedQuantity;
+  const sellPrice = getSellPrice(item.price, selectedQuantity);
 
   return (
     <div className={`rpg-item rounded-lg p-3 ${isEquipped ? 'opacity-70' : ''}`}>

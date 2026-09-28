@@ -60,8 +60,8 @@ export function LevelUpModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="relative z-[101] bg-white rounded-lg p-6 max-w-md w-full">
+    <div className="game-modal fixed inset-0 z-[100] flex items-center justify-center bg-stone-950/75 p-4" role="dialog" aria-modal="true" aria-label={`Evolução para nível ${level}`}>
+      <div className="rpg-panel relative z-[101] w-full max-w-md rounded-lg p-6">
         <div className="flex items-center gap-2 mb-6">
           {isEvenLevel ? (
             <Sparkles className="w-6 h-6 text-yellow-500" />

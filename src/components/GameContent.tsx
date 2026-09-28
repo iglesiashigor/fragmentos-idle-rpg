@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Hammer, ScrollText, Sparkles, Trophy } from 'lucide-react';
+import { CheckCircle2, Hammer, MapPinned, ScrollText, Sparkles, Trophy } from 'lucide-react';
 import { Character } from './Character';
 import { GameMap } from './GameMap';
 import { Town } from './Town';
@@ -22,6 +22,7 @@ import {
   Quest,
 } from '../types/game';
 import { CraftingRecipe } from '../data/recipes';
+import { REST_COST } from '../utils/economy';
 import { getDifficultyTone } from '../data/balance';
 import {
   EquipmentSlotId,
@@ -281,8 +282,8 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
   };
 
   const handleRest = () => {
-    if (gameState.character.gold < 20) {
-      setActionNotice({ title: 'Você precisa de 20 ouro para descansar.' });
+    if (gameState.character.gold < REST_COST) {
+      setActionNotice({ title: `Você precisa de ${REST_COST} ouro para descansar.` });
       return;
     }
     gameState.handleRest();
@@ -451,7 +452,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
           <ActionToast notice={actionNotice} />
         )}
 
-        <div className="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[440px_minmax(0,1fr)]">
+        <div className="grid items-start gap-6 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[440px_minmax(0,1fr)]">
           <div className="space-y-6">
             <Character character={gameState.character} />
             <CharacterTabs
@@ -466,19 +467,20 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
             />
           </div>
 
-          <div className="rpg-panel min-w-0 rounded-lg p-4 sm:p-6">
+          <div className="rpg-panel min-w-0 rounded-xl p-4 sm:p-6">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="text-2xl font-black text-stone-950">Mapa</h2>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-amber-800">Mundo de Fragmentos</p>
+                <h2 className="flex items-center gap-2 text-2xl font-black text-stone-950"><MapPinned className="h-6 w-6 text-amber-700" aria-hidden="true" />Mapa</h2>
                 <p className="text-sm font-semibold text-stone-500">
-                  Escolha um destino para continuar a aventura
+                  Escolha um marcador ou destino da lista para continuar a aventura.
                 </p>
               </div>
               <button
                 onClick={() => setShowTutorial(true)}
-                className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-black text-amber-800 transition-colors hover:bg-amber-100"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-black text-amber-800 transition-colors hover:bg-amber-100"
               >
-                Tutorial
+                <ScrollText className="h-4 w-4" aria-hidden="true" /> Tutorial
               </button>
             </div>
             <GameMap

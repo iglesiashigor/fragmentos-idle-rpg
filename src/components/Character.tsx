@@ -1,7 +1,9 @@
 import { Character as CharacterType } from '../types/game';
+import { ReactNode } from 'react';
 import { TITLE_BY_ID } from '../data/achievements';
 import { calculateRequiredExperience } from '../utils/experience';
 import { calculateCharacterStats } from '../utils/combatStats';
+import { Coins, Shield, Sparkles, Swords, Target } from 'lucide-react';
 
 interface CharacterProps {
   character: CharacterType;
@@ -19,7 +21,7 @@ export function Character({ character }: CharacterProps) {
     : null;
 
   return (
-    <div className="rpg-panel rounded-lg p-5">
+    <div className="rpg-panel rounded-xl p-5">
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-2xl font-black text-stone-950">
@@ -34,8 +36,8 @@ export function Character({ character }: CharacterProps) {
             Nível {character.level} {character.race.name} {character.class.name}
           </p>
         </div>
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 font-bold text-amber-800">
-          {character.gold} Ouro
+        <div className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-100 px-3 py-2 font-bold text-amber-900">
+          <Coins className="h-4 w-4" aria-hidden="true" /> {character.gold} Ouro
         </div>
       </div>
 
@@ -74,12 +76,13 @@ export function Character({ character }: CharacterProps) {
         />
 
         <div className="grid grid-cols-2 gap-2 pt-4 text-sm md:grid-cols-4">
-          <StatTile label="Ataque" value={Math.round(combatStats.attack)} />
-          <StatTile label="Magia" value={Math.round(combatStats.magicPower)} />
-          <StatTile label="Defesa" value={Math.round(combatStats.defense)} />
+          <StatTile label="Ataque" value={Math.round(combatStats.attack)} icon={<Swords className="h-4 w-4" />} />
+          <StatTile label="Magia" value={Math.round(combatStats.magicPower)} icon={<Sparkles className="h-4 w-4" />} />
+          <StatTile label="Defesa" value={Math.round(combatStats.defense)} icon={<Shield className="h-4 w-4" />} />
           <StatTile
             label="Crítico"
             value={`${Math.round(combatStats.criticalChance * 100)}%`}
+            icon={<Target className="h-4 w-4" />}
           />
         </div>
       </div>
@@ -112,18 +115,18 @@ function ResourceBar({
           {value}/{max}
         </span>
       </div>
-      <div className="h-4 w-full overflow-hidden rounded-full bg-stone-200">
-        <div className={`h-4 ${color}`} style={{ width: `${width}%` }} />
+      <div className="h-3 w-full overflow-hidden rounded-full bg-stone-200" role="progressbar" aria-label={label} aria-valuenow={value} aria-valuemin={0} aria-valuemax={max}>
+        <div className={`h-3 rounded-full ${color} transition-[width] duration-300`} style={{ width: `${width}%` }} />
       </div>
     </div>
   );
 }
 
-function StatTile({ label, value }: { label: string; value: number | string }) {
+function StatTile({ label, value, icon }: { label: string; value: number | string; icon: ReactNode }) {
   return (
-    <div className="rounded-md bg-stone-100 p-2">
-      <div className="text-stone-500">{label}</div>
-      <div className="font-bold text-stone-950">{value}</div>
+    <div className="rounded-lg border border-stone-200 bg-white/80 p-3">
+      <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-stone-500">{icon}{label}</div>
+      <div className="mt-1 text-lg font-black text-stone-950">{value}</div>
     </div>
   );
 }
