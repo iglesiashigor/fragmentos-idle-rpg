@@ -115,11 +115,7 @@ export function Town({
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-xl font-black text-stone-950">Mapa da cidade</h3>
-          <p className="text-sm font-semibold text-stone-600">Escolha um lugar no mapa para entrar.</p>
-        </div>
+      <div className="flex justify-end">
         <span className="inline-flex items-center gap-2 rounded-md border border-amber-300 bg-amber-100 px-3 py-2 font-black text-amber-900">
           <Coins className="h-4 w-4" aria-hidden="true" /> {gold} ouro
         </span>
