@@ -19,10 +19,11 @@ export function Character({ character }: CharacterProps) {
     : null;
 
   return (
-    <div className="rpg-panel rounded-lg p-5">
+    <div className="rpg-panel rounded-2xl p-5 sm:p-6">
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-2xl font-black text-stone-950">
+          <div className="mb-1 text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">Aventureiro</div>
+          <h2 className="text-2xl font-black text-stone-950 sm:text-3xl">
             {character.name}
           </h2>
           {activeTitle && (
@@ -34,7 +35,7 @@ export function Character({ character }: CharacterProps) {
             Nível {character.level} {character.race.name} {character.class.name}
           </p>
         </div>
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 font-bold text-amber-800">
+        <div className="self-start rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 font-black text-amber-900 shadow-sm">
           {character.gold} Ouro
         </div>
       </div>
@@ -112,8 +113,8 @@ function ResourceBar({
           {value}/{max}
         </span>
       </div>
-      <div className="h-4 w-full overflow-hidden rounded-full bg-stone-200">
-        <div className={`h-4 ${color}`} style={{ width: `${width}%` }} />
+      <div className="h-3 w-full overflow-hidden rounded-full bg-stone-200 shadow-inner">
+        <div className={`h-3 rounded-full ${color} transition-[width] duration-300`} style={{ width: `${width}%` }} />
       </div>
     </div>
   );
@@ -121,9 +122,9 @@ function ResourceBar({
 
 function StatTile({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-md bg-stone-100 p-2">
-      <div className="text-stone-500">{label}</div>
-      <div className="font-bold text-stone-950">{value}</div>
+    <div className="rounded-lg border border-stone-200 bg-white/80 p-2.5">
+      <div className="text-xs font-semibold uppercase tracking-wide text-stone-500">{label}</div>
+      <div className="text-lg font-black text-stone-950">{value}</div>
     </div>
   );
 }

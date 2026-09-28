@@ -14,6 +14,10 @@ import {
   ProfessionProgress,
   DailyTaskProgress,
   DailyTaskType,
+  HuntStrategy,
+  AutoCombatStrategy,
+  AutoCombatSettings,
+  ActiveIdleCombat,
 } from '../types/game';
 import { generateBoss, generateEnemy } from '../data/enemies';
 import {
@@ -88,11 +92,27 @@ import {
   advanceDailyTasks,
   normalizeDailyTasks,
 } from '../data/dailyTasks';
+import { getHuntArea } from '../data/huntAreas';
+import { simulateIdleHunt } from '../utils/idleHunt';
+import { DEFAULT_AUTO_COMBAT_SETTINGS, selectAutoCombatAction } from '../utils/autoCombat';
+import { simulateIdleCombat } from '../utils/idleCombat';
 
 const GATHERING_NODE_MAX_CHARGES = 5;
 const GATHERING_NODE_RESET_MS = 5 * 60 * 1000;
 const BOSS_LAIR_ENTRY_COST = 40;
 const BOSS_LAIR_RESET_MS = 10 * 60 * 1000;
+const ENEMY_REGION_RESET_MS = 3 * 60 * 1000;
+
+interface EnemyRegionState {
+  remaining: number;
+  total: number;
+  resetAt: number;
+}
+
+const createEnemyRegionState = (): EnemyRegionState => {
+  const total = 5 + Math.floor(Math.random() * 6);
+  return { remaining: total, total, resetAt: 0 };
+};
 
 export function useGameState(
   initialCharacter: SavedCharacter,
@@ -187,6 +207,20 @@ export function useGameState(
   const [currentLocation, setCurrentLocation] = useState<MapLocation | null>(null);
   const [enemy, setEnemy] = useState<Enemy | null>(null);
   const [mapLocations, setMapLocations] = useState(INITIAL_LOCATIONS);
+  const [enemyRegionStates, setEnemyRegionStates] = useState<
+    Record<string, EnemyRegionState>
+  >(() => {
+    const activity = initialCharacter.activeIdleCombat;
+    return activity
+      ? {
+          [activity.locationId]: {
+            remaining: activity.remainingEncounters,
+            total: activity.totalEncounters,
+            resetAt: 0,
+          },
+        }
+      : {};
+  });
   const [showRandomEvent, setShowRandomEvent] = useState(false);
   const [randomEventReward, setRandomEventReward] = useState<{
     type: 'spell' | 'item';
@@ -204,10 +238,58 @@ export function useGameState(
     finishingDamage?: number;
   } | null>(null);
   const [combatFeedback, setCombatFeedback] = useState<CombatTurnFeedback | null>(null);
-  const [showDeathModal, setShowDeathModal] = useState(initialCharacter.health <= 0);
+  const [showDeathModal, setShowDeathModal] = useState(false);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
   const [attributePoints, setAttributePoints] = useState(0);
   const hasSavedNormalizedCharacter = useRef(false);
+  const hasResolvedOfflineCombat = useRef(false);
+
+  useEffect(() => {
+    const replenishMap = () => {
+      setMapLocations((previous) => {
+        const locations = [...previous];
+        const enemyCount = locations.filter((location) => location.type === 'enemy').length;
+        const eventCount = locations.filter((location) => location.type === 'event').length;
+
+        for (let index = enemyCount; index < MAX_ENEMIES; index += 1) {
+          locations.push(generateRandomEnemyLocation(character.level));
+        }
+
+        if (eventCount < MAX_EVENTS && Math.random() < 0.3) {
+          let eventLocation: MapLocation | undefined;
+          for (let attempt = 0; attempt < 12 && !eventLocation; attempt += 1) {
+            const candidate = generateRandomLocation(character.level);
+            if (candidate.type === 'event') eventLocation = candidate;
+          }
+          if (eventLocation) locations.push(eventLocation);
+        }
+
+        return locations;
+      });
+    };
+
+    replenishMap();
+    const timer = window.setInterval(replenishMap, 2 * 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, [character.level]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      setEnemyRegionStates((previous) => {
+        let changed = false;
+        const next = { ...previous };
+        Object.entries(previous).forEach(([regionId, region]) => {
+          if (region.remaining <= 0 && region.resetAt <= now) {
+            next[regionId] = createEnemyRegionState();
+            changed = true;
+          }
+        });
+        return changed ? next : previous;
+      });
+    }, 15_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (hasSavedNormalizedCharacter.current) return;
@@ -231,6 +313,69 @@ export function useGameState(
     setCharacter(updatedCharacter);
     onCharacterUpdate(updatedCharacter);
   };
+
+  useEffect(() => {
+    if (hasResolvedOfflineCombat.current) return;
+    hasResolvedOfflineCombat.current = true;
+    const activity = character.activeIdleCombat;
+    if (!activity) return;
+
+    const report = simulateIdleCombat(character, activity);
+    if (report.kills <= 0) return;
+
+    const dailyProgress = getAdvancedDailyTasks('kill', report.kills);
+    const stats = character.stats || {
+      kills: 0,
+      bossesKilled: 0,
+      resourcesGathered: 0,
+      itemsCrafted: 0,
+      equipmentUpgrades: 0,
+    };
+    const now = Date.now();
+    const continuedActivity: ActiveIdleCombat | undefined =
+      report.defeated || report.remainingEncounters <= 0
+        ? undefined
+        : {
+            ...activity,
+            remainingEncounters: report.remainingEncounters,
+            lastProcessedAt: now,
+          };
+    const updatedCharacter = {
+      ...character,
+      gold: character.gold + report.gold,
+      experience: character.experience + report.experience,
+      health: report.defeated ? 0 : Math.max(1, character.health - report.healthLost),
+      stats: { ...stats, kills: stats.kills + report.kills },
+      dailyTasks: dailyProgress.tasks,
+      dailyTasksResetAt: dailyProgress.resetAt,
+      activeIdleCombat: continuedActivity,
+      lastIdleCombatReport: report,
+    };
+    const levelUpUpdates = getLevelUpUpdates(updatedCharacter, updatedCharacter.experience);
+
+    setEnemyRegionStates((previous) => ({
+      ...previous,
+      [activity.locationId]: {
+        remaining: report.remainingEncounters,
+        total: activity.totalEncounters,
+        resetAt:
+          report.remainingEncounters <= 0 ? now + ENEMY_REGION_RESET_MS : 0,
+      },
+    }));
+    setLastCombatRewards({
+      enemyName: `Caçada em ${activity.locationName}`,
+      gold: report.gold,
+      experience: report.experience,
+      loot: [],
+    });
+    if (report.defeated) {
+      setEnemy(generateEnemy(activity.level));
+      setShowDeathModal(true);
+    }
+    updateCharacter({ ...updatedCharacter, ...levelUpUpdates });
+    // The offline settlement is intentionally evaluated only from the loaded save.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getAdvancedDailyTasks = (
     type: DailyTaskType,
@@ -402,7 +547,33 @@ export function useGameState(
     const encounterLevel = location.level || getEncounterLevel(character.level);
 
     if (location.type === 'enemy') {
-      setEnemy(generateEnemy(encounterLevel));
+      const existingRegion = enemyRegionStates[location.id];
+      const region =
+        !existingRegion ||
+        (existingRegion.remaining <= 0 && existingRegion.resetAt <= Date.now())
+          ? createEnemyRegionState()
+          : existingRegion;
+
+      if (region !== existingRegion) {
+        setEnemyRegionStates((previous) => ({
+          ...previous,
+          [location.id]: region,
+        }));
+      }
+
+      const now = Date.now();
+      updateCharacter({
+        activeIdleCombat: {
+          locationId: location.id,
+          locationName: location.name,
+          level: encounterLevel,
+          remainingEncounters: region.remaining,
+          totalEncounters: region.total,
+          startedAt: now,
+          lastProcessedAt: now,
+        },
+      });
+      setEnemy(region.remaining > 0 ? generateEnemy(encounterLevel) : null);
     } else if (location.type === 'boss_lair') {
       setEnemy(null);
       setShowRandomEvent(false);
@@ -441,13 +612,24 @@ export function useGameState(
     }
   };
 
+  const handleLeaveLocation = () => {
+    if (currentLocation?.type === 'enemy' && character.activeIdleCombat) {
+      updateCharacter({ activeIdleCombat: undefined });
+    }
+    setCurrentLocation(null);
+    setEnemy(null);
+    setShowRandomEvent(false);
+    setRandomEventReward(null);
+    setCombatFeedback(null);
+  };
+
   const getEncounterLevel = (playerLevel: number) => {
     const range = getEncounterLevelRange(playerLevel);
     return Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
   };
 
   const handleAttack = () => {
-    if (!enemy) return;
+    if (!enemy || character.health <= 0 || showDeathModal) return;
 
     // Player attacks enemy
     const playerDamage = calculateBasicAttackDamage(character);
@@ -479,7 +661,7 @@ export function useGameState(
         defeatedPlayer: true,
       });
       setShowDeathModal(true);
-      updateCharacter({ health: 0 });
+      updateCharacter({ health: 0, activeIdleCombat: undefined });
       return;
     }
 
@@ -494,7 +676,7 @@ export function useGameState(
   };
 
   const handleCastSpell = (spell: Spell) => {
-    if (!enemy || character.mana === undefined) return;
+    if (!enemy || character.health <= 0 || showDeathModal || character.mana === undefined) return;
 
     // Check if player has enough mana
     if (character.mana < spell.manaCost) return;
@@ -529,7 +711,7 @@ export function useGameState(
         defeatedPlayer: true,
       });
       setShowDeathModal(true);
-      updateCharacter({ health: 0, mana: newMana });
+      updateCharacter({ health: 0, activeIdleCombat: undefined });
       return;
     }
 
@@ -547,7 +729,7 @@ export function useGameState(
   };
 
   const handleUseAbility = (ability: Ability) => {
-    if (!enemy || character.stamina === undefined) return;
+    if (!enemy || character.health <= 0 || showDeathModal || character.stamina === undefined) return;
 
     // Check if player has enough stamina
     if (character.stamina < ability.staminaCost) return;
@@ -582,7 +764,7 @@ export function useGameState(
         defeatedPlayer: true,
       });
       setShowDeathModal(true);
-      updateCharacter({ health: 0, stamina: newStamina });
+      updateCharacter({ health: 0, activeIdleCombat: undefined });
       return;
     }
 
@@ -599,6 +781,55 @@ export function useGameState(
     });
   };
 
+  const handleAutoCombatTurn = () => {
+    if (!enemy || character.health <= 0 || showDeathModal) return;
+    const action = selectAutoCombatAction(
+      character,
+      character.autoCombatSettings || DEFAULT_AUTO_COMBAT_SETTINGS
+    );
+
+    if (action.type === 'spell') return handleCastSpell(action.spell);
+    if (action.type === 'ability') return handleUseAbility(action.ability);
+    if (action.type === 'potion') return handleAutoPotion(action.potion);
+    handleAttack();
+  };
+
+  const handleAutoPotion = (potion: InventoryItem) => {
+    if (potion.type !== 'potion' || !potion.healing || character.health >= character.maxHealth) {
+      return;
+    }
+
+    const updatedInventory = character.inventory
+      .map((item) =>
+        item.instanceId === potion.instanceId
+          ? { ...item, quantity: item.quantity - 1 }
+          : item
+      )
+      .filter((item) => item.quantity > 0);
+
+    updateCharacter({
+      health: Math.min(character.maxHealth, character.health + potion.healing),
+      inventory: updatedInventory,
+    });
+    setCombatFeedback({
+      action: `${potion.name} automática`,
+      playerDamage: 0,
+      enemyDamage: 0,
+      isCritical: false,
+    });
+  };
+
+  const handleSetAutoCombatStrategy = (strategy: AutoCombatStrategy) => {
+    const currentSettings: AutoCombatSettings =
+      character.autoCombatSettings || DEFAULT_AUTO_COMBAT_SETTINGS;
+    updateCharacter({
+      autoCombatSettings: {
+        ...currentSettings,
+        strategy,
+      },
+    });
+  };
+
   const handleEnemyDefeat = (
     preRewardUpdates: Partial<SavedCharacter> = {},
     finishingBlow?: string,
@@ -606,41 +837,11 @@ export function useGameState(
   ) => {
     if (!enemy || !currentLocation) return;
 
-    // Update map locations
-    setMapLocations((prev) => {
-      const isFixedLocation =
-        currentLocation.type === 'boss_lair' ||
-        currentLocation.id.startsWith('gathering_');
-      const remainingLocations = isFixedLocation
-        ? prev
-        : prev.filter((loc) => loc.id !== currentLocation.id);
-      
-      const newEnemyCount = remainingLocations.filter(
-        (loc) => loc.type === 'enemy'
-      ).length;
-      
-      const newEventCount = remainingLocations.filter(
-        (loc) => loc.type === 'event'
-      ).length;
-
-      const newLocations = [...remainingLocations];
-
-      // Enemy replacement must always add an enemy. Events are optional extras.
-      if (newEnemyCount < MAX_ENEMIES) {
-        newLocations.push(generateRandomEnemyLocation(character.level));
-      }
-
-      if (newEventCount < MAX_EVENTS && Math.random() < 0.35) {
-        const newLocation = generateRandomLocation(character.level);
-        if (
-          newLocation.type === 'event'
-        ) {
-          newLocations.push(newLocation);
-        }
-      }
-
-      return newLocations;
-    });
+    if (currentLocation.type === 'event') {
+      setMapLocations((previous) =>
+        previous.filter((location) => location.id !== currentLocation.id)
+      );
+    }
 
     // Calculate rewards
     const baseGoldReward = enemy.isBoss
@@ -714,11 +915,6 @@ export function useGameState(
     };
     const levelUpUpdates = getLevelUpUpdates(updatedCharacter, newExp);
 
-    updateCharacter({
-      ...updates,
-      ...levelUpUpdates,
-    });
-
     setLastCombatRewards({
       enemyName: enemy.name,
       gold: goldReward,
@@ -733,8 +929,57 @@ export function useGameState(
       })),
     });
 
-    setEnemy(null);
-    setCurrentLocation(null);
+    if (currentLocation.type === 'enemy') {
+      const currentRegion =
+        enemyRegionStates[currentLocation.id] || createEnemyRegionState();
+      const remaining = Math.max(0, currentRegion.remaining - 1);
+      const resetAt =
+        remaining === 0 ? Date.now() + ENEMY_REGION_RESET_MS : currentRegion.resetAt;
+
+      setEnemyRegionStates((previous) => ({
+        ...previous,
+        [currentLocation.id]: {
+          ...currentRegion,
+          remaining,
+          resetAt,
+        },
+      }));
+
+      if (remaining > 0) {
+        updateCharacter({
+          ...updates,
+          ...levelUpUpdates,
+          activeIdleCombat: {
+            ...(character.activeIdleCombat || {
+              locationId: currentLocation.id,
+              locationName: currentLocation.name,
+              level: currentLocation.level || character.level,
+              totalEncounters: currentRegion.total,
+              startedAt: Date.now(),
+            }),
+            remainingEncounters: remaining,
+            totalEncounters: currentRegion.total,
+            lastProcessedAt: Date.now(),
+          },
+        });
+        setEnemy(generateEnemy(currentLocation.level || getEncounterLevel(character.level)));
+      } else {
+        updateCharacter({
+          ...updates,
+          ...levelUpUpdates,
+          activeIdleCombat: undefined,
+        });
+        setEnemy(null);
+        setCurrentLocation(null);
+      }
+    } else {
+      updateCharacter({
+        ...updates,
+        ...levelUpUpdates,
+      });
+      setEnemy(null);
+      setCurrentLocation(null);
+    }
   };
 
   const canEnterBossLair = () => {
@@ -811,15 +1056,8 @@ export function useGameState(
   };
 
   const handleSellItem = (item: InventoryItem, quantity = 1) => {
-    const inventoryItem = character.inventory.find((entry) =>
-      entry.instanceId && item.instanceId
-        ? entry.instanceId === item.instanceId
-        : entry.id === item.id
-    );
-    if (!inventoryItem || inventoryItem.equipped) return;
-
-    const sellQuantity = Math.max(1, Math.min(quantity, inventoryItem.quantity));
-    const sellPrice = Math.floor(inventoryItem.price * 0.7) * sellQuantity;
+    const sellQuantity = Math.max(1, Math.min(quantity, item.quantity));
+    const sellPrice = Math.floor(item.price * 0.7) * sellQuantity;
     const isSameInventoryItem = (
       first: InventoryItem,
       second: InventoryItem
@@ -1335,6 +1573,94 @@ export function useGameState(
     });
   };
 
+  const handleStartHunt = (areaId: string, strategy: HuntStrategy) => {
+    const now = Date.now();
+    updateCharacter({
+      activeHunt: {
+        areaId,
+        strategy,
+        startedAt: now,
+        lastClaimedAt: now,
+        autoPotionHealthPercent: 35,
+        autoSellCommon: false,
+      },
+    });
+  };
+
+  const handleClaimHunt = () => {
+    if (!character.activeHunt) return;
+
+    const now = Date.now();
+    const area = getHuntArea(character.activeHunt.areaId);
+    const summary = simulateIdleHunt(character, character.activeHunt, area, now);
+
+    if (summary.elapsedMs < 60000 || summary.kills <= 0) {
+      updateCharacter({
+        activeHunt: {
+          ...character.activeHunt,
+          lastClaimedAt: now,
+        },
+        lastHuntSummary: summary,
+      });
+      return;
+    }
+
+    const dailyProgress = advanceDailyTasks(
+      character.dailyTasks,
+      character.dailyTasksResetAt,
+      character.level,
+      'kill',
+      summary.kills
+    );
+    const baseStats = character.stats || {
+      kills: 0,
+      bossesKilled: 0,
+      resourcesGathered: 0,
+      itemsCrafted: 0,
+      equipmentUpgrades: 0,
+    };
+    const rewardedCharacter: SavedCharacter = {
+      ...character,
+      gold: character.gold + summary.gold,
+      experience: character.experience + summary.experience,
+      health: Math.max(1, character.health - summary.healthLost),
+      stats: {
+        ...baseStats,
+        kills: baseStats.kills + summary.kills,
+      },
+      dailyTasks: dailyProgress.tasks,
+      dailyTasksResetAt: dailyProgress.resetAt,
+      activeHunt: summary.defeated
+        ? undefined
+        : {
+            ...character.activeHunt,
+            lastClaimedAt: now,
+          },
+      lastHuntSummary: summary,
+    };
+    const levelUpUpdates = getLevelUpUpdates(
+      rewardedCharacter,
+      rewardedCharacter.experience
+    );
+
+    updateCharacter({
+      ...rewardedCharacter,
+      ...levelUpUpdates,
+    });
+  };
+
+  const handleStopHunt = () => {
+    if (!character.activeHunt) return;
+
+    const area = getHuntArea(character.activeHunt.areaId);
+    const summary = simulateIdleHunt(character, character.activeHunt, area);
+
+    updateCharacter({
+      activeHunt: undefined,
+      lastHuntSummary: summary,
+    });
+  };
+
   const getGatheringProfessionUpdate = (
     profession: ProfessionProgress | undefined,
     resourcePool?: string
@@ -1399,6 +1725,7 @@ export function useGameState(
     currentLocation,
     enemy,
     mapLocations,
+    enemyRegionStates,
     showRandomEvent,
     randomEventReward,
     showDeathModal,
@@ -1417,8 +1744,11 @@ export function useGameState(
     canEnterBossLair: canEnterBossLair(),
     updateCharacter,
     handleLocationSelect,
+    handleLeaveLocation,
     handleRest,
     handleAttack,
+    handleAutoCombatTurn,
+    handleSetAutoCombatStrategy,
     handleCastSpell,
     handleUseAbility,
     handleEnterBossLair,
@@ -1434,6 +1764,9 @@ export function useGameState(
     handleFoundGuild,
     handleUpgradeGuild,
     handleClaimDailyTask,
+    handleStartHunt,
+    handleClaimHunt,
+    handleStopHunt,
     handleSetActiveTitle,
     handleAttributeIncrease,
     handleSpellSelect,
