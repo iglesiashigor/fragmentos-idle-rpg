@@ -73,8 +73,6 @@ export function Combat({
         </CombatantPanel>
       </div>
 
-      {feedback && <CombatFeedback feedback={feedback} />}
-
       <div className="space-y-4">
         <button
           onClick={onAttack}
@@ -140,6 +138,8 @@ export function Combat({
             </div>
           )}
       </div>
+
+      {feedback && <CombatFeedback feedback={feedback} />}
     </div>
   );
 }
@@ -164,7 +164,7 @@ function CombatFeedback({ feedback }: { feedback: CombatTurnFeedback }) {
     <div
       role="status"
       aria-live="polite"
-      className={`mb-5 rounded-lg border p-3 ${
+      className={`mt-5 max-h-48 overflow-y-auto rounded-lg border p-3 ${
         feedback.defeatedPlayer
           ? 'border-red-300 bg-red-50'
           : feedback.defeatedEnemy
