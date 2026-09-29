@@ -14,6 +14,7 @@ const rules = {
   ...await server.ssrLoadModule('/src/data/recipes.ts'),
   ...await server.ssrLoadModule('/src/utils/randomEvents.ts'),
   ...await server.ssrLoadModule('/src/utils/pendingSave.ts'),
+  ...await server.ssrLoadModule('/src/utils/techniques.ts'),
 };
 await server.close();
 
@@ -120,5 +121,14 @@ assert.equal(rules.getPendingSave('player-1', character.id).level, 3);
 savedEntries.set(rules.pendingSaveKey('player-1', character.id), '{broken');
 assert.equal(rules.getPendingSave('player-1', character.id), null);
 assert.equal(savedEntries.size, 0);
+
+const oldDescription = 'Potencializa sua arma (Nível 2) (Nível 3) (Nível 4)';
+assert.equal(rules.cleanTechniqueDescription(oldDescription), 'Potencializa sua arma');
+assert.equal(rules.cleanTechniqueDescription('Fogo'), 'Fogo');
+assert.deepEqual(rules.upgradeTechnique({ ...spell, damage: 30, level: 4, description: oldDescription }),
+  { ...spell, damage: 36, level: 5, description: 'Potencializa sua arma' });
+const ability = { name: 'Lâmina', damage: 30, staminaCost: 20, level: 4, description: oldDescription };
+assert.deepEqual(rules.upgradeTechnique(ability),
+  { ...ability, damage: 36, level: 5, description: 'Potencializa sua arma' });
 
 console.log('Game rules check passed');

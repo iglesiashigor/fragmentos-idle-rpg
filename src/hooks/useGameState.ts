@@ -82,6 +82,7 @@ import {
   GATHERING_NODE_RESET_MS,
   getGatheringNodeState,
 } from '../utils/gathering';
+import { cleanTechniqueDescription, upgradeTechnique } from '../utils/techniques';
 
 const BOSS_LAIR_RESET_MS = 10 * 60 * 1000;
 
@@ -103,6 +104,14 @@ export function useGameState(
     );
     const normalizedCharacter: SavedCharacter = {
       ...savedCharacter,
+      spells: savedCharacter.spells.map((spell) => ({
+        ...spell,
+        description: cleanTechniqueDescription(spell.description),
+      })),
+      abilities: savedCharacter.abilities.map((ability) => ({
+        ...ability,
+        description: cleanTechniqueDescription(ability.description),
+      })),
       equipment: {
         weapon: savedCharacter.equipment.weapon || null,
         armor: savedCharacter.equipment.armor || null,
@@ -206,7 +215,9 @@ export function useGameState(
     if (
       character.maxHealth !== initialCharacter.maxHealth ||
       character.maxMana !== initialCharacter.maxMana ||
-      character.maxStamina !== initialCharacter.maxStamina
+      character.maxStamina !== initialCharacter.maxStamina ||
+      character.spells.some((spell, index) => spell.description !== initialCharacter.spells[index]?.description) ||
+      character.abilities.some((ability, index) => ability.description !== initialCharacter.abilities[index]?.description)
     ) {
       hasSavedNormalizedCharacter.current = true;
       onCharacterUpdate(character);
@@ -250,20 +261,7 @@ export function useGameState(
     
     if (existingSpell) {
       // Level up existing spell
-      const updatedSpells = character.spells.map(s => {
-        if (s.id === spell.id) {
-          const newLevel = s.level + 1;
-          const damageIncrease = Math.floor(s.damage * 0.2); // 20% damage increase per level
-          
-          return {
-            ...s,
-            level: newLevel,
-            damage: s.damage + damageIncrease,
-            description: `${s.description} (Nível ${newLevel})`,
-          };
-        }
-        return s;
-      });
+      const updatedSpells = character.spells.map(s => s.id === spell.id ? upgradeTechnique(s) : s);
       
       updateCharacter({ spells: updatedSpells });
     } else {
@@ -282,20 +280,7 @@ export function useGameState(
     
     if (existingAbility) {
       // Level up existing ability
-      const updatedAbilities = character.abilities.map(a => {
-        if (a.id === ability.id) {
-          const newLevel = a.level + 1;
-          const damageIncrease = Math.floor(a.damage * 0.2); // 20% damage increase per level
-          
-          return {
-            ...a,
-            level: newLevel,
-            damage: a.damage + damageIncrease,
-            description: `${a.description} (Nível ${newLevel})`,
-          };
-        }
-        return a;
-      });
+      const updatedAbilities = character.abilities.map(a => a.id === ability.id ? upgradeTechnique(a) : a);
       
       updateCharacter({ abilities: updatedAbilities });
     } else {

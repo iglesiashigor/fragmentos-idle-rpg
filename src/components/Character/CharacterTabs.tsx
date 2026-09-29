@@ -168,11 +168,11 @@ function SkillGroup({
             return (
               <div key={`${item.id}_${item.level}`} className="rounded-md border border-stone-200 bg-white p-3">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <h4 className="font-black text-stone-950">{item.name}</h4>
                     <p className="mt-1 text-xs font-semibold text-stone-500">{item.description}</p>
                   </div>
-                  <span className="rounded-md bg-stone-950 px-2 py-1 text-xs font-black text-white">
+                  <span className="shrink-0 whitespace-nowrap rounded-md bg-stone-950 px-2 py-1 text-xs font-black text-white">
                     Nv. {item.level}
                   </span>
                 </div>
