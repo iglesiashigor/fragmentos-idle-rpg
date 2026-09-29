@@ -5,7 +5,7 @@ import {
   MAX_PROFESSION_LEVEL,
   PROFESSIONS,
 } from '../data/professions';
-import { RESOURCE_BY_ID, RESOURCE_POOLS } from '../data/resources';
+import { RESOURCE_BY_ID, RESOURCE_POOLS, RESOURCE_UNLOCK_LEVELS } from '../data/resources';
 import { GatheringNodeState, MapLocation, SavedCharacter } from '../types/game';
 import { getGatheringUpgradeCost, MAX_GATHERING_NODE_LEVEL } from '../utils/gathering';
 
@@ -76,8 +76,8 @@ export function Gathering({
           <h3 className="text-xl font-black text-stone-950">{location.name}</h3>
           <p className="text-sm font-semibold text-stone-600">
             Recursos:{' '}
-            {pool?.items
-              .map((itemId) => RESOURCE_BY_ID[itemId]?.name || itemId)
+            {pool && [...new Set(pool.items)]
+              .map((itemId) => `${RESOURCE_BY_ID[itemId]?.name || itemId}${(RESOURCE_UNLOCK_LEVELS[itemId] || 1) > character.level ? ` (Nv. ${RESOURCE_UNLOCK_LEVELS[itemId]})` : ''}`)
               .join(', ') || 'desconhecidos'}
           </p>
         </div>

@@ -211,6 +211,15 @@ export const CRAFTED_ITEMS: Item[] = [
     description: 'Manoplas restauradas com fragmentos antigos e minério refinado.',
     rarity: 'epic',
   },
+  { id: 'silver_spear', name: 'Lança de Prata', type: 'weapon', price: 240, power: 21, rarity: 'rare', description: 'Lança equilibrada com ponta de prata.' },
+  { id: 'forest_blade', name: 'Lâmina do Bosque', type: 'weapon', price: 300, power: 27, rarity: 'epic', description: 'Lâmina leve envolta em resina ancestral.' },
+  { id: 'crystal_scepter', name: 'Cetro de Cristal', type: 'weapon', price: 330, power: 30, rarity: 'epic', description: 'Canaliza energia através de um cristal bruto.' },
+  { id: 'thorn_armor', name: 'Armadura de Espinhos', type: 'armor', price: 220, power: 19, rarity: 'rare', description: 'Couro reforçado com fibras de espinho.' },
+  { id: 'runic_robe', name: 'Manto Rúnico', type: 'armor', price: 320, power: 27, rarity: 'epic', description: 'Manto gravado com pó rúnico e fragmentos antigos.' },
+  { id: 'silver_helm', name: 'Elmo de Prata', type: 'helmet', price: 210, power: 16, rarity: 'rare', description: 'Elmo polido que protege sem pesar.' },
+  { id: 'grove_gloves', name: 'Luvas da Clareira', type: 'gloves', price: 185, power: 14, rarity: 'rare', description: 'Luvas leves de fibra espinhosa.' },
+  { id: 'relic_leggings', name: 'Grevas da Relíquia', type: 'pants', price: 310, power: 24, rarity: 'epic', description: 'Grevas restauradas com um núcleo antigo.' },
+  { id: 'pathfinder_boots', name: 'Botas do Desbravador', type: 'boots', price: 195, power: 15, rarity: 'rare', description: 'Botas firmes para trilhas difíceis.' },
 ];
 
 export const POTIONS: Item[] = [
@@ -241,6 +250,9 @@ export const POTIONS: Item[] = [
     staminaRestore: 45,
     description: 'Recupera 45 pontos de estamina',
   },
+  { id: 'greater_health_potion', name: 'Poção de Cura Maior', type: 'potion', price: 70, power: 110, healing: 110, description: 'Recupera 110 pontos de vida.' },
+  { id: 'greater_mana_potion', name: 'Poção de Mana Maior', type: 'potion', price: 70, power: 110, manaRestore: 110, description: 'Recupera 110 pontos de mana.' },
+  { id: 'greater_stamina_potion', name: 'Poção de Estamina Maior', type: 'potion', price: 70, power: 110, staminaRestore: 110, description: 'Recupera 110 pontos de estamina.' },
 ];
 
 export const LOOT: Item[] = [

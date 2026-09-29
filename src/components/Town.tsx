@@ -26,6 +26,7 @@ import {
   hasMaterials,
   isEquipmentItem,
   MAX_INVENTORY_SLOTS,
+  removeMaterialsFromInventory,
 } from '../utils/inventory';
 import {
   getAvailableQuests,
@@ -589,7 +590,7 @@ function QuestPanel({
 
   return (
     <div className="grid gap-3 xl:grid-cols-2">
-      <section>
+      <section className="max-h-[70vh] overflow-y-auto pr-1">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-lg font-bold text-stone-950">Missões ativas</h3>
           {readyCount > 0 && (
@@ -604,6 +605,9 @@ function QuestPanel({
           <div className="space-y-2">
             {activeQuests.map((quest) => {
               const ready = isQuestReadyToClaim(quest);
+              const hasRewardSpace = (quest.rewards.items || []).every((item) =>
+                canAddItemToInventory(item, character.inventory)
+              );
               return (
                 <div
                   key={quest.id}
@@ -624,10 +628,10 @@ function QuestPanel({
                   <RewardText quest={quest} />
                   <button
                     onClick={() => onClaimQuestReward(quest)}
-                    disabled={!ready}
+                    disabled={!ready || !hasRewardSpace}
                     className="rpg-button-primary mt-3 w-full disabled:bg-stone-300 disabled:text-stone-500"
                   >
-                    {ready ? 'Receber recompensa' : 'Em andamento'}
+                    {ready ? (hasRewardSpace ? 'Receber recompensa' : 'Libere espaço na bolsa') : 'Em andamento'}
                   </button>
                 </div>
               );
@@ -636,7 +640,7 @@ function QuestPanel({
         )}
       </section>
 
-      <section>
+      <section className="max-h-[70vh] overflow-y-auto pr-1">
         <h3 className="mb-3 text-lg font-bold text-stone-950">Novas missões</h3>
         {availableQuests.length === 0 ? (
           <EmptyState text="Nenhuma missão nova disponível agora." />
@@ -683,7 +687,7 @@ function CraftPanel({
   const canCraftRecipe = (recipe: CraftingRecipe) =>
     gold >= recipe.goldCost &&
     hasMaterials(inventory, recipe.materials) &&
-    canAddItemToInventory(recipe.result, inventory);
+    canAddItemToInventory(recipe.result, removeMaterialsFromInventory(inventory, recipe.materials));
   const visibleRecipes = CRAFTING_RECIPES
     .filter((recipe) => !showOnlyAvailable || canCraftRecipe(recipe))
     .sort((first, second) => Number(canCraftRecipe(second)) - Number(canCraftRecipe(first)));
@@ -698,7 +702,7 @@ function CraftPanel({
     .sort((first, second) => Number(canUpgradeItem(second)) - Number(canUpgradeItem(first)));
 
   return (
-    <div>
+    <div className="max-h-[70vh] overflow-y-auto pr-1">
       <div className="sticky top-0 z-10 mb-4 flex flex-wrap gap-2 border-b border-stone-200 bg-white pb-3">
         <TownTab
           label="Produzir"
@@ -738,7 +742,7 @@ function CraftPanel({
                 <ActionPreview
                   items={[
                     `Gasta ${recipe.goldCost} ouro`,
-                    canAddItemToInventory(recipe.result, inventory)
+                    canAddItemToInventory(recipe.result, removeMaterialsFromInventory(inventory, recipe.materials))
                       ? 'Mochila comporta o item'
                       : 'Mochila cheia',
                     `Cria ${recipe.quantity}x ${recipe.result.name}`,

@@ -153,6 +153,18 @@ export const CRAFTING_RECIPES: CraftingRecipe[] = [
       { itemId: 'couro', quantity: 4 },
     ],
   },
+  { id: 'craft_silver_spear', name: 'Lança de Prata', description: 'Forja uma lança precisa com madeira resistente.', result: CRAFTED_ITEMS[7], quantity: 1, goldCost: 100, materials: [{ itemId: 'silver_ore', quantity: 4 }, { itemId: 'hardwood', quantity: 4 }, { itemId: 'forest_resin', quantity: 2 }] },
+  { id: 'craft_forest_blade', name: 'Lâmina do Bosque', description: 'Une metal e resina em uma arma ágil.', result: CRAFTED_ITEMS[8], quantity: 1, goldCost: 175, materials: [{ itemId: 'silver_ore', quantity: 6 }, { itemId: 'hardwood', quantity: 6 }, { itemId: 'forest_resin', quantity: 5 }] },
+  { id: 'craft_crystal_scepter', name: 'Cetro de Cristal', description: 'Canaliza cristais e inscrições antigas.', result: CRAFTED_ITEMS[9], quantity: 1, goldCost: 200, materials: [{ itemId: 'crystal_shard', quantity: 7 }, { itemId: 'rune_dust', quantity: 5 }, { itemId: 'hardwood', quantity: 4 }] },
+  { id: 'craft_thorn_armor', name: 'Armadura de Espinhos', description: 'Costura couro com fibras resistentes.', result: CRAFTED_ITEMS[10], quantity: 1, goldCost: 110, materials: [{ itemId: 'couro', quantity: 6 }, { itemId: 'thorn_fiber', quantity: 6 }, { itemId: 'forest_resin', quantity: 3 }] },
+  { id: 'craft_runic_robe', name: 'Manto Rúnico', description: 'Inscreve proteção arcana em tecido antigo.', result: CRAFTED_ITEMS[11], quantity: 1, goldCost: 195, materials: [{ itemId: 'thorn_fiber', quantity: 8 }, { itemId: 'rune_dust', quantity: 6 }, { itemId: 'ancient_fragment', quantity: 5 }] },
+  { id: 'craft_silver_helm', name: 'Elmo de Prata', description: 'Molda um elmo resistente e leve.', result: CRAFTED_ITEMS[12], quantity: 1, goldCost: 105, materials: [{ itemId: 'silver_ore', quantity: 5 }, { itemId: 'couro', quantity: 3 }, { itemId: 'stone', quantity: 3 }] },
+  { id: 'craft_grove_gloves', name: 'Luvas da Clareira', description: 'Trança fibras e couro em luvas ágeis.', result: CRAFTED_ITEMS[13], quantity: 1, goldCost: 90, materials: [{ itemId: 'thorn_fiber', quantity: 6 }, { itemId: 'couro', quantity: 4 }, { itemId: 'forest_resin', quantity: 2 }] },
+  { id: 'craft_relic_leggings', name: 'Grevas da Relíquia', description: 'Recupera grevas com um núcleo intacto.', result: CRAFTED_ITEMS[14], quantity: 1, goldCost: 190, materials: [{ itemId: 'relic_core', quantity: 3 }, { itemId: 'silver_ore', quantity: 6 }, { itemId: 'rune_dust', quantity: 4 }] },
+  { id: 'craft_pathfinder_boots', name: 'Botas do Desbravador', description: 'Prepara botas para trilhas perigosas.', result: CRAFTED_ITEMS[15], quantity: 1, goldCost: 95, materials: [{ itemId: 'couro', quantity: 5 }, { itemId: 'hardwood', quantity: 3 }, { itemId: 'thorn_fiber', quantity: 4 }] },
+  { id: 'craft_greater_health_potion', name: 'Poção de Cura Maior', description: 'Prepara uma dose forte com flores lunares.', result: POTIONS[3], quantity: 1, goldCost: 20, materials: [{ itemId: 'herb', quantity: 3 }, { itemId: 'moonflower', quantity: 2 }] },
+  { id: 'craft_greater_mana_potion', name: 'Poção de Mana Maior', description: 'Infunde cristais em uma essência lunar.', result: POTIONS[4], quantity: 1, goldCost: 20, materials: [{ itemId: 'moonflower', quantity: 2 }, { itemId: 'crystal_shard', quantity: 1 }] },
+  { id: 'craft_greater_stamina_potion', name: 'Poção de Estamina Maior', description: 'Mistura flores e fibras revigorantes.', result: POTIONS[5], quantity: 1, goldCost: 20, materials: [{ itemId: 'moonflower', quantity: 2 }, { itemId: 'thorn_fiber', quantity: 2 }] },
 ];
 
 export const MAX_EQUIPMENT_UPGRADE = 10;
@@ -182,7 +194,7 @@ export function getEquipmentUpgradeCost(item: InventoryItem): {
       materials: [
         { itemId: 'iron_ore', quantity: oreCost },
         { itemId: 'wood', quantity: nextLevel },
-        ...(rareMaterialCost ? [{ itemId: 'stone', quantity: rareMaterialCost }] : []),
+        ...(rareMaterialCost ? [{ itemId: 'crystal_shard', quantity: rareMaterialCost }] : []),
       ],
     };
   }
@@ -192,7 +204,7 @@ export function getEquipmentUpgradeCost(item: InventoryItem): {
       materials: [
         { itemId: 'iron_ore', quantity: oreCost },
         { itemId: 'couro', quantity: nextLevel },
-        ...(rareMaterialCost ? [{ itemId: 'fiber', quantity: rareMaterialCost }] : []),
+        ...(rareMaterialCost ? [{ itemId: 'thorn_fiber', quantity: rareMaterialCost }] : []),
       ],
   };
 }

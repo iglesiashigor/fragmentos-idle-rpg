@@ -1,6 +1,6 @@
 import { Item, Quest, Spell } from '../types/game';
 import { CRAFTED_ITEMS } from '../data/items';
-import { RESOURCE_BY_ID, RESOURCE_POOLS } from '../data/resources';
+import { RESOURCE_BY_ID, RESOURCE_POOLS, RESOURCE_UNLOCK_LEVELS } from '../data/resources';
 
 export const RARE_SPELLS: Spell[] = [
   {
@@ -67,25 +67,36 @@ export function generateRandomEvent(
   }
 
   if (roll < 0.4) {
+    const isCaravan = Math.random() < 0.5;
     return {
       type: 'gold',
-      title: 'Tesouro Perdido',
-      description: 'Você encontrou uma bolsa antiga escondida entre marcas de viagem.',
+      title: isCaravan ? 'Caravana Resgatada' : 'Tesouro Perdido',
+      description: isCaravan
+        ? 'Mercadores agradecem por abrir caminho e oferecem algumas moedas.'
+        : 'Você encontrou uma bolsa antiga escondida entre marcas de viagem.',
       gold: 25 + level * 8,
     };
   }
 
   if (roll < 0.55) {
+    const isSpring = Math.random() < 0.5;
     return {
       type: 'blessing',
-      title: 'Santuário Esquecido',
-      description: 'Uma energia tranquila restaura parte das suas forças.',
+      title: isSpring ? 'Fonte da Clareira' : 'Santuário Esquecido',
+      description: isSpring
+        ? 'A água brilhante devolve suas forças para a jornada.'
+        : 'Uma energia tranquila restaura parte das suas forças.',
       healthRestore: 30 + level * 12,
       resourceRestore: 20 + level * 8,
     };
   }
 
-  if (allowSpells && roll < 0.72) {
+  if (roll < 0.65) {
+    const pools = ['forest', 'grove', 'quarry', 'ruins'];
+    return generateGatheringEvent(level, pools[Math.floor(Math.random() * pools.length)]);
+  }
+
+  if (allowSpells && roll < 0.78) {
     const spell = RARE_SPELLS[Math.floor(Math.random() * RARE_SPELLS.length)];
     return {
       type: 'spell',
@@ -112,7 +123,7 @@ export function generateRandomEvent(
 function generateMysteryQuest(level: number): QuestReward {
   const questRoll = Math.random();
 
-  if (questRoll < 0.5) {
+  if (questRoll < 0.4) {
     const amount = 2 + Math.ceil(level / 4);
     return {
       type: 'quest',
@@ -136,6 +147,23 @@ function generateMysteryQuest(level: number): QuestReward {
           gold: 55 + level * 12,
           experience: 60 + level * 18,
         },
+        status: 'available',
+      },
+    };
+  }
+
+  if (questRoll >= 0.75) {
+    const amount = 2 + Math.ceil(level / 5);
+    return {
+      type: 'quest', title: 'Cartas do Herbalista',
+      description: 'Um bilhete pede flores raras para tratar os doentes da cidade.',
+      quest: {
+        id: `mystery_moonflower_${Date.now()}`,
+        name: 'Flores para a Cidade',
+        description: 'Colete flores lunares na clareira.',
+        type: 'collect', requirements: { level: 1 },
+        objectives: [{ target: 'moonflower', label: 'Flores lunares', amount, current: 0 }],
+        rewards: { gold: 65 + level * 14, experience: 70 + level * 17 },
         status: 'available',
       },
     };
@@ -171,10 +199,12 @@ function generateMysteryQuest(level: number): QuestReward {
 
 export function generateGatheringEvent(
   level: number,
-  resourcePool = 'forest'
+  resourcePool = 'forest',
+  unlockLevel = level
 ): GatheringReward {
   const pool = RESOURCE_POOLS[resourcePool] || RESOURCE_POOLS.forest;
-  const itemId = pool.items[Math.floor(Math.random() * pool.items.length)];
+  const availableItems = pool.items.filter((id) => (RESOURCE_UNLOCK_LEVELS[id] || 1) <= unlockLevel);
+  const itemId = availableItems[Math.floor(Math.random() * availableItems.length)];
   const item = RESOURCE_BY_ID[itemId];
   const rewards = item
     ? [

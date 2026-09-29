@@ -15,6 +15,9 @@ const rules = {
   ...await server.ssrLoadModule('/src/utils/randomEvents.ts'),
   ...await server.ssrLoadModule('/src/utils/pendingSave.ts'),
   ...await server.ssrLoadModule('/src/utils/techniques.ts'),
+  ...await server.ssrLoadModule('/src/data/resources.ts'),
+  ...await server.ssrLoadModule('/src/data/items.ts'),
+  ...await server.ssrLoadModule('/src/data/quests.ts'),
 };
 await server.close();
 
@@ -111,6 +114,29 @@ Math.random = random;
 assert.equal(collected.inventory[0].quantity, 2);
 assert.equal(collected.professions.woodcutter.experience, 25);
 assert.equal(rules.collectResources(character, [{ item: resource, quantity: 2 }], 'forest', 2).inventory[0].quantity, 4);
+const obtainableItems = new Set([
+  ...rules.RESOURCES.map((item) => item.id),
+  ...rules.LOOT.map((item) => item.id),
+]);
+assert.equal(new Set(rules.CRAFTING_RECIPES.map((recipe) => recipe.id)).size, rules.CRAFTING_RECIPES.length);
+assert.ok(rules.CRAFTING_RECIPES.every((recipe) => recipe.name === recipe.result.name));
+assert.ok(rules.CRAFTING_RECIPES.every((recipe) =>
+  recipe.materials.every((material) => obtainableItems.has(material.itemId))));
+const questIds = new Set(rules.QUESTS.map((quest) => quest.id));
+assert.equal(questIds.size, rules.QUESTS.length);
+assert.ok(rules.QUESTS.every((quest) =>
+  (quest.requirements.previousQuests || []).every((id) => questIds.has(id))));
+assert.ok(rules.QUESTS.every((quest) =>
+  quest.type !== 'collect' || quest.objectives.every((objective) => obtainableItems.has(objective.target))));
+assert.ok(Object.values(rules.RESOURCE_POOLS).every((pool) =>
+  pool.items.every((itemId) => rules.RESOURCE_BY_ID[itemId])));
+Math.random = () => 0.99;
+assert.equal(rules.generateGatheringEvent(1, 'ruins', 1).rewards[0].item.id, 'ancient_fragment');
+assert.equal(rules.generateGatheringEvent(3, 'ruins', 6).rewards[0].item.id, 'relic_core');
+assert.equal(rules.generateEnemy(1).name, 'Bandido');
+assert.equal(rules.generateEnemy(6).name, 'Lobo Lunar');
+assert.equal(rules.generateEnemy(6).abilities[0].name, 'Salto Lunar');
+Math.random = random;
 
 const savedEntries = new Map();
 globalThis.localStorage = {

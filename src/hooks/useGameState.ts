@@ -737,7 +737,8 @@ export function useGameState(
 
     const gatheringReward = generateGatheringEvent(
       Math.max(currentLocation.level || 1, Math.ceil(character.level / 4)),
-      currentLocation.resourcePool
+      currentLocation.resourcePool,
+      character.level
     );
     const bonus = currentLocation.id.startsWith('gathering_') ? (nodeState.level || 1) - 1 : 0;
     const collected = collectResources(character, gatheringReward.rewards, currentLocation.resourcePool, bonus);
@@ -808,18 +809,15 @@ export function useGameState(
 
   const handleClaimQuestReward = (quest: Quest) => {
     if (!isQuestReadyToClaim(quest)) return;
+    let rewardInventory = [...character.inventory];
+    for (const item of quest.rewards.items || []) {
+      if (!canAddItemToInventory(item, rewardInventory)) return;
+      rewardInventory = addItemToInventory(item, rewardInventory);
+    }
 
     const remainingQuests = (character.quests || []).filter(
       (activeQuest) => activeQuest.id !== quest.id
     );
-    const rewardInventory = [...character.inventory];
-
-    (quest.rewards.items || []).forEach((item) => {
-      if (canAddItemToInventory(item, rewardInventory)) {
-        const updatedInventory = addItemToInventory(item, rewardInventory);
-        rewardInventory.splice(0, rewardInventory.length, ...updatedInventory);
-      }
-    });
 
     const rewardedCharacter = {
       ...character,
@@ -847,8 +845,7 @@ export function useGameState(
   const handleCraftRecipe = (recipe: CraftingRecipe) => {
     if (
       character.gold < recipe.goldCost ||
-      !hasMaterials(character.inventory, recipe.materials) ||
-      !canAddItemToInventory(recipe.result, character.inventory)
+      !hasMaterials(character.inventory, recipe.materials)
     ) {
       return;
     }
@@ -857,6 +854,7 @@ export function useGameState(
       character.inventory,
       recipe.materials
     );
+    if (!canAddItemToInventory(recipe.result, inventoryWithoutMaterials)) return;
     const updatedInventory = addItemToInventory(
       recipe.result,
       inventoryWithoutMaterials,
