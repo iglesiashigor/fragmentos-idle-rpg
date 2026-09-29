@@ -5,6 +5,11 @@ import { addItemToInventory, canAddItemToInventory } from './inventory';
 
 export const GATHERING_NODE_MAX_CHARGES = 5;
 export const GATHERING_NODE_RESET_MS = 5 * 60 * 1000;
+export const MAX_GATHERING_NODE_LEVEL = 10;
+
+export function getGatheringUpgradeCost(level: number) {
+  return 100 * level;
+}
 
 export function getGatheringNodeState(
   nodes: Character['gatheringNodes'],
@@ -13,7 +18,7 @@ export function getGatheringNodeState(
 ): GatheringNodeState {
   const saved = nodes?.[nodeId];
   if (!saved || (saved.remaining <= 0 && saved.resetAt <= now)) {
-    return { remaining: GATHERING_NODE_MAX_CHARGES, resetAt: 0 };
+    return { remaining: GATHERING_NODE_MAX_CHARGES, resetAt: 0, level: saved?.level || 1 };
   }
   return saved;
 }
@@ -23,13 +28,15 @@ export function consumeGatheringCharge(node: GatheringNodeState, now = Date.now(
   return {
     remaining,
     resetAt: remaining <= 0 ? now + GATHERING_NODE_RESET_MS : node.resetAt,
+    level: node.level,
   };
 }
 
 export function collectResources(
   character: SavedCharacter,
   rewards: { item: Item; quantity: number }[],
-  resourcePool?: string
+  resourcePool?: string,
+  nodeBonus = 0
 ) {
   const definition = getProfessionForResourcePool(resourcePool);
   const currentProfession = definition
@@ -41,7 +48,7 @@ export function collectResources(
   const displayedRewards: { name: string; quantity: number }[] = [];
 
   for (const { item, quantity } of rewards) {
-    const finalQuantity = quantity + progression.quantityBonus + getGuildGatheringBonus(character.guild);
+    const finalQuantity = quantity + progression.quantityBonus + getGuildGatheringBonus(character.guild) + nodeBonus;
     if (!canAddItemToInventory(item, inventory)) continue;
     inventory = addItemToInventory(item, inventory, finalQuantity);
     collectedItems.push({ itemId: item.id, quantity: finalQuantity });

@@ -49,6 +49,7 @@ export interface ProfessionProgress {
 export interface GatheringNodeState {
   remaining: number;
   resetAt: number;
+  level?: number;
 }
 
 export interface GuildProgress {

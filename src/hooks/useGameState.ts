@@ -80,7 +80,9 @@ import {
   collectResources,
   consumeGatheringCharge,
   GATHERING_NODE_RESET_MS,
+  getGatheringUpgradeCost,
   getGatheringNodeState,
+  MAX_GATHERING_NODE_LEVEL,
 } from '../utils/gathering';
 import { cleanTechniqueDescription, upgradeTechnique } from '../utils/techniques';
 
@@ -737,7 +739,8 @@ export function useGameState(
       Math.max(currentLocation.level || 1, Math.ceil(character.level / 4)),
       currentLocation.resourcePool
     );
-    const collected = collectResources(character, gatheringReward.rewards, currentLocation.resourcePool);
+    const bonus = currentLocation.id.startsWith('gathering_') ? (nodeState.level || 1) - 1 : 0;
+    const collected = collectResources(character, gatheringReward.rewards, currentLocation.resourcePool, bonus);
     const totalCollected = collected.collectedItems.reduce((total, item) => total + item.quantity, 0);
     const dailyProgress = getAdvancedDailyTasks('gather', 1);
 
@@ -766,6 +769,21 @@ export function useGameState(
       dailyTasksResetAt: dailyProgress.resetAt,
     });
     setLastGatheringRewards(collected.displayedRewards);
+  };
+
+  const handleUpgradeGatheringNode = () => {
+    if (currentLocation?.type !== 'gathering' || !currentLocation.id.startsWith('gathering_')) return;
+    const nodeState = getGatheringNodeState(character.gatheringNodes, currentLocation.id);
+    const level = nodeState.level || 1;
+    const cost = getGatheringUpgradeCost(level);
+    if (level >= MAX_GATHERING_NODE_LEVEL || character.gold < cost) return;
+    updateCharacter({
+      gold: character.gold - cost,
+      gatheringNodes: {
+        ...(character.gatheringNodes || {}),
+        [currentLocation.id]: { ...nodeState, level: level + 1 },
+      },
+    });
   };
 
   const handleAcceptQuest = (quest: Quest) => {
@@ -1031,6 +1049,7 @@ export function useGameState(
     handleSellItem,
     handleClaimRandomEvent,
     handleGather,
+    handleUpgradeGatheringNode,
     handleAcceptQuest,
     handleClaimQuestReward,
     handleCraftRecipe,

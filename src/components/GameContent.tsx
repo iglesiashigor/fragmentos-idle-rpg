@@ -386,6 +386,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
           {
             status: isDepleted ? 'cooldown' : 'ready',
             label: isDepleted ? 'Recarregando' : 'Pronto',
+            level: location.id.startsWith('gathering_') ? node?.level || 1 : location.level,
           },
         ];
       }
@@ -515,6 +516,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                     lastRewards={gameState.lastGatheringRewards}
                     nodeState={gameState.gatheringNodeState}
                     onGather={handleGather}
+                    onUpgrade={gameState.handleUpgradeGatheringNode}
                   />
                 ) : gameState.currentLocation.type === 'boss_lair' && !gameState.enemy ? (
                   <BossLair

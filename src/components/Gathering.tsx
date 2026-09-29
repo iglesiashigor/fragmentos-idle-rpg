@@ -7,6 +7,7 @@ import {
 } from '../data/professions';
 import { RESOURCE_BY_ID, RESOURCE_POOLS } from '../data/resources';
 import { GatheringNodeState, MapLocation, SavedCharacter } from '../types/game';
+import { getGatheringUpgradeCost, MAX_GATHERING_NODE_LEVEL } from '../utils/gathering';
 
 interface GatheringProps {
   character: SavedCharacter;
@@ -14,6 +15,7 @@ interface GatheringProps {
   lastRewards: { name: string; quantity: number }[] | null;
   nodeState: GatheringNodeState | null;
   onGather: () => void;
+  onUpgrade: () => void;
 }
 
 export function Gathering({
@@ -22,6 +24,7 @@ export function Gathering({
   lastRewards,
   nodeState,
   onGather,
+  onUpgrade,
 }: GatheringProps) {
   const [now, setNow] = useState(Date.now());
   const resourcePool = location.resourcePool || '';
@@ -53,6 +56,9 @@ export function Gathering({
   const resetMinutes = nodeState
     ? Math.max(1, Math.ceil((nodeState.resetAt - now) / 60000))
     : 0;
+  const isFixedNode = location.id.startsWith('gathering_');
+  const nodeLevel = nodeState?.level || 1;
+  const upgradeCost = getGatheringUpgradeCost(nodeLevel);
 
   useEffect(() => {
     if (!nodeState || nodeState.remaining > 0) return;
@@ -76,6 +82,32 @@ export function Gathering({
           </p>
         </div>
       </div>
+
+      {isFixedNode && (
+        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-stone-800">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <strong className="text-base text-stone-950">Ponto de coleta Nv. {nodeLevel}</strong>
+            <span className="font-bold">+{nodeLevel - 1} recurso por coleta</span>
+          </div>
+          {nodeLevel < MAX_GATHERING_NODE_LEVEL ? (
+            <button
+              type="button"
+              onClick={onUpgrade}
+              disabled={character.gold < upgradeCost}
+              className="rpg-button-primary mt-3 w-full disabled:bg-stone-300 disabled:text-stone-500"
+            >
+              Melhorar para Nv. {nodeLevel + 1} · {upgradeCost} moedas
+            </button>
+          ) : (
+            <p className="mt-2 font-bold text-amber-800">Nível máximo alcançado</p>
+          )}
+          {nodeLevel < MAX_GATHERING_NODE_LEVEL && character.gold < upgradeCost && (
+            <p className="mt-2 text-xs font-semibold text-stone-600">
+              Faltam {upgradeCost - character.gold} moedas.
+            </p>
+          )}
+        </div>
+      )}
 
       {!isKnownResourcePool ? (
         <WarningBox text="Este ponto de coleta ainda não tem uma profissão associada." />

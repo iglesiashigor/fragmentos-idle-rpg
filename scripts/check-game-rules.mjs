@@ -99,6 +99,10 @@ assert.equal(reward.updates.stats.kills, 1);
 const exhausted = rules.consumeGatheringCharge({ remaining: 1, resetAt: 0 }, 1000);
 assert.equal(rules.getGatheringNodeState({ forest: exhausted }, 'forest', 1001).remaining, 0);
 assert.equal(rules.getGatheringNodeState({ forest: exhausted }, 'forest', exhausted.resetAt).remaining, 5);
+const upgraded = rules.consumeGatheringCharge({ remaining: 1, resetAt: 0, level: 3 }, 1000);
+assert.equal(rules.getGatheringNodeState({ forest: upgraded }, 'forest', upgraded.resetAt).level, 3);
+assert.equal(rules.getGatheringUpgradeCost(1), 100);
+assert.equal(rules.getGatheringUpgradeCost(3), 300);
 assert.deepEqual(rules.getGatheringProfessionUpdate({ id: 'woodcutter', level: 1, experience: 50 }, 'forest', 1).profession,
   { id: 'woodcutter', level: 2, experience: 15 });
 Math.random = () => 1;
@@ -106,6 +110,7 @@ const collected = rules.collectResources(character, [{ item: resource, quantity:
 Math.random = random;
 assert.equal(collected.inventory[0].quantity, 2);
 assert.equal(collected.professions.woodcutter.experience, 25);
+assert.equal(rules.collectResources(character, [{ item: resource, quantity: 2 }], 'forest', 2).inventory[0].quantity, 4);
 
 const savedEntries = new Map();
 globalThis.localStorage = {
