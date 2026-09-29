@@ -12,7 +12,6 @@ import { UserProfile } from './Profile/UserProfile';
 import { DeathModal } from './Character/DeathModal';
 import { CharacterTabs } from './Character/CharacterTabs';
 import { LevelUpModal } from './LevelUp/LevelUpModal';
-import { TutorialModal } from './TutorialModal';
 import { useGameState } from '../hooks/useGameState';
 import {
   DailyTaskProgress,
@@ -57,7 +56,6 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
   const gameState = useGameState(initialCharacter, onCharacterUpdate);
   const [inventoryNotice, setInventoryNotice] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<ActionNotice | null>(null);
-  const [showTutorial, setShowTutorial] = useState(false);
   const previousCharacterRef = useRef(gameState.character);
 
   useEffect(() => {
@@ -377,22 +375,6 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
     });
   };
 
-  const handleCloseTutorial = () => {
-    setShowTutorial(false);
-    gameState.updateCharacter({ tutorialSeen: true });
-  };
-
-  const handleDismissTutorial = () => {
-    setShowTutorial(false);
-    gameState.updateCharacter({
-      tutorialSeen: true,
-      tutorialDismissed: true,
-    });
-  };
-
-  const shouldShowTutorial =
-    showTutorial ||
-    (!gameState.character.tutorialSeen && !gameState.character.tutorialDismissed);
   const now = Date.now();
   const markerStates: Record<string, MarkerState> = Object.fromEntries(
     gameState.mapLocations.map((location) => {
@@ -492,14 +474,7 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
                 <button onClick={gameState.handleLeaveTown} className="rpg-button-secondary">
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Voltar ao mundo
                 </button>
-              ) : (
-                <button
-                  onClick={() => setShowTutorial(true)}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-black text-amber-800 transition-colors hover:bg-amber-100"
-                >
-                  <ScrollText className="h-4 w-4" aria-hidden="true" /> Tutorial
-                </button>
-              )}
+              ) : null}
             </div>
             {isInTown ? (
               <Town
@@ -599,13 +574,6 @@ export function GameContent({ character: initialCharacter, onCharacterUpdate, on
           />
         )}
 
-        {shouldShowTutorial && (
-          <TutorialModal
-            character={gameState.character}
-            onClose={handleCloseTutorial}
-            onDismiss={handleDismissTutorial}
-          />
-        )}
       </div>
     </div>
   );

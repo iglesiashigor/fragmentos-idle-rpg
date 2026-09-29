@@ -9,7 +9,7 @@ import { SavedCharacter, Race, CharacterClass, Attributes } from './types/game';
 import { useCharacter } from './hooks/useCharacter';
 
 function App() {
-  const { user, isLoading, loadError, retryLoad, login, register, logout, saveCharacter, updateCharacter, deleteCharacter } = useAuth();
+  const { user, isLoading, loadError, saveError, retryLoad, retrySave, login, register, logout, saveCharacter, updateCharacter, deleteCharacter } = useAuth();
   const { createCharacter } = useCharacter();
   const [activeCharacter, setActiveCharacter] = useState<SavedCharacter | null>(null);
   const [showCharacterCreation, setShowCharacterCreation] = useState(false);
@@ -93,16 +93,26 @@ function App() {
   }
 
   return (
-    <GameContent
-      character={activeCharacter}
-      onCharacterUpdate={updateCharacter}
-      onBackToSelection={handleBackToSelection}
-      onLogout={() => {
-        setActiveCharacter(null);
-        logout();
-      }}
-      onCreateNew={handleCreateNew}
-    />
+    <>
+      {saveError && (
+        <div className="app-bg px-4 pt-4" role="alert">
+          <div className="mx-auto flex max-w-[1500px] flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-400 bg-amber-50 p-3 text-sm font-semibold text-amber-950">
+            <span>{saveError}</span>
+            <button className="rpg-button-secondary" onClick={retrySave}>Tentar salvar novamente</button>
+          </div>
+        </div>
+      )}
+      <GameContent
+        character={activeCharacter}
+        onCharacterUpdate={updateCharacter}
+        onBackToSelection={handleBackToSelection}
+        onLogout={() => {
+          setActiveCharacter(null);
+          logout();
+        }}
+        onCreateNew={handleCreateNew}
+      />
+    </>
   );
 }
 

@@ -194,8 +194,6 @@ export interface Character {
   guild?: GuildProgress;
   dailyTasks?: DailyTaskProgress[];
   dailyTasksResetAt?: number;
-  tutorialSeen?: boolean;
-  tutorialDismissed?: boolean;
 }
 
 export interface CharacterStats {

@@ -13,6 +13,7 @@ const rules = {
   ...await server.ssrLoadModule('/src/data/balance.ts'),
   ...await server.ssrLoadModule('/src/data/recipes.ts'),
   ...await server.ssrLoadModule('/src/utils/randomEvents.ts'),
+  ...await server.ssrLoadModule('/src/utils/pendingSave.ts'),
 };
 await server.close();
 
@@ -104,5 +105,20 @@ const collected = rules.collectResources(character, [{ item: resource, quantity:
 Math.random = random;
 assert.equal(collected.inventory[0].quantity, 2);
 assert.equal(collected.professions.woodcutter.experience, 25);
+
+const savedEntries = new Map();
+globalThis.localStorage = {
+  getItem: (key) => savedEntries.get(key) ?? null,
+  setItem: (key, value) => savedEntries.set(key, value),
+  removeItem: (key) => savedEntries.delete(key),
+};
+rules.storePendingSave('player-1', { ...character, level: 2 });
+assert.equal(rules.getPendingSave('player-1', character.id).level, 2);
+assert.equal(rules.getPendingSave('player-2', character.id), null);
+rules.storePendingSave('player-1', { ...character, level: 3 });
+assert.equal(rules.getPendingSave('player-1', character.id).level, 3);
+savedEntries.set(rules.pendingSaveKey('player-1', character.id), '{broken');
+assert.equal(rules.getPendingSave('player-1', character.id), null);
+assert.equal(savedEntries.size, 0);
 
 console.log('Game rules check passed');

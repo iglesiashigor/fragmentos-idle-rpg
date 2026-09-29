@@ -5,6 +5,7 @@ import {
   isSupabaseConfigured,
   supabase,
 } from '../lib/supabase';
+import { getPendingSave, pendingSaveKey, storePendingSave } from '../utils/pendingSave';
 
 interface StoredUser extends User {
   password: string;
@@ -50,7 +51,43 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+
+  const queuePendingSaves = useCallback((userId: string, characterIds: string[]) => {
+    if (!supabase) return saveQueueRef.current;
+    const client = supabase;
+    saveQueueRef.current = saveQueueRef.current.then(async () => {
+      let saveFailure: Error | null = null;
+      for (const characterId of characterIds) {
+        const key = pendingSaveKey(userId, characterId);
+        const snapshot = localStorage.getItem(key);
+        if (!snapshot) continue;
+        const character = getPendingSave(userId, characterId);
+        if (!character) continue;
+        try {
+          const { error } = await client
+            .from('characters')
+            .update({ name: character.name, data: character })
+            .eq('id', characterId)
+            .eq('user_id', userId)
+            .select('id')
+            .single();
+          if (error) throw error;
+          if (localStorage.getItem(key) === snapshot) localStorage.removeItem(key);
+        } catch (error) {
+          saveFailure = error instanceof Error ? error : new Error('tente novamente.');
+        }
+      }
+      if (saveFailure) throw saveFailure;
+      setSaveError(characterIds.some((id) => getPendingSave(userId, id))
+        ? 'Há progresso aguardando sincronização.'
+        : null);
+    }).catch((error: unknown) => {
+      setSaveError(`Progresso pendente de sincronização: ${error instanceof Error ? error.message : 'tente novamente.'}`);
+    });
+    return saveQueueRef.current;
+  }, []);
 
   const loadSupabaseUser = useCallback(async () => {
     if (!supabase) return;
@@ -62,6 +99,7 @@ export function useAuth() {
 
       if (!authUser) {
         setLoadError(null);
+        setSaveError(null);
         setUser(null);
         return;
       }
@@ -74,15 +112,33 @@ export function useAuth() {
       if (error) throw error;
 
       setLoadError(null);
+      const characters = (data as CharacterRow[]).map(toSavedCharacter).map((character) =>
+        getPendingSave(authUser.id, character.id) || character
+      );
       setUser({
         id: authUser.id,
         email: authUser.email || '',
-        characters: (data as CharacterRow[]).map(toSavedCharacter),
+        characters,
       });
+      if (characters.some((character) => getPendingSave(authUser.id, character.id))) {
+        setSaveError('Há progresso salvo neste navegador aguardando sincronização.');
+        void queuePendingSaves(authUser.id, characters.map((character) => character.id));
+      }
     } catch (error) {
       setLoadError(`Não foi possível carregar seus personagens: ${error instanceof Error ? error.message : 'tente novamente.'}`);
     }
-  }, []);
+  }, [queuePendingSaves]);
+
+  useEffect(() => {
+    if (!user || !supabase) return;
+    const retry = () => void queuePendingSaves(user.id, user.characters.map((character) => character.id));
+    window.addEventListener('online', retry);
+    return () => window.removeEventListener('online', retry);
+  }, [user, queuePendingSaves]);
+
+  const retrySave = () => {
+    if (user) void queuePendingSaves(user.id, user.characters.map((character) => character.id));
+  };
 
   const retryLoad = async () => {
     setIsLoading(true);
@@ -244,16 +300,12 @@ export function useAuth() {
     if (!user) return;
 
     if (supabase) {
-      const client = supabase;
-      saveQueueRef.current = saveQueueRef.current.then(async () => {
-        const { error } = await client
-          .from('characters')
-          .update({ name: character.name, data: character })
-          .eq('id', character.id);
-        if (error) throw error;
-      }).catch((error: unknown) => {
-        alert(`Erro ao salvar progresso: ${error instanceof Error ? error.message : 'tente novamente.'}`);
-      });
+      try {
+        storePendingSave(user.id, character);
+        void queuePendingSaves(user.id, user.characters.map((savedCharacter) => savedCharacter.id));
+      } catch {
+        setSaveError('Não foi possível guardar o progresso neste navegador. Verifique o armazenamento disponível.');
+      }
     }
 
     const updatedUser = {
@@ -274,6 +326,7 @@ export function useAuth() {
     if (!user) return false;
 
     if (supabase) {
+      await saveQueueRef.current;
       const { error } = await supabase
         .from('characters')
         .delete()
@@ -283,6 +336,7 @@ export function useAuth() {
         alert(`Erro ao excluir personagem: ${error.message}`);
         return false;
       }
+      localStorage.removeItem(pendingSaveKey(user.id, characterId));
     }
 
     const updatedUser = {
@@ -304,6 +358,8 @@ export function useAuth() {
     user,
     isLoading,
     loadError,
+    saveError,
+    retrySave,
     retryLoad,
     login,
     register,
