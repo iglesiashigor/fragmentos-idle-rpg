@@ -557,6 +557,14 @@ function SellItemCard({
           >
             Vender por {sellPrice} ouro
           </button>
+          {item.quantity > 1 && (
+            <button
+              onClick={() => onSellItem(item, item.quantity)}
+              className="mt-2 w-full rounded-md border border-amber-600 px-3 py-2 font-bold text-amber-800 hover:bg-amber-50"
+            >
+              Vender tudo por {getSellPrice(item.price, item.quantity, item.rarity)} ouro
+            </button>
+          )}
         </>
       )}
     </div>
