@@ -13,15 +13,13 @@ import { getRarityStyles } from '../../utils/rarity';
 import { ItemDetailsModal } from './ItemDetailsModal';
 
 interface InventoryPanelProps {
+  view: 'equipment' | 'inventory';
   inventory: InventoryItem[];
   equipment: Equipment;
-  currentHealth: number;
-  maxHealth: number;
   onEquipItem: (item: InventoryItem) => void;
   onUnequipItem: (slot: EquipmentSlotId) => void;
   onUsePotion: (item: InventoryItem) => void;
   notice?: string | null;
-  framed?: boolean;
 }
 
 const EQUIPMENT_SLOT_LABELS: Record<EquipmentSlotId, string> = {
@@ -34,30 +32,31 @@ const EQUIPMENT_SLOT_LABELS: Record<EquipmentSlotId, string> = {
 };
 
 export function InventoryPanel({
+  view,
   inventory,
   equipment,
   onEquipItem,
   onUnequipItem,
   onUsePotion,
   notice,
-  framed = true,
 }: InventoryPanelProps) {
   const bagItems = getBagItems(inventory);
-  const emptySlots = Math.max(0, MAX_INVENTORY_SLOTS - bagItems.length);
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
   return (
-    <div className={framed ? 'rpg-panel rounded-lg p-5' : ''}>
+    <div>
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-black text-stone-950">Inventário</h2>
+          <h2 className="text-xl font-black text-stone-950">{view === 'equipment' ? 'Equipamentos' : 'Inventário'}</h2>
           <p className="text-sm font-medium text-stone-500">
-            Equipamentos e bolsa
+            {view === 'equipment' ? 'Itens em uso pelo personagem.' : 'Itens carregados na bolsa.'}
           </p>
         </div>
-        <div className="rounded-md bg-stone-900 px-3 py-1 text-sm font-bold text-amber-300">
-          {bagItems.length}/{MAX_INVENTORY_SLOTS}
-        </div>
+        {view === 'inventory' && (
+          <div className="shrink-0 rounded-md bg-stone-900 px-3 py-1 text-sm font-bold text-amber-300" aria-label={`${bagItems.length} de ${MAX_INVENTORY_SLOTS} espaços ocupados`}>
+            {bagItems.length}/{MAX_INVENTORY_SLOTS}
+          </div>
+        )}
       </div>
 
       {notice && (
@@ -66,45 +65,36 @@ export function InventoryPanel({
         </div>
       )}
 
-      <div className="mb-5 grid grid-cols-2 gap-3">
-        {EQUIPMENT_SLOTS.map((slot) => (
-          <EquipmentSlot
-            key={slot}
-            title={EQUIPMENT_SLOT_LABELS[slot]}
-            icon={slot === 'weapon' ? <Sword className="h-5 w-5" /> : <Shield className="h-5 w-5" />}
-            item={equipment[slot] || null}
-            onUnequip={() => onUnequipItem(slot)}
-            onShowDetails={setSelectedItem}
-          />
-        ))}
-      </div>
-
-      <div className="mb-3 flex items-center justify-between border-t border-stone-200 pt-4">
-        <h3 className="font-black text-stone-950">Bolsa</h3>
-        <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-          Itens carregados
-        </span>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
-        {bagItems.map((item) => (
-          <BagSlot
-            key={item.instanceId || item.id}
-            item={item}
-            equipped={false}
-            onEquipItem={onEquipItem}
-            onUsePotion={onUsePotion}
-            onShowDetails={setSelectedItem}
-          />
-        ))}
-
-        {Array.from({ length: emptySlots }).map((_, index) => (
-          <div
-            key={`empty-${index}`}
-            className="aspect-square rounded-md border border-dashed border-stone-300 bg-stone-100/70"
-          />
-        ))}
-      </div>
+      {view === 'equipment' ? (
+        <div className="grid grid-cols-2 gap-3">
+          {EQUIPMENT_SLOTS.map((slot) => (
+            <EquipmentSlot
+              key={slot}
+              title={EQUIPMENT_SLOT_LABELS[slot]}
+              icon={slot === 'weapon' ? <Sword className="h-5 w-5" /> : <Shield className="h-5 w-5" />}
+              item={equipment[slot] || null}
+              onUnequip={() => onUnequipItem(slot)}
+              onShowDetails={setSelectedItem}
+            />
+          ))}
+        </div>
+      ) : (
+        bagItems.length === 0 ? (
+          <p className="rounded-md border border-dashed border-stone-300 bg-white p-4 text-sm font-semibold text-stone-500">A bolsa está vazia.</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4">
+            {bagItems.map((item) => (
+              <BagSlot
+                key={item.instanceId || item.id}
+                item={item}
+                onEquipItem={onEquipItem}
+                onUsePotion={onUsePotion}
+                onShowDetails={setSelectedItem}
+              />
+            ))}
+          </div>
+        )
+      )}
 
       {selectedItem && (
         <ItemDetailsModal
@@ -167,13 +157,11 @@ function EquipmentSlot({
 
 function BagSlot({
   item,
-  equipped,
   onEquipItem,
   onUsePotion,
   onShowDetails,
 }: {
   item: InventoryItem;
-  equipped: boolean;
   onEquipItem: (item: InventoryItem) => void;
   onUsePotion: (item: InventoryItem) => void;
   onShowDetails: (item: InventoryItem) => void;
@@ -184,13 +172,9 @@ function BagSlot({
 
   return (
     <div
-      className={`group relative aspect-square rounded-md border p-2 shadow-sm transition-colors ${rarity.surface} ${
-        equipped
-          ? 'border-amber-500 ring-2 ring-amber-300'
-          : `${rarity.border} hover:border-amber-300`
-      }`}
+      className={`flex min-h-28 flex-col rounded-md border p-2 shadow-sm transition-colors ${rarity.surface} ${rarity.border} hover:border-amber-300`}
     >
-      <div className="flex h-full flex-col justify-between">
+      <div className="flex flex-1 flex-col justify-between">
         <div className="flex items-start justify-between gap-1">
           <ItemIcon item={item} />
           <div className="flex items-center gap-1">
@@ -216,20 +200,19 @@ function BagSlot({
       </div>
 
       {(canEquip || canUse) && (
-        <div className="absolute inset-x-1 bottom-1 hidden gap-1 group-hover:flex">
+        <div className="mt-2 flex gap-1">
           {canEquip && (
             <button
               onClick={() => onEquipItem(item)}
-              disabled={equipped}
-              className="flex-1 rounded bg-amber-600 px-1 py-1 text-[11px] font-bold text-white hover:bg-amber-700 disabled:bg-stone-400"
+              className="min-h-8 flex-1 rounded bg-amber-600 px-1 py-1 text-[11px] font-bold text-white hover:bg-amber-700"
             >
-              {equipped ? 'Equipado' : 'Equipar'}
+              Equipar
             </button>
           )}
           {canUse && (
             <button
               onClick={() => onUsePotion(item)}
-              className="flex-1 rounded bg-emerald-600 px-1 py-1 text-[11px] font-bold text-white hover:bg-emerald-700"
+              className="min-h-8 flex-1 rounded bg-emerald-600 px-1 py-1 text-[11px] font-bold text-white hover:bg-emerald-700"
             >
               Usar
             </button>

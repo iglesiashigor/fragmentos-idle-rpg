@@ -1,5 +1,5 @@
 import { ReactNode, useState } from 'react';
-import { Award, Backpack, BarChart3, BookOpen, Hammer, Info } from 'lucide-react';
+import { Award, Backpack, BarChart3, BookOpen, Hammer, Info, Shield } from 'lucide-react';
 import { TITLE_ACHIEVEMENTS } from '../../data/achievements';
 import {
   getProfessionRequiredExperience,
@@ -11,7 +11,7 @@ import { EquipmentSlotId } from '../../utils/inventory';
 import { calculateAbilityBase, calculateCharacterStats, calculateSpellBase } from '../../utils/combatStats';
 import { InventoryPanel } from '../Inventory/InventoryPanel';
 
-type CharacterTabId = 'inventory' | 'attributes' | 'skills' | 'professions' | 'achievements';
+type CharacterTabId = 'equipment' | 'inventory' | 'attributes' | 'skills' | 'professions' | 'achievements';
 
 interface CharacterTabsProps {
   character: SavedCharacter;
@@ -44,6 +44,12 @@ export function CharacterTabs({
       </div>
       <div className="mb-5 flex flex-wrap gap-2" aria-label="Menu do personagem">
         <SidebarTab
+          label="Equipamentos"
+          active={activeTab === 'equipment'}
+          icon={<Shield className="h-4 w-4" />}
+          onClick={() => setActiveTab('equipment')}
+        />
+        <SidebarTab
           label="Inventário"
           active={activeTab === 'inventory'}
           icon={<Backpack className="h-4 w-4" />}
@@ -75,30 +81,30 @@ export function CharacterTabs({
         />
       </div>
 
-      {activeTab === 'inventory' ? (
-        <InventoryPanel
-          inventory={inventory}
-          equipment={equipment}
-          onEquipItem={onEquipItem}
-          onUnequipItem={onUnequipItem}
-          onUsePotion={onUsePotion}
-          currentHealth={character.health}
-          maxHealth={character.maxHealth}
-          notice={inventoryNotice}
-          framed={false}
-        />
-      ) : activeTab === 'attributes' ? (
-        <AttributesPanel character={character} />
-      ) : activeTab === 'skills' ? (
-        <SkillsPanel character={character} />
-      ) : activeTab === 'professions' ? (
-        <ProfessionProgressPanel character={character} />
-      ) : (
-        <AchievementPanel
-          character={character}
-          onSetActiveTitle={onSetActiveTitle}
-        />
-      )}
+      <div key={activeTab} className="max-h-[min(70dvh,42rem)] overflow-y-auto overscroll-contain pr-1 focus-visible:outline-2 focus-visible:outline-amber-600" role="region" aria-label="Detalhes do personagem" tabIndex={0}>
+        {activeTab === 'equipment' || activeTab === 'inventory' ? (
+          <InventoryPanel
+            view={activeTab}
+            inventory={inventory}
+            equipment={equipment}
+            onEquipItem={onEquipItem}
+            onUnequipItem={onUnequipItem}
+            onUsePotion={onUsePotion}
+            notice={inventoryNotice}
+          />
+        ) : activeTab === 'attributes' ? (
+          <AttributesPanel character={character} />
+        ) : activeTab === 'skills' ? (
+          <SkillsPanel character={character} />
+        ) : activeTab === 'professions' ? (
+          <ProfessionProgressPanel character={character} />
+        ) : (
+          <AchievementPanel
+            character={character}
+            onSetActiveTitle={onSetActiveTitle}
+          />
+        )}
+      </div>
     </div>
   );
 }
